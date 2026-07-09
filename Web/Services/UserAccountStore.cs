@@ -711,9 +711,12 @@ public sealed class UserAccountStore : IUserAccountStore
                 changed = true;
             }
 
-            if (string.IsNullOrWhiteSpace(existing.PasswordHash))
+            if (!PasswordMatches(existing.PasswordHash, _seedAdmin.Password))
             {
                 existing.PasswordHash = HashPassword(_seedAdmin.Password);
+                existing.PasswordResetTokenHash = null;
+                existing.PasswordResetTokenExpiresAt = null;
+                existing.PasswordChangedAt = DateTimeOffset.UtcNow;
                 changed = true;
             }
 
