@@ -8,4 +8,5 @@ public interface IPaymentRepository
     Task UpdateAsync(Payment payment, CancellationToken cancellationToken = default);
     Task<Payment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default);
     Task<Payment?> GetByOrderCodeAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Payment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default);
 }

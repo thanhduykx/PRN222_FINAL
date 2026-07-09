@@ -22,4 +22,5 @@ public sealed class Payment
     public DateTimeOffset? PaidAt { get; set; }
     public DateTimeOffset? FailedAt { get; set; }
     public string FailureReason { get; set; } = string.Empty;
+    public Package? Package { get; set; }
 }

@@ -198,6 +198,31 @@ public sealed class PaymentService : IPaymentService
             };
     }
 
+    public async Task<IReadOnlyList<PaymentHistoryItemDto>> GetPaymentsForUserAsync(Guid userId, int limit = 20, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("User is required.");
+        }
+
+        var payments = await _payments.GetByUserAsync(userId, Math.Clamp(limit, 1, 100), cancellationToken);
+        return payments.Select(payment => new PaymentHistoryItemDto
+        {
+            PaymentId = payment.Id,
+            PackageId = payment.PackageId,
+            PackageName = payment.Package?.Name ?? string.Empty,
+            PackageCode = payment.Package?.Code ?? string.Empty,
+            Provider = payment.Provider,
+            Status = payment.Status,
+            AmountVnd = payment.AmountVnd,
+            Currency = payment.Currency,
+            OrderCode = payment.OrderCode,
+            CreatedAt = payment.CreatedAt,
+            PaidAt = payment.PaidAt,
+            FailureReason = payment.FailureReason
+        }).ToList();
+    }
+
     private async Task ActivateSubscriptionAsync(Payment payment, Package package, bool idempotent, CancellationToken cancellationToken)
     {
         if (idempotent && await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken) is not null)

@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PRN222_FINAL.BLL.Options;
+using PRN222_FINAL.BLL.Services.Analytics;
 using PRN222_FINAL.BLL.Services.Billing;
 using PRN222_FINAL.BLL.Services.Billing.Gateways;
 using PRN222_FINAL.DAL.Repositories;
+using PRN222_FINAL.DAL.Repositories.Analytics;
 using PRN222_FINAL.DAL.Repositories.Billing;
 using PRN222_FINAL.Models;
 
@@ -29,6 +31,8 @@ public static class BusinessServiceCollectionExtensions
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddHttpClient<IMomoPaymentGateway, MomoPaymentGateway>();
         services.AddHttpClient<IPayOsPaymentGateway, PayOsPaymentGateway>();
+        services.AddSingleton<IAnalyticsRepository>(_ => new AnalyticsRepository(connectionString));
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         return services;
     }

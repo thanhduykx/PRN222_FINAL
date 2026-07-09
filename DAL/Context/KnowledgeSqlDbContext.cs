@@ -19,6 +19,7 @@ public sealed class KnowledgeSqlDbContext : DbContext
     public DbSet<KnowledgeSqlCitation> Citations => Set<KnowledgeSqlCitation>();
     public DbSet<KnowledgeSqlSubjectLecturer> SubjectLecturers => Set<KnowledgeSqlSubjectLecturer>();
     public DbSet<KnowledgeSqlSubjectStudent> SubjectStudents => Set<KnowledgeSqlSubjectStudent>();
+    public DbSet<KnowledgeSqlCourseAccessLog> CourseAccessLogs => Set<KnowledgeSqlCourseAccessLog>();
     public DbSet<KnowledgeSqlPackage> Packages => Set<KnowledgeSqlPackage>();
     public DbSet<KnowledgeSqlPayment> Payments => Set<KnowledgeSqlPayment>();
     public DbSet<KnowledgeSqlSubscription> Subscriptions => Set<KnowledgeSqlSubscription>();
@@ -97,6 +98,14 @@ public sealed class KnowledgeSqlDbContext : DbContext
         modelBuilder.Entity<KnowledgeSqlCitation>(entity =>
         {
             entity.HasIndex(c => c.DocumentId);
+            entity.HasIndex(c => c.Subject);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlCourseAccessLog>(entity =>
+        {
+            entity.HasIndex(log => log.UserId);
+            entity.HasIndex(log => log.SubjectId);
+            entity.HasIndex(log => log.AccessedAt);
         });
 
         modelBuilder.Entity<KnowledgeSqlPackage>(entity =>

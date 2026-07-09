@@ -2,29 +2,71 @@
 @using PRN222_FINAL.Models
 @model PRN222_FINAL.Web.Pages.Payments.CheckoutModel
 @{
-    ViewData["Title"] = "Checkout";
+    ViewData["Title"] = "Thanh toán";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Checkout";
+    ViewData["ShellTitle"] = "Thanh toán";
 }
 
-<section class="container py-4">
-    <h1 class="h3 mb-3">Checkout</h1>
+<section class="ops-page">
+    <div class="ops-page-header">
+        <div>
+            <span class="ops-eyebrow">Checkout</span>
+            <h1>Thanh toán gói dịch vụ</h1>
+            <p>Xác nhận gói và chọn cổng thanh toán. Số tiền thanh toán được lấy từ bảng package trên server.</p>
+        </div>
+        <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Chọn gói khác
+        </a>
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
     }
 
-    <div class="card">
-        <div class="card-body">
-            <p class="text-muted">Select a payment provider. The final amount is loaded from the server package table.</p>
-            <form method="post" class="d-flex flex-column flex-sm-row gap-2">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="PackageId" />
-                <button type="submit" name="provider" value="@PaymentProvider.MoMo" class="btn btn-danger">Pay with MoMo</button>
-                <button type="submit" name="provider" value="@PaymentProvider.PayOS" class="btn btn-primary">Pay with PayOS</button>
-            </form>
+    @if (Model.Package is not null)
+    {
+        <div class="ops-admin-layout">
+            <article class="ops-panel">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>@Model.Package.Name</h2>
+                        <p class="ops-muted mb-0">@Model.Package.Description</p>
+                    </div>
+                    <strong class="fs-4">@(Model.Package.PriceVnd <= 0 ? "Miễn phí" : $"{Model.Package.PriceVnd:N0} VND")</strong>
+                </div>
+                <div class="ops-kpi-grid">
+                    <article class="ops-kpi"><span>Chat/tháng</span><strong>@Model.Package.MonthlyChatLimit.ToString("N0")</strong></article>
+                    <article class="ops-kpi"><span>Upload/tháng</span><strong>@Model.Package.MonthlyDocumentUploadLimit.ToString("N0")</strong></article>
+                    <article class="ops-kpi"><span>Lưu trữ</span><strong>@Model.Package.StorageLimitMb.ToString("N0") MB</strong></article>
+                    <article class="ops-kpi"><span>Thời hạn</span><strong>@Model.Package.DurationDays ngày</strong></article>
+                </div>
+            </article>
+
+            <aside class="ops-command-rail">
+                <section class="ops-command-card">
+                    <span class="ops-eyebrow">Payment</span>
+                    <h2>Chọn phương thức</h2>
+                    <p class="ops-muted">Sau khi thanh toán thành công, hệ thống sẽ kích hoạt hoặc gia hạn subscription tự động.</p>
+                    <form method="post" class="d-grid gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="PackageId" />
+                        <button type="submit" name="provider" value="@PaymentProvider.MoMo" class="ops-button ops-button--primary">
+                            <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
+                            @(Model.Package.PriceVnd <= 0 ? "Kích hoạt miễn phí" : "Thanh toán MoMo")
+                        </button>
+                        @if (Model.Package.PriceVnd > 0)
+                        {
+                            <button type="submit" name="provider" value="@PaymentProvider.PayOS" class="ops-button ops-button--secondary">
+                                <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                                Thanh toán PayOS
+                            </button>
+                        }
+                    </form>
+                </section>
+            </aside>
         </div>
-    </div>
+    }
 </section>

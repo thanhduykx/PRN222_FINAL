@@ -99,6 +99,23 @@ public static class KnowledgeSqlSchemaInitializer
 
             CREATE INDEX IF NOT EXISTS "IX_subscriptions_UserId_Status_EndsAt" ON subscriptions ("UserId", "Status", "EndsAt");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_subscriptions_PaymentId" ON subscriptions ("PaymentId") WHERE "PaymentId" IS NOT NULL;
+
+            CREATE TABLE IF NOT EXISTS course_access_logs (
+                "Id" uuid PRIMARY KEY,
+                "UserId" uuid NULL,
+                "UserName" varchar(255) NOT NULL DEFAULT '',
+                "UserEmail" varchar(255) NOT NULL DEFAULT '',
+                "Role" varchar(64) NOT NULL DEFAULT '',
+                "SubjectId" uuid NOT NULL,
+                "SubjectCode" varchar(64) NOT NULL DEFAULT '',
+                "SubjectName" varchar(255) NOT NULL DEFAULT '',
+                "AccessArea" varchar(64) NOT NULL DEFAULT '',
+                "AccessedAt" timestamp with time zone NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS "IX_course_access_logs_UserId" ON course_access_logs ("UserId");
+            CREATE INDEX IF NOT EXISTS "IX_course_access_logs_SubjectId" ON course_access_logs ("SubjectId");
+            CREATE INDEX IF NOT EXISTS "IX_course_access_logs_AccessedAt" ON course_access_logs ("AccessedAt");
             """);
     }
 

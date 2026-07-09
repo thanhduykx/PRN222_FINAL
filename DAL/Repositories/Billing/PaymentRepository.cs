@@ -48,7 +48,10 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
     public async Task<Payment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
-        var entity = await context.Payments.AsNoTracking().FirstOrDefaultAsync(item => item.Id == paymentId, cancellationToken);
+        var entity = await context.Payments
+            .AsNoTracking()
+            .Include(item => item.Package)
+            .FirstOrDefaultAsync(item => item.Id == paymentId, cancellationToken);
         return entity is null ? null : BillingSqlMapper.ToModel(entity);
     }
 
@@ -61,5 +64,18 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .FirstOrDefaultAsync(item => item.Provider == provider && item.OrderCode == normalizedOrderCode, cancellationToken);
 
         return entity is null ? null : BillingSqlMapper.ToModel(entity);
+    }
+
+    public async Task<IReadOnlyList<Payment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments
+            .AsNoTracking()
+            .Include(payment => payment.Package)
+            .Where(payment => payment.UserId == userId)
+            .OrderByDescending(payment => payment.CreatedAt)
+            .Take(Math.Clamp(limit, 1, 100))
+            .Select(payment => BillingSqlMapper.ToModel(payment))
+            .ToListAsync(cancellationToken);
     }
 }

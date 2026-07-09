@@ -6,6 +6,8 @@ using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
+using PRN222_FINAL.BLL.Services.Analytics;
+using PRN222_FINAL.Models.DTOs.Analytics;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -13,6 +15,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class SubjectDocumentsModel : HomePageModelBase
 {
     private readonly IDocumentStatusNotifier _documentStatusNotifier;
+    private readonly IAnalyticsService _analytics;
 
     public SubjectDocumentsModel(
         ILogger<HomePageModelBase> logger,
@@ -23,10 +26,12 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
         IUserAccountStore users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
-        IDocumentStatusNotifier documentStatusNotifier)
+        IDocumentStatusNotifier documentStatusNotifier,
+        IAnalyticsService analytics)
         : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
     {
         _documentStatusNotifier = documentStatusNotifier;
+        _analytics = analytics;
     }
 
     public DocumentTreeSubjectViewModel Subject { get; private set; } = new();
@@ -267,7 +272,30 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
             .ToList();
 
         Subject = BuildSubjectTree(subject, subjectDocuments);
+        await TrackCourseAccessAsync(subject, "documents", cancellationToken);
         return Page();
+    }
+
+    private async Task TrackCourseAccessAsync(CourseSubject subject, string accessArea, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _analytics.TrackCourseAccessAsync(new CourseAccessLogRequestDto
+            {
+                UserId = CurrentUserId(),
+                UserName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty,
+                UserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty,
+                Role = CurrentRole(),
+                SubjectId = subject.Id,
+                SubjectCode = subject.Code,
+                SubjectName = subject.DisplayName,
+                AccessArea = accessArea
+            }, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not track subject document access for subject {SubjectId}", subject.Id);
+        }
     }
 
     private static DocumentTreeSubjectViewModel BuildSubjectTree(CourseSubject subject, IReadOnlyList<IndexedDocument> documents)

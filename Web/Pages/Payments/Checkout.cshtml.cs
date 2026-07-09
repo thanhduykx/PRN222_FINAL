@@ -12,20 +12,29 @@ namespace PRN222_FINAL.Web.Pages.Payments;
 public sealed class CheckoutModel : PageModel
 {
     private readonly IPaymentService _payments;
+    private readonly IPackageService _packages;
 
-    public CheckoutModel(IPaymentService payments)
+    public CheckoutModel(IPaymentService payments, IPackageService packages)
     {
         _payments = payments;
+        _packages = packages;
     }
 
     [BindProperty(SupportsGet = true)]
     public Guid PackageId { get; set; }
 
+    public PackageDto? Package { get; private set; }
     public string ErrorMessage { get; private set; } = string.Empty;
 
-    public IActionResult OnGet()
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        return PackageId == Guid.Empty ? RedirectToPage("/Packages/Index") : Page();
+        if (PackageId == Guid.Empty)
+        {
+            return RedirectToPage("/Packages/Index");
+        }
+
+        Package = await _packages.GetPackageAsync(PackageId, cancellationToken);
+        return Package is null ? RedirectToPage("/Packages/Index") : Page();
     }
 
     public async Task<IActionResult> OnPostAsync(string provider, CancellationToken cancellationToken)
@@ -33,6 +42,7 @@ public sealed class CheckoutModel : PageModel
         if (!Enum.TryParse<PaymentProvider>(provider, true, out var parsedProvider))
         {
             ErrorMessage = "Payment provider is invalid.";
+            Package = await _packages.GetPackageAsync(PackageId, cancellationToken);
             return Page();
         }
 
@@ -61,6 +71,7 @@ public sealed class CheckoutModel : PageModel
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
+            Package = await _packages.GetPackageAsync(PackageId, cancellationToken);
             return Page();
         }
     }
