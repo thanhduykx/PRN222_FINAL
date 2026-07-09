@@ -233,25 +233,25 @@ public abstract class HomePageModelBase : PageModel
             return subject?.OwnerUserId == userId;
         }
 
-        protected async Task<bool> CanManageDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
+        protected Task<bool> CanManageDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
         {
             if (DocumentBelongsToCurrentUser(document))
             {
-                return true;
+                return Task.FromResult(true);
             }
 
-            return false;
+            return Task.FromResult(false);
         }
 
         
-        protected async Task<bool> CanEditDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
+        protected Task<bool> CanEditDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
         {
             if (DocumentBelongsToCurrentUser(document))
             {
-                return true;
+                return Task.FromResult(true);
             }
 
-            return false;
+            return Task.FromResult(false);
         }
 
         public bool CanEditDocumentMetadata(IndexedDocument document, IEnumerable<CourseSubject> catalog)
