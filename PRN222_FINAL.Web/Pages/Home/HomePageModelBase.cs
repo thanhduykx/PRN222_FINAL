@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using PRN222_FINAL.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -6,6 +6,7 @@ using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
+using PRN222_FINAL.Models.DTOs.Documents;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -129,9 +130,9 @@ public abstract class HomePageModelBase : PageModel
             return new SubjectOwnerInfo(lecturer.Id, lecturer.FullName, lecturer.Email);
         }
 
-        protected DocumentUploaderInfo BuildDocumentUploaderInfo()
+        protected DocumentUploaderDto BuildDocumentUploaderInfo()
         {
-            return new DocumentUploaderInfo(
+            return new DocumentUploaderDto(
                 CurrentUserId(),
                 User.FindFirstValue(ClaimTypes.Name),
                 User.FindFirstValue(ClaimTypes.Email));

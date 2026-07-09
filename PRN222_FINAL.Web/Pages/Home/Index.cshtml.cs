@@ -1,4 +1,5 @@
-﻿using PRN222_FINAL.Models;
+using PRN222_FINAL.Models;
+using PRN222_FINAL.Models.DTOs.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRN222_FINAL.Web.Models;
@@ -267,19 +268,22 @@ public sealed class IndexModel : HomePageModelBase
                 return Forbid();
             }
 
-            DocumentUploadResult result;
+            DocumentUploadResultDto result;
             var uploader = BuildDocumentUploaderInfo();
             if (model.File is { Length: > 0 })
             {
                 await using var stream = model.File.OpenReadStream();
                 result = await _indexingService.QueueFileAsync(
-                    stream,
-                    model.File.FileName,
-                    model.File.ContentType,
-                    model.Subject,
-                    model.Chapter,
-                    Path.Combine(_environment.WebRootPath, "uploads"),
-                    uploader,
+                    new DocumentFileUploadRequestDto
+                    {
+                        FileStream = stream,
+                        FileName = model.File.FileName,
+                        ContentType = model.File.ContentType,
+                        Subject = model.Subject,
+                        Chapter = model.Chapter,
+                        UploadsRoot = Path.Combine(_environment.WebRootPath, "uploads"),
+                        Uploader = uploader
+                    },
                     cancellationToken);
             }
             else
@@ -287,13 +291,16 @@ public sealed class IndexModel : HomePageModelBase
                 var extracted = await _webPageTextExtractor.ExtractAsync(model.SourceUrl ?? string.Empty, cancellationToken);
                 var sourceName = $"{extracted.Title} - {new Uri(extracted.SourceUrl).Host}.txt";
                 result = await _indexingService.QueueTextAsync(
-                    extracted.Text,
-                    sourceName,
-                    extracted.UsedBrowserRenderer ? "text/html+playwright" : "text/html",
-                    model.Subject,
-                    model.Chapter,
-                    Path.Combine(_environment.WebRootPath, "uploads"),
-                    uploader,
+                    new DocumentTextUploadRequestDto
+                    {
+                        Text = extracted.Text,
+                        SourceName = sourceName,
+                        ContentType = extracted.UsedBrowserRenderer ? "text/html+playwright" : "text/html",
+                        Subject = model.Subject,
+                        Chapter = model.Chapter,
+                        UploadsRoot = Path.Combine(_environment.WebRootPath, "uploads"),
+                        Uploader = uploader
+                    },
                     cancellationToken);
             }
 
