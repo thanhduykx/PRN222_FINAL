@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
+using PRN222_FINAL.BLL.Services.Analytics;
+using PRN222_FINAL.Models.DTOs.Analytics;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -12,6 +14,8 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class CourseWorkspaceModel : HomePageModelBase
 {
     private static readonly Regex SentenceRegex = new(@"(?<=[.!?。])\s+|\r?\n+", RegexOptions.Compiled);
+    private readonly IAnalyticsService _analytics;
+
     public CourseWorkspaceModel(
         ILogger<HomePageModelBase> logger,
         IKnowledgeService knowledge,
@@ -20,9 +24,11 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
         IRagChatService chatService,
         IUserAccountStore users,
         IWebHostEnvironment environment,
-        IDocumentIndexJobQueue indexJobQueue)
+        IDocumentIndexJobQueue indexJobQueue,
+        IAnalyticsService analytics)
         : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
     {
+        _analytics = analytics;
     }
 
     public CourseSubject Subject { get; private set; } = new();
@@ -76,6 +82,7 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
             Documents = subjectDocuments;
             Chapters = BuildChapterLearning(subject, subjectDocuments, chunks);
             CanManageCourse = await CanManageSubjectAsync(subject.Id, cancellationToken);
+            await TrackCourseAccessAsync(subject, "workspace", cancellationToken);
 
             return Page();
         }
@@ -127,6 +134,28 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
     {
         var trimmed = (value ?? string.Empty).Trim();
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength].TrimEnd() + "...";
+    }
+
+    private async Task TrackCourseAccessAsync(CourseSubject subject, string accessArea, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _analytics.TrackCourseAccessAsync(new CourseAccessLogRequestDto
+            {
+                UserId = CurrentUserId(),
+                UserName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty,
+                UserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty,
+                Role = CurrentRole(),
+                SubjectId = subject.Id,
+                SubjectCode = subject.Code,
+                SubjectName = subject.DisplayName,
+                AccessArea = accessArea
+            }, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not track course access for subject {SubjectId}", subject.Id);
+        }
     }
 
 }

@@ -1,50 +1,107 @@
 @page
+@using PRN222_FINAL.Models
 @model PRN222_FINAL.Web.Pages.Packages.IndexModel
 @{
-    ViewData["Title"] = "Packages";
+    ViewData["Title"] = "Gói dịch vụ";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Packages";
+    ViewData["ShellTitle"] = "Gói dịch vụ";
 }
 
-<section class="container-fluid py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<section class="ops-page">
+    <div class="ops-page-header">
         <div>
-            <h1 class="h3 mb-1">Packages</h1>
-            <p class="text-muted mb-0">Choose a package for RAG chatbot, document upload and storage limits.</p>
+            <span class="ops-eyebrow">Billing</span>
+            <h1>Gói dịch vụ</h1>
+            <p>Chọn gói sử dụng cho chatbot RAG, upload tài liệu và dung lượng lưu trữ. Giá luôn lấy từ server, không tin dữ liệu từ trình duyệt.</p>
         </div>
-        <a class="btn btn-outline-primary" asp-page="/Subscriptions/Current">Current subscription</a>
+        <div class="ops-panel-actions">
+            <a class="ops-button ops-button--secondary" asp-page="/Subscriptions/Current">
+                <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+                Gói hiện tại
+            </a>
+        </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
+    }
+
+    @if (Model.CurrentSubscription is not null)
+    {
+        <section class="ops-panel mb-4">
+            <div class="ops-panel-head">
+                <div>
+                    <h2>Đang sử dụng: @Model.CurrentSubscription.PackageName</h2>
+                    <p class="ops-muted mb-0">Có hiệu lực đến @Model.CurrentSubscription.EndsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm").</p>
+                </div>
+                <span class="rbl-status is-success">@Model.CurrentSubscription.Status</span>
+            </div>
+        </section>
     }
 
     <div class="row g-3">
         @foreach (var package in Model.Packages)
         {
             <div class="col-12 col-md-4">
-                <article class="card h-100">
+                <article class="ops-command-card h-100">
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-start justify-content-between gap-3">
                             <div>
+                                <span class="ops-eyebrow">@package.Code</span>
                                 <h2 class="h5 mb-1">@package.Name</h2>
-                                <span class="badge text-bg-light">@package.Code</span>
                             </div>
-                            <strong class="fs-5">@package.PriceVnd.ToString("N0") VND</strong>
+                            @if (package.IsCurrentPackage)
+                            {
+                                <span class="rbl-status is-success">Đang dùng</span>
+                            }
+                            else
+                            {
+                                <strong class="fs-5">@(package.IsFree ? "Miễn phí" : $"{package.PriceVnd:N0} VND")</strong>
+                            }
                         </div>
-                        <p class="text-muted mt-3">@package.Description</p>
-                        <ul class="list-unstyled small mb-4">
-                            <li>Chat/month: @package.MonthlyChatLimit.ToString("N0")</li>
-                            <li>Uploads/month: @package.MonthlyDocumentUploadLimit.ToString("N0")</li>
-                            <li>Storage: @package.StorageLimitMb.ToString("N0") MB</li>
-                            <li>Duration: @package.DurationDays days</li>
+                        <p class="ops-muted mt-3">@package.Description</p>
+                        <ul class="list-unstyled small mb-4 ops-stack">
+                            <li><strong>@package.MonthlyChatLimit.ToString("N0")</strong> lượt chat/tháng</li>
+                            <li><strong>@package.MonthlyDocumentUploadLimit.ToString("N0")</strong> lượt upload/tháng</li>
+                            <li><strong>@package.StorageLimitMb.ToString("N0") MB</strong> lưu trữ</li>
+                            <li><strong>@package.DurationDays</strong> ngày sử dụng</li>
                         </ul>
-                        <form class="mt-auto" method="get" asp-page="/Payments/Checkout">
-                            <input type="hidden" name="packageId" value="@package.Id" />
-                            <button type="submit" class="btn btn-primary w-100">Choose package</button>
-                        </form>
+                        @if (package.IsCurrentPackage)
+                        {
+                            <a class="ops-button ops-button--secondary mt-auto" asp-page="/Subscriptions/Current">
+                                <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                                Xem gói hiện tại
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="mt-auto d-grid gap-2">
+                                <form method="post" asp-page-handler="Checkout">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="packageId" value="@package.Id" />
+                                    <input type="hidden" name="provider" value="@PaymentProvider.MoMo" />
+                                    <button type="submit" class="ops-button ops-button--primary w-100">
+                                        <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
+                                        @(package.IsFree ? "Kích hoạt miễn phí" : "Thanh toán MoMo")
+                                    </button>
+                                </form>
+                                @if (!package.IsFree)
+                                {
+                                    <form method="post" asp-page-handler="Checkout">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="packageId" value="@package.Id" />
+                                        <input type="hidden" name="provider" value="@PaymentProvider.PayOS" />
+                                        <button type="submit" class="ops-button ops-button--secondary w-100">
+                                            <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                                            Thanh toán PayOS
+                                        </button>
+                                    </form>
+                                    <a class="ops-mini-button text-center" asp-page="/Payments/Checkout" asp-route-packageId="@package.Id">Xem checkout chi tiết</a>
+                                }
+                            </div>
+                        }
                     </div>
                 </article>
             </div>

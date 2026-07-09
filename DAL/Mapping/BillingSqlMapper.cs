@@ -58,7 +58,8 @@ public static class BillingSqlMapper
         CreatedAt = entity.CreatedAt,
         PaidAt = entity.PaidAt,
         FailedAt = entity.FailedAt,
-        FailureReason = entity.FailureReason
+        FailureReason = entity.FailureReason,
+        Package = entity.Package is null ? null : ToModel(entity.Package)
     };
 
     public static KnowledgeSqlPayment ToEntity(Payment model) => new()

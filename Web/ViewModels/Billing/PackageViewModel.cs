@@ -11,4 +11,6 @@ public sealed class PackageViewModel
     public int MonthlyChatLimit { get; set; }
     public int MonthlyDocumentUploadLimit { get; set; }
     public int StorageLimitMb { get; set; }
+    public bool IsCurrentPackage { get; set; }
+    public bool IsFree => PriceVnd <= 0;
 }

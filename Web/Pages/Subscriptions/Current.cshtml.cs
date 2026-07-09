@@ -10,27 +10,33 @@ namespace PRN222_FINAL.Web.Pages.Subscriptions;
 public sealed class CurrentModel : PageModel
 {
     private readonly ISubscriptionService _subscriptions;
+    private readonly IPaymentService _payments;
 
-    public CurrentModel(ISubscriptionService subscriptions)
+    public CurrentModel(ISubscriptionService subscriptions, IPaymentService payments)
     {
         _subscriptions = subscriptions;
+        _payments = payments;
     }
 
     public SubscriptionViewModel? Subscription { get; private set; }
+    public IReadOnlyList<PaymentHistoryItemViewModel> PaymentHistory { get; private set; } = Array.Empty<PaymentHistoryItemViewModel>();
     public string ErrorMessage { get; private set; } = string.Empty;
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var subscription = await _subscriptions.GetCurrentSubscriptionAsync(GetUserId(), cancellationToken);
+            var userId = GetUserId();
+            var subscription = await _subscriptions.GetCurrentSubscriptionAsync(userId, cancellationToken);
             if (subscription is null)
             {
+                PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
                 return;
             }
 
             Subscription = new SubscriptionViewModel
             {
+                PackageId = subscription.PackageId,
                 PackageName = subscription.PackageName,
                 Status = subscription.Status.ToString(),
                 StartsAt = subscription.StartsAt,
@@ -39,11 +45,29 @@ public sealed class CurrentModel : PageModel
                 MonthlyDocumentUploadLimit = subscription.MonthlyDocumentUploadLimit,
                 StorageLimitMb = subscription.StorageLimitMb
             };
+            PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
         }
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
         }
+    }
+
+    private async Task<IReadOnlyList<PaymentHistoryItemViewModel>> LoadPaymentHistoryAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var payments = await _payments.GetPaymentsForUserAsync(userId, 20, cancellationToken);
+        return payments.Select(payment => new PaymentHistoryItemViewModel
+        {
+            PackageName = string.IsNullOrWhiteSpace(payment.PackageName) ? payment.PackageCode : payment.PackageName,
+            PackageCode = payment.PackageCode,
+            Provider = payment.Provider.ToString(),
+            Status = payment.Status.ToString(),
+            AmountVnd = payment.AmountVnd,
+            OrderCode = payment.OrderCode,
+            CreatedAt = payment.CreatedAt,
+            PaidAt = payment.PaidAt,
+            FailureReason = payment.FailureReason
+        }).ToList();
     }
 
     private Guid GetUserId()

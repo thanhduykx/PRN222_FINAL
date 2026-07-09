@@ -21,6 +21,18 @@ public sealed class PackageService : IPackageService
         return packages.Select(BillingDtoMapper.ToDto).ToList();
     }
 
+    public async Task<PackageDto?> GetPackageAsync(Guid packageId, CancellationToken cancellationToken = default)
+    {
+        if (packageId == Guid.Empty)
+        {
+            return null;
+        }
+
+        await EnsureDefaultPackagesAsync(cancellationToken);
+        var package = await _packages.GetByIdAsync(packageId, cancellationToken);
+        return package is null ? null : BillingDtoMapper.ToDto(package);
+    }
+
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
         var existing = await _packages.GetAllAsync(cancellationToken);

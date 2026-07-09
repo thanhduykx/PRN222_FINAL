@@ -1,0 +1,218 @@
+@page
+@model PRN222_FINAL.Web.Pages.Admin.StatisticsModel
+@{
+    ViewData["Title"] = "Thống kê";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "admin";
+    ViewData["ShellTitle"] = "Thống kê";
+    ViewData["AdminSection"] = "statistics";
+}
+
+<section class="ops-page">
+    <div class="ops-page-header">
+        <div>
+            <span class="ops-eyebrow">Admin analytics</span>
+            <h1>Thống kê hệ thống</h1>
+            <p>Phân tích lượt chat, truy cập môn/lecture, tài liệu, mua gói và subscription trong @Model.Days ngày gần nhất.</p>
+        </div>
+        <form method="get" class="ops-panel-actions">
+            <label class="ops-inline-field">
+                <span>Khoảng ngày</span>
+                <select asp-for="Days" onchange="this.form.submit()">
+                    <option value="7">7 ngày</option>
+                    <option value="30">30 ngày</option>
+                    <option value="90">90 ngày</option>
+                    <option value="180">180 ngày</option>
+                </select>
+            </label>
+        </form>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
+    }
+    else
+    {
+        <div class="ops-kpi-grid">
+            <article class="ops-kpi"><span>Câu hỏi chat</span><strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") user hoạt động</small></article>
+            <article class="ops-kpi"><span>Phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") câu trả lời</small></article>
+            <article class="ops-kpi"><span>Môn học</span><strong>@Model.Dashboard.TotalSubjects.ToString("N0")</strong><small>@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu</small></article>
+            <article class="ops-kpi"><span>Doanh thu đã thanh toán</span><strong>@Model.Dashboard.PaidRevenueVnd.ToString("N0") VND</strong><small>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid</small></article>
+            <article class="ops-kpi"><span>Subscription active</span><strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong><small>@Model.Dashboard.PendingPaymentCount.ToString("N0") payment pending</small></article>
+        </div>
+
+        <div class="ops-admin-layout mt-4">
+            <section class="ops-panel ops-admin-main">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Thống kê truy cập môn/lecture</h2>
+                        <p class="ops-muted mb-0">Lượt mở workspace/kho tài liệu, số tài liệu, chunk và citation chat theo môn.</p>
+                    </div>
+                </div>
+                <div class="ops-table-wrap">
+                    <table class="ops-table">
+                        <thead>
+                            <tr>
+                                <th>Môn</th>
+                                <th>Giảng viên</th>
+                                <th>Người học</th>
+                                <th>Tài liệu</th>
+                                <th>Chunk</th>
+                                <th>Truy cập</th>
+                                <th>Citation chat</th>
+                                <th>Gần nhất</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var subject in Model.Dashboard.SubjectUsage)
+                            {
+                                <tr>
+                                    <td data-label="Môn">
+                                        <strong>@subject.SubjectCode</strong>
+                                        <small>@subject.SubjectName</small>
+                                    </td>
+                                    <td data-label="Giảng viên">
+                                        <strong>@(string.IsNullOrWhiteSpace(subject.OwnerName) ? "Chưa phân công" : subject.OwnerName)</strong>
+                                        <small>@subject.OwnerEmail</small>
+                                    </td>
+                                    <td data-label="Người học">@subject.StudentCount.ToString("N0")</td>
+                                    <td data-label="Tài liệu">@subject.IndexedDocumentCount.ToString("N0") / @subject.DocumentCount.ToString("N0")</td>
+                                    <td data-label="Chunk">@subject.ChunkCount.ToString("N0")</td>
+                                    <td data-label="Truy cập">@subject.CourseAccessCount.ToString("N0")</td>
+                                    <td data-label="Citation chat">@subject.ChatCitationCount.ToString("N0")</td>
+                                    <td data-label="Gần nhất">@(subject.LastAccessedAt?.LocalDateTime.ToString("dd/MM HH:mm") ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <aside class="ops-command-rail">
+                <section class="ops-command-card">
+                    <span class="ops-eyebrow">Chat usage</span>
+                    <h2>User chat nhiều nhất</h2>
+                    <div class="ops-stack">
+                        @foreach (var user in Model.Dashboard.TopChatUsers)
+                        {
+                            <div class="ops-user-identity">
+                                <strong>@user.UserName</strong>
+                                <small>@user.UserEmail</small>
+                                <small>@user.QuestionCount.ToString("N0") câu hỏi / @user.SessionCount.ToString("N0") phiên</small>
+                            </div>
+                        }
+                        @if (Model.Dashboard.TopChatUsers.Count == 0)
+                        {
+                            <p class="ops-muted">Chưa có dữ liệu chat.</p>
+                        }
+                    </div>
+                </section>
+            </aside>
+        </div>
+
+        <div class="ops-command-grid mt-4">
+            <section class="ops-panel">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Thống kê mua gói</h2>
+                        <p class="ops-muted mb-0">Doanh thu và trạng thái thanh toán theo package.</p>
+                    </div>
+                </div>
+                <div class="ops-table-wrap">
+                    <table class="ops-table">
+                        <thead>
+                            <tr>
+                                <th>Gói</th>
+                                <th>Paid</th>
+                                <th>Pending</th>
+                                <th>Failed/Canceled</th>
+                                <th>Active sub</th>
+                                <th>Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var package in Model.Dashboard.PackagePurchases)
+                            {
+                                <tr>
+                                    <td data-label="Gói"><strong>@package.PackageName</strong><small>@package.PackageCode</small></td>
+                                    <td data-label="Paid">@package.PaidCount.ToString("N0")</td>
+                                    <td data-label="Pending">@package.PendingCount.ToString("N0")</td>
+                                    <td data-label="Failed/Canceled">@package.FailedCount.ToString("N0")</td>
+                                    <td data-label="Active sub">@package.ActiveSubscriptionCount.ToString("N0")</td>
+                                    <td data-label="Doanh thu">@package.RevenueVnd.ToString("N0") VND</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="ops-panel">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Giao dịch gần nhất</h2>
+                        <p class="ops-muted mb-0">10 payment mới nhất trong khoảng lọc.</p>
+                    </div>
+                </div>
+                <div class="ops-table-wrap">
+                    <table class="ops-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Gói</th>
+                                <th>Cổng</th>
+                                <th>Trạng thái</th>
+                                <th>Số tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in Model.Dashboard.RecentPayments)
+                            {
+                                <tr>
+                                    <td data-label="User"><strong>@payment.UserName</strong><small>@payment.UserEmail</small></td>
+                                    <td data-label="Gói">@payment.PackageName</td>
+                                    <td data-label="Cổng">@payment.Provider</td>
+                                    <td data-label="Trạng thái"><span class="rbl-status @(payment.Status == "Paid" ? "is-success" : payment.Status == "Pending" ? "is-running" : "is-error")">@payment.Status</span></td>
+                                    <td data-label="Số tiền">@payment.AmountVnd.ToString("N0") VND</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section class="ops-panel mt-4">
+            <div class="ops-panel-head">
+                <div>
+                    <h2>Sử dụng chat theo ngày</h2>
+                    <p class="ops-muted mb-0">Dữ liệu phục vụ báo cáo xu hướng dùng chatbot.</p>
+                </div>
+            </div>
+            <div class="ops-table-wrap">
+                <table class="ops-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Câu hỏi</th>
+                            <th>Phiên</th>
+                            <th>User hoạt động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var day in Model.Dashboard.DailyChatUsage)
+                        {
+                            <tr>
+                                <td data-label="Ngày">@day.DateLabel</td>
+                                <td data-label="Câu hỏi">@day.QuestionCount.ToString("N0")</td>
+                                <td data-label="Phiên">@day.SessionCount.ToString("N0")</td>
+                                <td data-label="User hoạt động">@day.ActiveUserCount.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</section>

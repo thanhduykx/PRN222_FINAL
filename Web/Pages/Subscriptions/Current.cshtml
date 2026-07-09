@@ -1,46 +1,99 @@
 @page
 @model PRN222_FINAL.Web.Pages.Subscriptions.CurrentModel
 @{
-    ViewData["Title"] = "Current subscription";
+    ViewData["Title"] = "Gói hiện tại";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Current subscription";
+    ViewData["ShellTitle"] = "Gói hiện tại";
 }
 
-<section class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0">Current subscription</h1>
-        <a class="btn btn-outline-primary" asp-page="/Packages/Index">Packages</a>
+<section class="ops-page">
+    <div class="ops-page-header">
+        <div>
+            <span class="ops-eyebrow">Subscription</span>
+            <h1>Gói hiện tại</h1>
+            <p>Theo dõi gói đang dùng, giới hạn sử dụng và lịch sử thanh toán.</p>
+        </div>
+        <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
+            <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+            Mua gói
+        </a>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
     }
     else if (Model.Subscription is null)
     {
-        <div class="alert alert-info">No active subscription.</div>
+        <div class="ops-empty">
+            <strong>Chưa có gói đang hoạt động.</strong>
+            <p>Chọn Free, Student hoặc Pro để bắt đầu dùng giới hạn phù hợp.</p>
+            <a class="ops-button ops-button--primary" asp-page="/Packages/Index">Xem gói dịch vụ</a>
+        </div>
     }
     else
     {
-        <div class="card">
-            <div class="card-body">
-                <h2 class="h5">@Model.Subscription.PackageName</h2>
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Status</dt>
-                    <dd class="col-sm-8">@Model.Subscription.Status</dd>
-                    <dt class="col-sm-4">Valid from</dt>
-                    <dd class="col-sm-8">@Model.Subscription.StartsAt.LocalDateTime</dd>
-                    <dt class="col-sm-4">Valid until</dt>
-                    <dd class="col-sm-8">@Model.Subscription.EndsAt.LocalDateTime</dd>
-                    <dt class="col-sm-4">Chat/month</dt>
-                    <dd class="col-sm-8">@Model.Subscription.MonthlyChatLimit.ToString("N0")</dd>
-                    <dt class="col-sm-4">Uploads/month</dt>
-                    <dd class="col-sm-8">@Model.Subscription.MonthlyDocumentUploadLimit.ToString("N0")</dd>
-                    <dt class="col-sm-4">Storage</dt>
-                    <dd class="col-sm-8">@Model.Subscription.StorageLimitMb.ToString("N0") MB</dd>
-                </dl>
+        <section class="ops-panel">
+            <div class="ops-panel-head">
+                <div>
+                    <h2>@Model.Subscription.PackageName</h2>
+                    <p class="ops-muted mb-0">Từ @Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") đến @Model.Subscription.EndsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm").</p>
+                </div>
+                <span class="rbl-status is-success">@Model.Subscription.Status</span>
+            </div>
+            <div class="ops-kpi-grid">
+                <article class="ops-kpi"><span>Chat/tháng</span><strong>@Model.Subscription.MonthlyChatLimit.ToString("N0")</strong></article>
+                <article class="ops-kpi"><span>Upload/tháng</span><strong>@Model.Subscription.MonthlyDocumentUploadLimit.ToString("N0")</strong></article>
+                <article class="ops-kpi"><span>Lưu trữ</span><strong>@Model.Subscription.StorageLimitMb.ToString("N0") MB</strong></article>
+                <article class="ops-kpi"><span>Trạng thái</span><strong>@Model.Subscription.Status</strong></article>
+            </div>
+        </section>
+    }
+
+    <section class="ops-panel mt-4">
+        <div class="ops-panel-head">
+            <div>
+                <h2>Lịch sử thanh toán</h2>
+                <p class="ops-muted mb-0">Các giao dịch MoMo/PayOS gần nhất của tài khoản.</p>
             </div>
         </div>
-    }
+        @if (Model.PaymentHistory.Count == 0)
+        {
+            <div class="ops-empty compact">Chưa có giao dịch thanh toán.</div>
+        }
+        else
+        {
+            <div class="ops-table-wrap">
+                <table class="ops-table">
+                    <thead>
+                        <tr>
+                            <th>Gói</th>
+                            <th>Cổng</th>
+                            <th>Trạng thái</th>
+                            <th>Số tiền</th>
+                            <th>Mã đơn</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.PaymentHistory)
+                        {
+                            <tr>
+                                <td data-label="Gói">
+                                    <strong>@payment.PackageName</strong>
+                                    <small>@payment.PackageCode</small>
+                                </td>
+                                <td data-label="Cổng">@payment.Provider</td>
+                                <td data-label="Trạng thái"><span class="rbl-status @(payment.Status == "Paid" ? "is-success" : payment.Status == "Pending" ? "is-running" : "is-error")">@payment.Status</span></td>
+                                <td data-label="Số tiền">@payment.AmountVnd.ToString("N0") VND</td>
+                                <td data-label="Mã đơn"><code>@payment.OrderCode</code></td>
+                                <td data-label="Thời gian">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </section>
