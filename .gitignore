@@ -5,8 +5,3 @@
 *.user
 *.suo
 *.log
-
-**/App_Data/
-
-**/wwwroot/uploads/*
-!**/wwwroot/uploads/.gitkeep
