@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Analytics;
 using PRN222_FINAL.Models.DTOs.Analytics;
 using PRN222_FINAL.Web.Security;
+using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.Web.ViewModels.Analytics;
 
 namespace PRN222_FINAL.Web.Pages.Admin;
@@ -12,26 +13,43 @@ namespace PRN222_FINAL.Web.Pages.Admin;
 public sealed class StatisticsModel : PageModel
 {
     private readonly IAnalyticsService _analytics;
+    private readonly IUserAccountStore _users;
 
-    public StatisticsModel(IAnalyticsService analytics)
+    public StatisticsModel(IAnalyticsService analytics, IUserAccountStore users)
     {
         _analytics = analytics;
+        _users = users;
     }
 
     [BindProperty(SupportsGet = true)]
     public int Days { get; set; } = 30;
 
+    [BindProperty(SupportsGet = true)]
+    public string Tab { get; set; } = "overview";
+
     public AdminStatisticsViewModel Dashboard { get; private set; } = new();
+    public int TotalUsers { get; private set; }
+    public int StudentUsers { get; private set; }
+    public int LecturerUsers { get; private set; }
+    public int AdminUsers { get; private set; }
     public string ErrorMessage { get; private set; } = string.Empty;
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         ViewData["AdminSection"] = "statistics";
+        ViewData["ActiveNav"] = "reports";
         Days = Math.Clamp(Days <= 0 ? 30 : Days, 1, 180);
+        Tab = NormalizeTab(Tab);
+        ViewData["ReportsSection"] = Tab;
 
         try
         {
             Dashboard = Map(await _analytics.GetAdminDashboardAsync(Days, cancellationToken));
+            var users = await _users.GetAllAsync(cancellationToken);
+            TotalUsers = users.Count;
+            StudentUsers = users.Count(user => user.Role == AppRoles.Student);
+            LecturerUsers = users.Count(user => user.Role == AppRoles.Lecturer);
+            AdminUsers = users.Count(user => user.Role == AppRoles.Admin);
         }
         catch (Exception ex)
         {
@@ -51,6 +69,8 @@ public sealed class StatisticsModel : PageModel
         TotalSubjects = dto.TotalSubjects,
         TotalDocuments = dto.TotalDocuments,
         IndexedDocuments = dto.IndexedDocuments,
+        ProcessingDocuments = dto.ProcessingDocuments,
+        FailedDocuments = dto.FailedDocuments,
         PaidRevenueVnd = dto.PaidRevenueVnd,
         PaidPaymentCount = dto.PaidPaymentCount,
         PendingPaymentCount = dto.PendingPaymentCount,
@@ -96,6 +116,16 @@ public sealed class StatisticsModel : PageModel
             SessionCount = user.SessionCount,
             LastQuestionAt = user.LastQuestionAt
         }).ToList(),
+        RecentDocuments = dto.RecentDocuments.Select(document => new DocumentAnalyticsViewModel
+        {
+            FileName = document.FileName,
+            Subject = document.Subject,
+            UploadedByName = document.UploadedByName,
+            UploadedByEmail = document.UploadedByEmail,
+            Status = document.Status,
+            CitationCount = document.CitationCount,
+            UploadedAt = document.UploadedAt
+        }).ToList(),
         RecentPayments = dto.RecentPayments.Select(payment => new RecentPaymentViewModel
         {
             UserName = string.IsNullOrWhiteSpace(payment.UserName) ? payment.UserEmail : payment.UserName,
@@ -108,4 +138,12 @@ public sealed class StatisticsModel : PageModel
             PaidAt = payment.PaidAt
         }).ToList()
     };
+
+    private static string NormalizeTab(string value)
+    {
+        var normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "billing" or "export"
+            ? normalized
+            : "overview";
+    }
 }
