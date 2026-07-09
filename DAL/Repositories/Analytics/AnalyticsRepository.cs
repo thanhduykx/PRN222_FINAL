@@ -94,9 +94,13 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .AsNoTracking()
             .Select(document => new DocumentRow(
                 document.Id,
+                document.FileName,
                 document.Subject,
+                document.UploadedByName ?? string.Empty,
+                document.UploadedByEmail ?? string.Empty,
                 document.Status,
-                document.ChunkCount))
+                document.ChunkCount,
+                document.UploadedAt))
             .ToListAsync(cancellationToken);
 
         var accessRows = await context.CourseAccessLogs
@@ -108,7 +112,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         var citationRows = await context.Citations
             .AsNoTracking()
             .Where(citation => citation.Message.CreatedAt >= fromUtc && citation.Message.CreatedAt <= toUtc)
-            .Select(citation => new CitationRow(citation.Subject, citation.Message.CreatedAt))
+            .Select(citation => new CitationRow(citation.DocumentId, citation.Subject, citation.Message.CreatedAt))
             .ToListAsync(cancellationToken);
 
         var payments = await context.Payments
@@ -161,6 +165,8 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             TotalSubjects = subjects.Count,
             TotalDocuments = documents.Count,
             IndexedDocuments = documents.Count(document => document.Status == DocumentIndexStatus.Indexed),
+            ProcessingDocuments = documents.Count(document => document.Status == DocumentIndexStatus.Processing),
+            FailedDocuments = documents.Count(document => document.Status == DocumentIndexStatus.Failed),
             PaidRevenueVnd = payments.Where(payment => payment.Status == PaymentStatus.Paid).Sum(payment => payment.AmountVnd),
             PaidPaymentCount = payments.Count(payment => payment.Status == PaymentStatus.Paid),
             PendingPaymentCount = payments.Count(payment => payment.Status == PaymentStatus.Pending),
@@ -169,6 +175,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             PackagePurchases = BuildPackagePurchases(packages, payments, activeSubscriptionCounts),
             DailyChatUsage = BuildDailyChatUsage(questionRows),
             TopChatUsers = BuildTopChatUsers(questionRows),
+            RecentDocuments = BuildRecentDocuments(documents, citationRows),
             RecentPayments = payments
                 .OrderByDescending(payment => payment.CreatedAt)
                 .Take(10)
@@ -297,6 +304,26 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
+    private static IReadOnlyList<DocumentAnalyticsDto> BuildRecentDocuments(
+        IReadOnlyList<DocumentRow> documents,
+        IReadOnlyList<CitationRow> citations)
+    {
+        return documents
+            .OrderByDescending(document => document.UploadedAt)
+            .Take(10)
+            .Select(document => new DocumentAnalyticsDto
+            {
+                FileName = document.FileName,
+                Subject = document.Subject,
+                UploadedByName = document.UploadedByName,
+                UploadedByEmail = document.UploadedByEmail,
+                Status = document.Status,
+                CitationCount = citations.Count(citation => citation.DocumentId == document.Id),
+                UploadedAt = document.UploadedAt
+            })
+            .ToList();
+    }
+
     private static bool MatchesSubject(string value, string subjectCode, string subjectName)
     {
         var normalizedValue = NormalizeCode(value);
@@ -325,8 +352,16 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
 
     private sealed record ChatQuestionRow(Guid Id, Guid SessionId, DateTimeOffset CreatedAt, Guid? OwnerUserId, string OwnerName, string OwnerEmail);
     private sealed record SubjectRow(Guid Id, string Code, string Name, string OwnerName, string OwnerEmail);
-    private sealed record DocumentRow(Guid Id, string Subject, string Status, int ChunkCount);
-    private sealed record CitationRow(string Subject, DateTimeOffset CreatedAt);
+    private sealed record DocumentRow(
+        Guid Id,
+        string FileName,
+        string Subject,
+        string UploadedByName,
+        string UploadedByEmail,
+        string Status,
+        int ChunkCount,
+        DateTimeOffset UploadedAt);
+    private sealed record CitationRow(Guid DocumentId, string Subject, DateTimeOffset CreatedAt);
     private sealed record AccessRow(Guid SubjectId, DateTimeOffset AccessedAt);
     private sealed record PackageRow(Guid Id, string Code, string Name);
     private sealed record CountRow(Guid Id, int Count);
