@@ -1,0 +1,15 @@
+.vs/
+**/bin/
+**/obj/
+
+*.user
+*.suo
+*.log
+
+**/App_Data/
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.example.json
+
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep

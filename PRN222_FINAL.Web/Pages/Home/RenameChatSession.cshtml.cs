@@ -1,0 +1,53 @@
+﻿using PRN222_FINAL.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using PRN222_FINAL.Web.Models;
+using PRN222_FINAL.Web.Security;
+using PRN222_FINAL.Web.Services;
+using PRN222_FINAL.BLL;
+
+namespace PRN222_FINAL.Web.Pages.Home;
+
+[IgnoreAntiforgeryToken]
+[Authorize(Policy = AuthorizationPolicies.ChatAccess)]
+public sealed class RenameChatSessionModel : HomePageModelBase
+{
+    public RenameChatSessionModel(
+        ILogger<HomePageModelBase> logger,
+        IKnowledgeService knowledge,
+        IDocumentIndexingService indexingService,
+        IWebPageTextExtractor webPageTextExtractor,
+        IRagChatService chatService,
+        IUserAccountStore users,
+        IWebHostEnvironment environment,
+        IDocumentIndexJobQueue indexJobQueue)
+        : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
+    {
+    }
+
+    public async Task<IActionResult> OnPostAsync([FromBody] ChatSessionRenameRequest? request, CancellationToken cancellationToken)
+    {
+        if (request is null || !Guid.TryParse(request.SessionId, out var sessionId))
+        {
+            return BadRequest(new { error = "Invalid chat session." });
+        }
+
+        try
+        {
+            var session = await _knowledge.RenameSessionAsync(
+                sessionId,
+                request.Title ?? string.Empty,
+                cancellationToken,
+                BuildChatSessionOwnerInfo());
+            return session is null
+                ? NotFound(new { error = "Chat session not found." })
+                : new JsonResult(ToSessionSummary(session));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+}
+

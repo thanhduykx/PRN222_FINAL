@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\PRN222_FINAL.Models\PRN222_FINAL.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Entities\DatabaseEntities.cs" />
+    <Compile Remove="Entities\User.cs" />
+    <Compile Remove="Entities\Subject.cs" />
+    <Compile Remove="Entities\Document.cs" />
+    <Compile Remove="Entities\Chunk.cs" />
+    <Compile Remove="Entities\ChunkingStrategy.cs" />
+    <Compile Remove="Entities\ChatSession.cs" />
+    <Compile Remove="Entities\ChatMessage.cs" />
+    <Compile Remove="Entities\Citation.cs" />
+    <Compile Remove="Entities\Embedding.cs" />
+    <Compile Remove="Entities\EmbeddingModel.cs" />
+    <Compile Remove="Entities\Experiment.cs" />
+    <Compile Remove="Entities\ExperimentRun.cs" />
+    <Compile Remove="Entities\BenchmarkResult.cs" />
+    <Compile Remove="Entities\TestQuestion.cs" />
+    <Compile Remove="EduVietRagDbContext.cs" />
+    <Compile Remove="Migrations\**\*.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
+
