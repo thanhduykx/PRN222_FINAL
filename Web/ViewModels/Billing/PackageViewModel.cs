@@ -9,8 +9,8 @@ public sealed class PackageViewModel
     public decimal PriceVnd { get; set; }
     public int DurationDays { get; set; }
     public int MonthlyChatLimit { get; set; }
-    public int MonthlyDocumentUploadLimit { get; set; }
-    public int StorageLimitMb { get; set; }
+    public bool IsLifetime { get; set; }
     public bool IsCurrentPackage { get; set; }
     public bool IsFree => PriceVnd <= 0;
+    public string DurationLabel => IsLifetime ? "Vĩnh viễn" : $"{DurationDays} ngày";
 }

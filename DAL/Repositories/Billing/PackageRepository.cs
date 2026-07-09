@@ -57,6 +57,7 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
             existing.MonthlyChatLimit = package.MonthlyChatLimit;
             existing.MonthlyDocumentUploadLimit = package.MonthlyDocumentUploadLimit;
             existing.StorageLimitMb = package.StorageLimitMb;
+            existing.IsLifetime = package.IsLifetime;
             existing.IsActive = package.IsActive;
             existing.SortOrder = package.SortOrder;
         }

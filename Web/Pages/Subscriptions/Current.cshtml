@@ -12,7 +12,7 @@
         <div>
             <span class="ops-eyebrow">Subscription</span>
             <h1>Gói hiện tại</h1>
-            <p>Theo dõi gói đang dùng, giới hạn sử dụng và lịch sử thanh toán.</p>
+            <p>Theo dõi gói chatbot đang dùng, giới hạn chat và lịch sử thanh toán.</p>
         </div>
         <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
             <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
@@ -38,14 +38,13 @@
             <div class="ops-panel-head">
                 <div>
                     <h2>@Model.Subscription.PackageName</h2>
-                    <p class="ops-muted mb-0">Từ @Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") đến @Model.Subscription.EndsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm").</p>
+                    <p class="ops-muted mb-0">Từ @Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") đến @Model.Subscription.ValidUntilLabel.</p>
                 </div>
                 <span class="rbl-status is-success">@Model.Subscription.Status</span>
             </div>
             <div class="ops-kpi-grid">
                 <article class="ops-kpi"><span>Chat/tháng</span><strong>@Model.Subscription.MonthlyChatLimit.ToString("N0")</strong></article>
-                <article class="ops-kpi"><span>Upload/tháng</span><strong>@Model.Subscription.MonthlyDocumentUploadLimit.ToString("N0")</strong></article>
-                <article class="ops-kpi"><span>Lưu trữ</span><strong>@Model.Subscription.StorageLimitMb.ToString("N0") MB</strong></article>
+                <article class="ops-kpi"><span>Thời hạn</span><strong>@(Model.Subscription.IsLifetime ? "Vĩnh viễn" : "Theo tháng")</strong></article>
                 <article class="ops-kpi"><span>Trạng thái</span><strong>@Model.Subscription.Status</strong></article>
             </div>
         </section>

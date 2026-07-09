@@ -16,6 +16,7 @@ public static class BillingSqlMapper
         MonthlyChatLimit = entity.MonthlyChatLimit,
         MonthlyDocumentUploadLimit = entity.MonthlyDocumentUploadLimit,
         StorageLimitMb = entity.StorageLimitMb,
+        IsLifetime = entity.IsLifetime,
         IsActive = entity.IsActive,
         SortOrder = entity.SortOrder,
         CreatedAt = entity.CreatedAt
@@ -32,6 +33,7 @@ public static class BillingSqlMapper
         MonthlyChatLimit = model.MonthlyChatLimit,
         MonthlyDocumentUploadLimit = model.MonthlyDocumentUploadLimit,
         StorageLimitMb = model.StorageLimitMb,
+        IsLifetime = model.IsLifetime,
         IsActive = model.IsActive,
         SortOrder = model.SortOrder,
         CreatedAt = model.CreatedAt
