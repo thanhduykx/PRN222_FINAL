@@ -138,6 +138,13 @@
                         </div>
                     </details>
                     }
+                    @if (isAuthenticated)
+                    {
+                    <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index">
+                        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                        <span>Packages</span>
+                    </a>
+                    }
                     @if (canManageUsers)
                     {
                     <details class="rbl-nav-dropdown" @((activeNav == "admin") ? "open" : "")>
@@ -324,6 +331,9 @@
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Home/OnlineUsers" data-i18n="admin.navOnlineUsers">Online users</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index">Packages</a>
                                 </li>
                             }
                             @if (canManageUsers)
