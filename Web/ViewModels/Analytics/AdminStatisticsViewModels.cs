@@ -12,6 +12,8 @@ public sealed class AdminStatisticsViewModel
     public int TotalSubjects { get; set; }
     public int TotalDocuments { get; set; }
     public int IndexedDocuments { get; set; }
+    public int ProcessingDocuments { get; set; }
+    public int FailedDocuments { get; set; }
     public decimal PaidRevenueVnd { get; set; }
     public int PaidPaymentCount { get; set; }
     public int PendingPaymentCount { get; set; }
@@ -20,6 +22,7 @@ public sealed class AdminStatisticsViewModel
     public IReadOnlyList<PackagePurchaseStatsViewModel> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsViewModel>();
     public IReadOnlyList<DailyChatUsageViewModel> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageViewModel>();
     public IReadOnlyList<UserChatUsageViewModel> TopChatUsers { get; set; } = Array.Empty<UserChatUsageViewModel>();
+    public IReadOnlyList<DocumentAnalyticsViewModel> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsViewModel>();
     public IReadOnlyList<RecentPaymentViewModel> RecentPayments { get; set; } = Array.Empty<RecentPaymentViewModel>();
 }
 
@@ -66,6 +69,17 @@ public sealed class UserChatUsageViewModel
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
     public DateTimeOffset? LastQuestionAt { get; set; }
+}
+
+public sealed class DocumentAnalyticsViewModel
+{
+    public string FileName { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string UploadedByName { get; set; } = string.Empty;
+    public string UploadedByEmail { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int CitationCount { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
 }
 
 public sealed class RecentPaymentViewModel
