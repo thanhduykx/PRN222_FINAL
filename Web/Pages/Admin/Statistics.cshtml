@@ -32,6 +32,37 @@
         })
         .ToList();
     var dailyChartPath = string.Join(" ", dailyChartPoints.Select(point => FormattableString.Invariant($"{point.X:0.##},{point.Y:0.##}")));
+    var maxSubscriptionTrend = Math.Max(1, Model.Dashboard.DailySubscriptionUsage
+        .Select(day => Math.Max(day.NewSubscriptionCount, day.SuccessfulPaymentCount))
+        .DefaultIfEmpty(0)
+        .Max());
+    var totalPackageVolume = Math.Max(1, Model.Dashboard.PackagePurchases
+        .Sum(package => package.ActiveSubscriptionCount > 0 ? package.ActiveSubscriptionCount : package.PaidCount));
+    var subscriptionCancelRate = Model.Dashboard.TotalSubscriptionCount == 0
+        ? 0
+        : Math.Round(Model.Dashboard.CanceledSubscriptionCount * 100d / Model.Dashboard.TotalSubscriptionCount, 1);
+    var topSubscriptionPackage = Model.Dashboard.PackagePurchases
+        .OrderByDescending(package => package.ActiveSubscriptionCount)
+        .ThenByDescending(package => package.PaidCount)
+        .FirstOrDefault();
+    var packageColors = new[] { "#1f7af2", "#48c987", "#7b5fe3", "#ffa447", "#21b6c7", "#ef5c5c" };
+    var donutCursor = 0d;
+    var donutStops = new List<string>();
+    for (var packageIndex = 0; packageIndex < Model.Dashboard.PackagePurchases.Count; packageIndex++)
+    {
+        var package = Model.Dashboard.PackagePurchases[packageIndex];
+        var packageVolume = package.ActiveSubscriptionCount > 0 ? package.ActiveSubscriptionCount : package.PaidCount;
+        if (packageVolume <= 0)
+        {
+            continue;
+        }
+
+        var nextCursor = donutCursor + packageVolume * 100d / totalPackageVolume;
+        donutStops.Add(FormattableString.Invariant($"{packageColors[packageIndex % packageColors.Length]} {donutCursor:0.##}% {nextCursor:0.##}%"));
+        donutCursor = nextCursor;
+    }
+
+    var subscriptionDonut = donutStops.Count == 0 ? "#e5eef8 0% 100%" : string.Join(", ", donutStops);
     var tabs = new[]
     {
         new { Key = "overview", Label = "Tổng quan" },
@@ -39,12 +70,14 @@
         new { Key = "documents", Label = "Tài liệu" },
         new { Key = "users", Label = "Người dùng" },
         new { Key = "permissions", Label = "Phân quyền" },
+        new { Key = "subscription", Label = "Gói đăng ký" },
         new { Key = "export", Label = "Xuất báo cáo" }
     };
 
     string TabClass(string tab) => Model.Tab == tab ? "ops-tab is-active" : "ops-tab";
     string TabUrl(string tab) => Url.Page("/Admin/Statistics", new { tab, days = Model.Days }) ?? "#";
     string PercentLabel(int numerator, int denominator) => denominator <= 0 ? "0%" : $"{Math.Min(100, (int)Math.Round(numerator * 100d / denominator))}%";
+    string MoneyVnd(decimal value) => value >= 1_000_000 ? $"{value / 1_000_000m:N1} triệu" : $"{value:N0}đ";
     string UserInitial(string value) => string.IsNullOrWhiteSpace(value) ? "U" : value.Trim()[..1].ToUpperInvariant();
     string ShortEmail(string value)
     {
@@ -490,6 +523,209 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+        }
+
+        @if (Model.Tab == "subscription")
+        {
+            <section class="ops-subscription-page">
+                <section class="ops-kpi-grid ops-subscription-kpis" aria-label="Chỉ số gói đăng ký">
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">business_center</span>
+                        <div class="ops-kpi-content">
+                            <span>Tổng đăng ký</span>
+                            <strong>@Model.Dashboard.TotalSubscriptionCount.ToString("N0")</strong>
+                            <small>@Model.Days ngày gần nhất</small>
+                        </div>
+                    </article>
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">groups</span>
+                        <div class="ops-kpi-content">
+                            <span>Đang hoạt động</span>
+                            <strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong>
+                            <small>Subscription active</small>
+                        </div>
+                    </article>
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">person_add</span>
+                        <div class="ops-kpi-content">
+                            <span>Đăng ký mới</span>
+                            <strong>@Model.Dashboard.NewSubscriptionCount.ToString("N0")</strong>
+                            <small>Trong khoảng lọc</small>
+                        </div>
+                    </article>
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">sync</span>
+                        <div class="ops-kpi-content">
+                            <span>Giao dịch thành công</span>
+                            <strong>@Model.Dashboard.PaidPaymentCount.ToString("N0")</strong>
+                            <small>Payment paid</small>
+                        </div>
+                    </article>
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">cancel</span>
+                        <div class="ops-kpi-content">
+                            <span>Tỷ lệ hủy</span>
+                            <strong>@subscriptionCancelRate.ToString("0.#")%</strong>
+                            <small>@Model.Dashboard.CanceledSubscriptionCount.ToString("N0") gói đã hủy</small>
+                        </div>
+                    </article>
+                    <article class="ops-kpi ops-stat-kpi">
+                        <span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">account_balance_wallet</span>
+                        <div class="ops-kpi-content">
+                            <span>Doanh thu</span>
+                            <strong>@MoneyVnd(Model.Dashboard.PaidRevenueVnd)</strong>
+                            <small>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid</small>
+                        </div>
+                    </article>
+                </section>
+
+                <div class="ops-subscription-grid">
+                    <section class="ops-panel ops-subscription-trend">
+                        <div class="ops-panel-head">
+                            <div>
+                                <h2>Xu hướng đăng ký</h2>
+                                <p class="ops-muted mb-0">Theo dõi đăng ký mới và giao dịch thanh toán thành công theo ngày.</p>
+                            </div>
+                            <span class="ops-panel-note">Theo ngày</span>
+                        </div>
+                        <div class="ops-subscription-chart">
+                            <div class="ops-subscription-chart__legend">
+                                <span><i class="is-blue"></i>Đăng ký mới</span>
+                                <span><i class="is-green"></i>Thanh toán thành công</span>
+                            </div>
+                            <div class="ops-subscription-chart__plot">
+                                @foreach (var day in Model.Dashboard.DailySubscriptionUsage)
+                                {
+                                    var newHeight = Math.Max(4, day.NewSubscriptionCount * 100 / maxSubscriptionTrend);
+                                    var paidHeight = Math.Max(4, day.SuccessfulPaymentCount * 100 / maxSubscriptionTrend);
+                                    <div class="ops-subscription-chart__day">
+                                        <span class="ops-subscription-chart__bar is-blue" style="height:@newHeight%" title="@day.NewSubscriptionCount.ToString("N0") đăng ký mới"></span>
+                                        <span class="ops-subscription-chart__bar is-green" style="height:@paidHeight%" title="@day.SuccessfulPaymentCount.ToString("N0") thanh toán thành công"></span>
+                                        <small>@day.DateLabel</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ops-panel ops-subscription-mix">
+                        <div class="ops-panel-head">
+                            <div>
+                                <h2>Cơ cấu gói đăng ký</h2>
+                                <p class="ops-muted mb-0">Tỷ trọng theo gói đang hoạt động hoặc giao dịch paid.</p>
+                            </div>
+                            <span class="ops-panel-note">Theo số lượng</span>
+                        </div>
+                        <div class="ops-subscription-donut-layout">
+                            <div class="ops-subscription-donut" style="--subscription-donut:@subscriptionDonut">
+                                <span>Tổng</span>
+                                <strong>@totalPackageVolume.ToString("N0")</strong>
+                            </div>
+                            <div class="ops-subscription-mix-table">
+                                <div class="ops-subscription-mix-row is-head"><span>Gói</span><span>Số lượng</span><span>Tỷ lệ</span></div>
+                                @foreach (var package in Model.Dashboard.PackagePurchases.Select((item, index) => new { item, index }))
+                                {
+                                    var packageVolume = package.item.ActiveSubscriptionCount > 0 ? package.item.ActiveSubscriptionCount : package.item.PaidCount;
+                                    var packageRate = totalPackageVolume == 0 ? 0 : packageVolume * 100d / totalPackageVolume;
+                                    <div class="ops-subscription-mix-row">
+                                        <span><i style="background:@packageColors[package.index % packageColors.Length]"></i>@package.item.PackageName</span>
+                                        <span>@packageVolume.ToString("N0")</span>
+                                        <span>@packageRate.ToString("0.#")%</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="ops-subscription-grid">
+                    <section class="ops-panel">
+                        <div class="ops-panel-head">
+                            <div>
+                                <h2>Hiệu suất theo gói</h2>
+                                <p class="ops-muted mb-0">So sánh active, giao dịch mới, pending/hủy và doanh thu.</p>
+                            </div>
+                        </div>
+                        <div class="ops-table-wrap">
+                            <table class="ops-table ops-compact-table ops-subscription-table">
+                                <thead>
+                                    <tr>
+                                        <th>Gói</th>
+                                        <th>Đang hoạt động</th>
+                                        <th>Paid</th>
+                                        <th>Pending</th>
+                                        <th>Hủy/lỗi</th>
+                                        <th>Doanh thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var package in Model.Dashboard.PackagePurchases.Select((item, index) => new { item, index }))
+                                    {
+                                        <tr>
+                                            <td data-label="Gói"><span class="ops-package-dot" style="background:@packageColors[package.index % packageColors.Length]"></span><strong>@package.item.PackageName</strong></td>
+                                            <td data-label="Đang hoạt động">@package.item.ActiveSubscriptionCount.ToString("N0")</td>
+                                            <td data-label="Paid">@package.item.PaidCount.ToString("N0")</td>
+                                            <td data-label="Pending">@package.item.PendingCount.ToString("N0")</td>
+                                            <td data-label="Hủy/lỗi">@package.item.FailedCount.ToString("N0")</td>
+                                            <td data-label="Doanh thu">@MoneyVnd(package.item.RevenueVnd)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="ops-panel">
+                        <div class="ops-panel-head">
+                            <div>
+                                <h2>Giao dịch gần đây</h2>
+                                <p class="ops-muted mb-0">Các giao dịch gói mới nhất trong khoảng lọc.</p>
+                            </div>
+                            <span class="ops-panel-note">Xem tất cả</span>
+                        </div>
+                        <div class="ops-table-wrap">
+                            <table class="ops-table ops-compact-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Gói</th>
+                                        <th>Cổng thanh toán</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.Dashboard.RecentPayments.Take(6))
+                                    {
+                                        <tr>
+                                            <td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td>
+                                            <td data-label="Gói">@payment.PackageName</td>
+                                            <td data-label="Cổng">@payment.Provider</td>
+                                            <td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td>
+                                            <td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="ops-panel ops-subscription-insights">
+                    <div class="ops-subscription-insight is-blue">
+                        <span class="material-symbols-outlined" aria-hidden="true">stars</span>
+                        <div><strong>Gói phổ biến nhất</strong><p>@(topSubscriptionPackage?.PackageName ?? "Chưa có dữ liệu") với @((topSubscriptionPackage?.ActiveSubscriptionCount ?? 0).ToString("N0")) người dùng active.</p></div>
+                    </div>
+                    <div class="ops-subscription-insight is-green">
+                        <span class="material-symbols-outlined" aria-hidden="true">trending_up</span>
+                        <div><strong>Thanh toán thành công</strong><p>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid trong khoảng lọc.</p></div>
+                    </div>
+                    <div class="ops-subscription-insight is-red">
+                        <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
+                        <div><strong>Gói cần theo dõi</strong><p>@subscriptionCancelRate.ToString("0.#")% tỷ lệ hủy trên tổng đăng ký.</p></div>
+                    </div>
+                </section>
             </section>
         }
 

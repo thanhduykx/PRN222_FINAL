@@ -31,10 +31,14 @@ public sealed class AdminAnalyticsDashboardDto
     public decimal PaidRevenueVnd { get; set; }
     public int PaidPaymentCount { get; set; }
     public int PendingPaymentCount { get; set; }
+    public int TotalSubscriptionCount { get; set; }
+    public int NewSubscriptionCount { get; set; }
+    public int CanceledSubscriptionCount { get; set; }
     public int ActiveSubscriptionCount { get; set; }
     public IReadOnlyList<SubjectUsageDto> SubjectUsage { get; set; } = Array.Empty<SubjectUsageDto>();
     public IReadOnlyList<PackagePurchaseStatsDto> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsDto>();
     public IReadOnlyList<DailyChatUsageDto> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageDto>();
+    public IReadOnlyList<DailySubscriptionUsageDto> DailySubscriptionUsage { get; set; } = Array.Empty<DailySubscriptionUsageDto>();
     public IReadOnlyList<UserChatUsageDto> TopChatUsers { get; set; } = Array.Empty<UserChatUsageDto>();
     public IReadOnlyList<DocumentAnalyticsDto> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsDto>();
     public IReadOnlyList<RecentPaymentDto> RecentPayments { get; set; } = Array.Empty<RecentPaymentDto>();
@@ -76,6 +80,13 @@ public sealed class DailyChatUsageDto
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
     public int ActiveUserCount { get; set; }
+}
+
+public sealed class DailySubscriptionUsageDto
+{
+    public DateOnly Date { get; set; }
+    public int NewSubscriptionCount { get; set; }
+    public int SuccessfulPaymentCount { get; set; }
 }
 
 public sealed class UserChatUsageDto
