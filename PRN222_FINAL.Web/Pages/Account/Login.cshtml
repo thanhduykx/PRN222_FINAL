@@ -1,7 +1,7 @@
 ﻿@page
 @model PRN222_FINAL.Web.Pages.Account.LoginModel
 @{
-    ViewData["Title"] = "ÄÄƒng nháº­p";
+    ViewData["Title"] = "Đăng nhập";
     ViewData["BodyClass"] = "auth-body";
 }
 
@@ -9,8 +9,8 @@
     <partial name="_AuthStars" />
     <div class="auth-panel">
         <p class="eyebrow">Course Assistant</p>
-        <h1>ÄÄƒng nháº­p</h1>
-        <p class="subtitle">Truy cáº­p kho tÃ i liá»‡u, quáº£n lÃ½ ná»™i dung Ä‘Ã£ index vÃ  tiáº¿p tá»¥c phiÃªn há»i Ä‘Ã¡p theo nguá»“n.</p>
+        <h1>Đăng nhập</h1>
+        <p class="subtitle">Truy cập kho tài liệu, quản lý nội dung đã index và tiếp tục phiên hỏi đáp theo nguồn.</p>
 
         @if (TempData["AuthError"] is string error)
         {
@@ -31,14 +31,14 @@
                 <span asp-validation-for="Email" class="text-danger"></span>
             </label>
             <label>
-                Máº­t kháº©u
+                Mật khẩu
                 <input asp-for="Password" class="form-control" autocomplete="current-password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </label>
-            <button type="submit" class="btn btn-primary">ÄÄƒng nháº­p</button>
+            <button type="submit" class="btn btn-primary">Đăng nhập</button>
         </form>
 
-        <p class="auth-switch"><a asp-page="/Account/ForgotPassword">QuÃªn máº­t kháº©u?</a></p>
+        <p class="auth-switch"><a asp-page="/Account/ForgotPassword">Quên mật khẩu?</a></p>
 
         @if (Model.IsGoogleLoginEnabled)
         {
@@ -47,12 +47,12 @@
                 <input name="returnUrl" value="@Model.ReturnUrl" type="hidden" />
                 <button type="submit" class="btn btn-outline-dark google-button">
                     <img src="~/img/google-g.svg" alt="" class="google-icon" />
-                    <span>ÄÄƒng nháº­p vá»›i Google</span>
+                    <span>Đăng nhập với Google</span>
                 </button>
             </form>
         }
 
-        <p class="auth-switch">ChÆ°a cÃ³ tÃ i khoáº£n? Vui lÃ²ng liÃªn há»‡ NhÃ  trÆ°á»ng Ä‘á»ƒ xin cáº¥p tÃ i khoáº£n.</p>
+        <p class="auth-switch">Chưa có tài khoản? Vui lòng liên hệ Nhà trường để xin cấp tài khoản.</p>
         @if (!Model.IsGoogleLoginEnabled && !string.IsNullOrWhiteSpace(Model.GoogleLoginUnavailableMessage))
         {
             <div class="alert alert-warning">@Model.GoogleLoginUnavailableMessage</div>

@@ -59,12 +59,12 @@ public sealed class ForgotPasswordModel : PageModel
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Could not send password reset email to {Email}", reset.Value.Account.Email);
-                ModelState.AddModelError(string.Empty, "KhÃ´ng gá»­i Ä‘Æ°á»£c email Ä‘áº·t láº¡i máº­t kháº©u. Kiá»ƒm tra cáº¥u hÃ¬nh SMTP rá»“i thá»­ láº¡i.");
+                ModelState.AddModelError(string.Empty, "Không gửi được email đặt lại mật khẩu. Kiểm tra cấu hình SMTP rồi thử lại.");
                 return Page();
             }
         }
 
-        TempData["AuthSuccess"] = "Náº¿u email tá»“n táº¡i, há»‡ thá»‘ng Ä‘Ã£ gá»­i liÃªn káº¿t Ä‘áº·t láº¡i máº­t kháº©u.";
+        TempData["AuthSuccess"] = "Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu.";
         return RedirectToPage("/Account/Login");
     }
 }

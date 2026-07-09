@@ -20,14 +20,14 @@ public static class KnowledgeSqlMapper
             FileSizeBytes = entity.FileSizeBytes,
             UploadedByUserId = entity.UploadedByUserId,
             
-            // Sá»­a warning dÃ²ng 22, 23
+            // Sửa warning dòng 22, 23
             UploadedByName = entity.UploadedByName ?? string.Empty,
             UploadedByEmail = entity.UploadedByEmail ?? string.Empty,
             
             Status = entity.Status,
             IndexedAt = entity.IndexedAt,
             
-            // Sá»­a warning dÃ²ng 26
+            // Sửa warning dòng 26
             IndexError = entity.IndexError ?? string.Empty,
             
             EmbeddingModel = entity.EmbeddingModel,
@@ -114,7 +114,7 @@ public static class KnowledgeSqlMapper
             CreatedAt = entity.CreatedAt,
             OwnerUserId = entity.OwnerUserId,
             
-            // Sá»­a warning dÃ²ng 102, 103
+            // Sửa warning dòng 102, 103
             OwnerName = entity.OwnerName ?? string.Empty,
             OwnerEmail = entity.OwnerEmail ?? string.Empty,
             

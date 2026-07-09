@@ -401,16 +401,16 @@ public sealed class IndexModel : PageModel
                 string headerText = GetCellValue(doc, cell);
                 string colLetter = GetColumnLetter(cell.CellReference?.Value);
 
-                if (headerText.Equals("Há» & TÃªn", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Equals("Há» vÃ  TÃªn", StringComparison.OrdinalIgnoreCase) ||
+                if (headerText.Equals("Họ & Tên", StringComparison.OrdinalIgnoreCase) ||
+                    headerText.Equals("Họ và Tên", StringComparison.OrdinalIgnoreCase) ||
                     headerText.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Equals("TÃªn", StringComparison.OrdinalIgnoreCase))
+                    headerText.Equals("Tên", StringComparison.OrdinalIgnoreCase))
                 {
                     nameColumn = colLetter;
                 }
                 else if (nameColumn == null && (
-                    headerText.Contains("Há» & TÃªn", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Contains("Há» vÃ  TÃªn", StringComparison.OrdinalIgnoreCase) ||
+                    headerText.Contains("Họ & Tên", StringComparison.OrdinalIgnoreCase) ||
+                    headerText.Contains("Họ và Tên", StringComparison.OrdinalIgnoreCase) ||
                     headerText.Contains("Name", StringComparison.OrdinalIgnoreCase)))
                 {
                     nameColumn = colLetter;
@@ -684,7 +684,7 @@ public sealed class IndexModel : PageModel
 
             if (subject.OwnerUserId.HasValue && subject.OwnerUserId.Value != lecturer.Id)
             {
-                TempData["Error"] = $"TrÆ°á»Ÿng bá»™ mÃ´n {subject.DisplayName} Ä‘Ã£ Ä‘Æ°á»£c gÃ¡n cho {FormatSubjectOwner(subject)}. Vui lÃ²ng gá»¡ trÆ°á»›c khi chuyá»ƒn.";
+                TempData["Error"] = $"Trưởng bộ môn {subject.DisplayName} đã được gán cho {FormatSubjectOwner(subject)}. Vui lòng gỡ trước khi chuyển.";
                 return RedirectToPage("/Admin/Index");
             }
 
@@ -696,7 +696,7 @@ public sealed class IndexModel : PageModel
                 cancellationToken,
                 new SubjectOwnerInfo(lecturer.Id, lecturer.FullName, lecturer.Email));
 
-            TempData["Success"] = $"ÄÃ£ gÃ¡n {DisplayName(lecturer)} lÃ m trÆ°á»Ÿng bá»™ mÃ´n {subject.DisplayName}.";
+            TempData["Success"] = $"Đã gán {DisplayName(lecturer)} làm trưởng bộ môn {subject.DisplayName}.";
         }
         catch (Exception ex) when (ex is InvalidOperationException)
         {
@@ -731,11 +731,11 @@ public sealed class IndexModel : PageModel
             var leaderRevoked = subject.OwnerUserId == lecturer.Id;
             if (leaderRevoked)
             {
-                TempData["Success"] = $"ÄÃ£ thu há»“i quyá»n trÆ°á»Ÿng bá»™ mÃ´n {subject.DisplayName} cá»§a {DisplayName(lecturer)}.";
+                TempData["Success"] = $"Đã thu hồi quyền trưởng bộ môn {subject.DisplayName} của {DisplayName(lecturer)}.";
             }
             else
             {
-                TempData["Success"] = $"{DisplayName(lecturer)} khÃ´ng pháº£i trÆ°á»Ÿng bá»™ mÃ´n {subject.DisplayName}.";
+                TempData["Success"] = $"{DisplayName(lecturer)} không phải trưởng bộ môn {subject.DisplayName}.";
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException)
@@ -764,20 +764,20 @@ public sealed class IndexModel : PageModel
                 // Verify no subject leader and no students before deactivating.
                 if (subject.OwnerUserId.HasValue)
                 {
-                    TempData["Error"] = $"KhÃ´ng thá»ƒ Deactivate mÃ´n {subject.DisplayName} vÃ¬ Ä‘ang cÃ³ trÆ°á»Ÿng bá»™ mÃ´n phá»¥ trÃ¡ch.";
+                    TempData["Error"] = $"Không thể Deactivate môn {subject.DisplayName} vì đang có trưởng bộ môn phụ trách.";
                     return RedirectToPage("/Admin/Index");
                 }
                 
                 var enrolledStudentIds = await _knowledge.GetSubjectStudentIdsAsync(subject.Id, cancellationToken);
                 if (enrolledStudentIds.Count > 0)
                 {
-                    TempData["Error"] = $"KhÃ´ng thá»ƒ Deactivate mÃ´n {subject.DisplayName} vÃ¬ Ä‘ang cÃ³ há»c sinh Ä‘Äƒng kÃ½.";
+                    TempData["Error"] = $"Không thể Deactivate môn {subject.DisplayName} vì đang có học sinh đăng ký.";
                     return RedirectToPage("/Admin/Index");
                 }
             }
 
             await _knowledge.SetSubjectActiveStatusAsync(subject.Id, model.IsActive, cancellationToken);
-            TempData["Success"] = $"ÄÃ£ {(model.IsActive ? "Activate" : "Deactivate")} mÃ´n {subject.DisplayName}.";
+            TempData["Success"] = $"Đã {(model.IsActive ? "Activate" : "Deactivate")} môn {subject.DisplayName}.";
         }
         catch (Exception ex) when (ex is InvalidOperationException)
         {
@@ -809,12 +809,12 @@ public sealed class IndexModel : PageModel
 
             if (!subject.OwnerUserId.HasValue)
             {
-                TempData["Error"] = $"KhÃ´ng thá»ƒ gÃ¡n há»c sinh vÃ o mÃ´n {subject.DisplayName} vÃ¬ chÆ°a cÃ³ trÆ°á»Ÿng bá»™ mÃ´n phá»¥ trÃ¡ch.";
+                TempData["Error"] = $"Không thể gán học sinh vào môn {subject.DisplayName} vì chưa có trưởng bộ môn phụ trách.";
                 return RedirectToPage("/Admin/Index", new { section = "student-table" });
             }
 
             await _knowledge.AddSubjectStudentAsync(subject.Id, student.Id, cancellationToken);
-            TempData["Success"] = $"ÄÃ£ thÃªm {DisplayName(student)} vÃ o lá»›p há»c mÃ´n {subject.DisplayName}.";
+            TempData["Success"] = $"Đã thêm {DisplayName(student)} vào lớp học môn {subject.DisplayName}.";
         }
         catch (Exception ex) when (ex is InvalidOperationException)
         {
@@ -845,7 +845,7 @@ public sealed class IndexModel : PageModel
                 ?? throw new InvalidOperationException("Subject not found.");
 
             await _knowledge.RemoveSubjectStudentAsync(subject.Id, student.Id, cancellationToken);
-            TempData["Success"] = $"ÄÃ£ gá»¡ {DisplayName(student)} khá»i danh sÃ¡ch há»c mÃ´n {subject.DisplayName}.";
+            TempData["Success"] = $"Đã gỡ {DisplayName(student)} khỏi danh sách học môn {subject.DisplayName}.";
         }
         catch (Exception ex) when (ex is InvalidOperationException)
         {
@@ -888,10 +888,10 @@ public sealed class IndexModel : PageModel
         var normalizedRoleFilter = roleFilter?.Trim();
         var adminCount = users.Count(user => user.Role == AppRoles.Admin);
 
-        // 1. DÃ¹ng Dictionary Ä‘á»ƒ Ã¡nh xáº¡ MÃ´n há»c cho ngÆ°á»i dÃ¹ng vÃ  gÃ¡n cá» IsLeader.
+        // 1. Dùng Dictionary để ánh xạ Môn học cho người dùng và gán cờ IsLeader.
         var subjectMap = new Dictionary<Guid, Dictionary<Guid, AdminAssignedSubjectViewModel>>();
 
-        // 2. Láº·p qua danh sÃ¡ch mÃ´n há»c Ä‘á»ƒ gom nhÃ³m trÆ°á»Ÿng bá»™ mÃ´n vÃ  há»c sinh.
+        // 2. Lặp qua danh sách môn học để gom nhóm trưởng bộ môn và học sinh.
         foreach (var subject in subjects)
         {
             if (subject.OwnerUserId.HasValue)
@@ -922,7 +922,7 @@ public sealed class IndexModel : PageModel
             }
         }
 
-        // 3. Chuyá»ƒn Ä‘á»•i sang Ä‘á»‹nh dáº¡ng IReadOnlyDictionary theo Ä‘Ãºng kiá»ƒu dá»¯ liá»‡u cÅ© yÃªu cáº§u
+        // 3. Chuyển đổi sang định dạng IReadOnlyDictionary theo đúng kiểu dữ liệu cũ yêu cầu
         var assignedSubjectsByUser = subjectMap.ToDictionary(
             kvp => kvp.Key,
             kvp => (IReadOnlyList<AdminAssignedSubjectViewModel>)kvp.Value.Values
@@ -1039,7 +1039,7 @@ public sealed class IndexModel : PageModel
     private static string FormatSubjectOwner(CourseSubject subject)
     {
         var name = string.IsNullOrWhiteSpace(subject.OwnerName)
-            ? "giáº£ng viÃªn khÃ¡c"
+            ? "giảng viên khác"
             : subject.OwnerName.Trim();
         var email = subject.OwnerEmail?.Trim();
         return string.IsNullOrWhiteSpace(email) ? name : $"{name} ({email})";
@@ -1084,7 +1084,7 @@ public sealed class IndexModel : PageModel
 
         if (message.Contains("Subject is already assigned", StringComparison.OrdinalIgnoreCase))
         {
-            return "MÃ´n nÃ y Ä‘Ã£ Ä‘Æ°á»£c gÃ¡n cho giáº£ng viÃªn khÃ¡c.";
+            return "Môn này đã được gán cho giảng viên khác.";
         }
 
         if (message.Contains("Set role to Student or Lecturer before deleting", StringComparison.OrdinalIgnoreCase))
@@ -1163,7 +1163,7 @@ public sealed class IndexModel : PageModel
         var owner = payload[(separatorIndex + separator.Length)..].Trim().TrimEnd('.');
         return string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(owner)
             ? null
-            : $"MÃ´n {subject} Ä‘Ã£ Ä‘Æ°á»£c gÃ¡n cho {owner}.";
+            : $"Môn {subject} đã được gán cho {owner}.";
     }
 
     private sealed record ImportUserDraft(

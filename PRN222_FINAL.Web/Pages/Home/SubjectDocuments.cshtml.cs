@@ -1,4 +1,4 @@
-using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.Models;
 using PRN222_FINAL.Models.DTOs.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -108,7 +108,7 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
     {
         if (base.IsAdmin())
         {
-            TempData["Error"] = "Admin khÃ´ng Ä‘Æ°á»£c phÃ©p upload tÃ i liá»‡u. Chá»‰ giáº£ng viÃªn má»›i cÃ³ quyá»n upload.";
+            TempData["Error"] = "Admin không được phép upload tài liệu. Chỉ giảng viên mới có quyền upload.";
             return RedirectToPage("/Home/SubjectDocuments", new { id });
         }
 
