@@ -7,8 +7,6 @@
 *.log
 
 **/App_Data/
-**/appsettings.json
-**/appsettings.*.json
 
 **/wwwroot/uploads/*
 !**/wwwroot/uploads/.gitkeep
