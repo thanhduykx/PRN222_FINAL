@@ -1,37 +1,94 @@
 @page
+@using PRN222_FINAL.Models
 @model PRN222_FINAL.Web.Pages.Payments.ReturnModel
 @{
-    ViewData["Title"] = "Payment result";
+    ViewData["Title"] = "Kết quả thanh toán";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Payment result";
+    ViewData["ShellTitle"] = "Kết quả thanh toán";
+
+    var status = Model.Status?.Status == PaymentStatus.Paid
+        ? PaymentStatus.Paid
+        : Model.ReturnStatusHint is PaymentStatus.Failed or PaymentStatus.Canceled
+            ? Model.ReturnStatusHint
+            : Model.Status?.Status;
+    var isSuccess = status == PaymentStatus.Paid;
+    var isFailure = status is PaymentStatus.Failed or PaymentStatus.Canceled;
+    var resultClass = isSuccess ? "is-success" : isFailure ? "is-error" : "is-running";
+    var resultIcon = isSuccess ? "check_circle" : isFailure ? "cancel" : "hourglass_top";
+    var resultTitle = isSuccess
+        ? "Thanh toán thành công"
+        : isFailure
+            ? "Thanh toán thất bại hoặc đã hủy"
+            : "Đang chờ xác nhận thanh toán";
+    var resultMessage = isSuccess
+        ? "Gói dịch vụ đã được kích hoạt hoặc gia hạn cho tài khoản của bạn."
+        : isFailure
+            ? "Giao dịch chưa được ghi nhận thành công. Bạn có thể chọn lại gói và thanh toán lại."
+            : "Hệ thống đang chờ MoMo/PayOS gửi xác nhận webhook. Nếu bạn vừa thanh toán, hãy kiểm tra lại gói hiện tại sau vài giây.";
 }
 
-<section class="container py-4">
-    <h1 class="h3 mb-3">Payment result</h1>
+<section class="ops-page">
+    <div class="ops-page-header">
+        <div>
+            <span class="ops-eyebrow">Payment result</span>
+            <h1>Kết quả thanh toán</h1>
+            <p>Trạng thái giao dịch MoMo/PayOS sau khi quay lại hệ thống.</p>
+        </div>
+    </div>
+
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="alert alert-warning">@Model.ErrorMessage</div>
+        <section class="ops-panel">
+            <div class="ops-panel-head">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="material-symbols-outlined text-danger" aria-hidden="true">error</span>
+                    <div>
+                        <h2>Không xác định được giao dịch</h2>
+                        <p class="ops-muted mb-0">@Model.ErrorMessage</p>
+                    </div>
+                </div>
+            </div>
+            <div class="ops-panel-actions">
+                <a class="ops-button ops-button--primary" asp-page="/Packages/Index">Quay lại mua gói</a>
+            </div>
+        </section>
     }
     else if (Model.Status is not null)
     {
-        <div class="card">
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Provider</dt>
-                    <dd class="col-sm-9">@Model.Status.Provider</dd>
-                    <dt class="col-sm-3">Order</dt>
-                    <dd class="col-sm-9">@Model.Status.OrderCode</dd>
-                    <dt class="col-sm-3">Status</dt>
-                    <dd class="col-sm-9">@Model.Status.Status</dd>
-                    <dt class="col-sm-3">Message</dt>
-                    <dd class="col-sm-9">@Model.Status.Message</dd>
-                </dl>
+        <section class="ops-panel">
+            <div class="ops-panel-head">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="material-symbols-outlined" aria-hidden="true">@resultIcon</span>
+                    <div>
+                        <h2>@resultTitle</h2>
+                        <p class="ops-muted mb-0">@resultMessage</p>
+                    </div>
+                </div>
+                <span class="rbl-status @resultClass">@status</span>
             </div>
-        </div>
+            <div class="ops-kpi-grid">
+                <article class="ops-kpi"><span>Cổng</span><strong>@Model.Status.Provider</strong></article>
+                <article class="ops-kpi"><span>Mã đơn</span><strong>@Model.Status.OrderCode</strong></article>
+                <article class="ops-kpi"><span>Giao dịch</span><strong>@(string.IsNullOrWhiteSpace(Model.Status.ProviderTransactionId) ? "-" : Model.Status.ProviderTransactionId)</strong></article>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Status.Message))
+            {
+                <p class="ops-panel-note mt-3">@Model.Status.Message</p>
+            }
+            <div class="ops-panel-actions mt-3">
+                <a class="ops-button ops-button--primary" asp-page="/Subscriptions/Current">
+                    <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                    Xem gói hiện tại
+                </a>
+                @if (!isSuccess)
+                {
+                    <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
+                        <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+                        Chọn lại gói
+                    </a>
+                }
+            </div>
+        </section>
     }
-    <div class="mt-3 d-flex gap-2">
-        <a class="btn btn-primary" asp-page="/Subscriptions/Current">View subscription</a>
-        <a class="btn btn-outline-secondary" asp-page="/Packages/Index">Back to packages</a>
-    </div>
 </section>

@@ -141,7 +141,7 @@
                         </div>
                     </details>
                     }
-                    @if (isAuthenticated)
+                    @if (isAuthenticated && currentRole == AppRoles.Student)
                     {
                     <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index">
                         <span class="material-symbols-outlined" aria-hidden="true">payments</span>
@@ -368,6 +368,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Home/OnlineUsers" data-i18n="admin.navOnlineUsers">Online users</a>
                                 </li>
+                            }
+                            @if (isAuthenticated && currentRole == AppRoles.Student)
+                            {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index">Gói dịch vụ</a>
                                 </li>

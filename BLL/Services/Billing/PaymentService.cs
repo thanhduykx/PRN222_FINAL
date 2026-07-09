@@ -190,9 +190,9 @@ public sealed class PaymentService : IPaymentService
                 Status = payment.Status,
                 Message = payment.Status switch
                 {
-                    PaymentStatus.Paid => "Payment completed.",
-                    PaymentStatus.Pending => "Payment is waiting for confirmation.",
-                    PaymentStatus.Canceled => "Payment was canceled.",
+                    PaymentStatus.Paid => "Thanh toán thành công.",
+                    PaymentStatus.Pending => "Thanh toán đang chờ xác nhận từ cổng thanh toán.",
+                    PaymentStatus.Canceled => "Thanh toán đã bị hủy.",
                     _ => payment.FailureReason
                 }
             };
@@ -233,6 +233,9 @@ public sealed class PaymentService : IPaymentService
         var current = await _subscriptions.GetCurrentActiveAsync(payment.UserId, cancellationToken);
         var now = DateTimeOffset.UtcNow;
         var startsAt = current is not null && current.EndsAt > now ? current.EndsAt : now;
+        var endsAt = package.IsLifetime
+            ? new DateTimeOffset(9999, 12, 31, 23, 59, 59, TimeSpan.Zero)
+            : startsAt.AddDays(Math.Max(1, package.DurationDays));
         var subscription = new Subscription
         {
             Id = Guid.NewGuid(),
@@ -242,7 +245,7 @@ public sealed class PaymentService : IPaymentService
             UserEmail = payment.UserEmail,
             Status = SubscriptionStatus.Active,
             StartsAt = startsAt,
-            EndsAt = startsAt.AddDays(Math.Max(1, package.DurationDays)),
+            EndsAt = endsAt,
             PaymentId = payment.Id,
             CreatedAt = now
         };

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Billing;
 using PRN222_FINAL.Models;
 using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.ViewModels.Billing;
 
 namespace PRN222_FINAL.Web.Pages.Packages;
@@ -30,13 +31,24 @@ public sealed class IndexModel : PageModel
     public SubscriptionViewModel? CurrentSubscription { get; private set; }
     public string ErrorMessage { get; private set; } = string.Empty;
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
+        if (!IsStudent())
+        {
+            return RedirectForRole();
+        }
+
         await LoadPageAsync(cancellationToken);
+        return Page();
     }
 
     public async Task<IActionResult> OnPostCheckoutAsync(Guid packageId, string provider, CancellationToken cancellationToken)
     {
+        if (!IsStudent())
+        {
+            return RedirectForRole();
+        }
+
         if (!Enum.TryParse<PaymentProvider>(provider, true, out var parsedProvider))
         {
             ErrorMessage = "Cổng thanh toán không hợp lệ.";
@@ -86,8 +98,7 @@ public sealed class IndexModel : PageModel
                     StartsAt = currentSubscription.StartsAt,
                     EndsAt = currentSubscription.EndsAt,
                     MonthlyChatLimit = currentSubscription.MonthlyChatLimit,
-                    MonthlyDocumentUploadLimit = currentSubscription.MonthlyDocumentUploadLimit,
-                    StorageLimitMb = currentSubscription.StorageLimitMb
+                    IsLifetime = currentSubscription.IsLifetime
                 };
 
             var packages = await _packages.GetActivePackagesAsync(cancellationToken);
@@ -100,8 +111,7 @@ public sealed class IndexModel : PageModel
                 PriceVnd = package.PriceVnd,
                 DurationDays = package.DurationDays,
                 MonthlyChatLimit = package.MonthlyChatLimit,
-                MonthlyDocumentUploadLimit = package.MonthlyDocumentUploadLimit,
-                StorageLimitMb = package.StorageLimitMb,
+                IsLifetime = package.IsLifetime,
                 IsCurrentPackage = CurrentSubscription?.PackageId == package.Id
             }).ToList();
         }
@@ -115,5 +125,17 @@ public sealed class IndexModel : PageModel
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(value, out var userId) ? userId : Guid.Empty;
+    }
+
+    private bool IsStudent()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Student;
+    }
+
+    private IActionResult RedirectForRole()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Admin
+            ? RedirectToPage("/Admin/Statistics")
+            : RedirectToPage("/Home/Courses");
     }
 }

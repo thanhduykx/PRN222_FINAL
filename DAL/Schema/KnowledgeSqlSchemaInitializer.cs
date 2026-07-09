@@ -48,6 +48,7 @@ public static class KnowledgeSqlSchemaInitializer
                 "MonthlyChatLimit" integer NOT NULL,
                 "MonthlyDocumentUploadLimit" integer NOT NULL,
                 "StorageLimitMb" integer NOT NULL,
+                "IsLifetime" boolean NOT NULL DEFAULT false,
                 "IsActive" boolean NOT NULL,
                 "SortOrder" integer NOT NULL,
                 "CreatedAt" timestamp with time zone NOT NULL
@@ -56,6 +57,7 @@ public static class KnowledgeSqlSchemaInitializer
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_packages_Code" ON packages ("Code");
             CREATE INDEX IF NOT EXISTS "IX_packages_IsActive" ON packages ("IsActive");
             CREATE INDEX IF NOT EXISTS "IX_packages_SortOrder" ON packages ("SortOrder");
+            ALTER TABLE packages ADD COLUMN IF NOT EXISTS "IsLifetime" boolean NOT NULL DEFAULT false;
 
             CREATE TABLE IF NOT EXISTS payments (
                 "Id" uuid PRIMARY KEY,

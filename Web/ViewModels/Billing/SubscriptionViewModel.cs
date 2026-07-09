@@ -8,8 +8,8 @@ public sealed class SubscriptionViewModel
     public DateTimeOffset StartsAt { get; set; }
     public DateTimeOffset EndsAt { get; set; }
     public int MonthlyChatLimit { get; set; }
-    public int MonthlyDocumentUploadLimit { get; set; }
-    public int StorageLimitMb { get; set; }
+    public bool IsLifetime { get; set; }
+    public string ValidUntilLabel => IsLifetime ? "Vĩnh viễn" : EndsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm");
 }
 
 public sealed class PaymentHistoryItemViewModel

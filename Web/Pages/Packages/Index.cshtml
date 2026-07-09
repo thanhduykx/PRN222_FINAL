@@ -8,12 +8,12 @@
     ViewData["ShellTitle"] = "Gói dịch vụ";
 }
 
-<section class="ops-page">
-    <div class="ops-page-header">
+<section class="ops-page package-cinema">
+    <div class="ops-page-header package-cinema-hero">
         <div>
             <span class="ops-eyebrow">Billing</span>
             <h1>Gói dịch vụ</h1>
-            <p>Chọn gói sử dụng cho chatbot RAG, upload tài liệu và dung lượng lưu trữ. Giá luôn lấy từ server, không tin dữ liệu từ trình duyệt.</p>
+            <p>Chọn gói sử dụng cho chatbot RAG theo môn học. Giá luôn lấy từ server, không tin dữ liệu từ trình duyệt.</p>
         </div>
         <div class="ops-panel-actions">
             <a class="ops-button ops-button--secondary" asp-page="/Subscriptions/Current">
@@ -34,18 +34,19 @@
             <div class="ops-panel-head">
                 <div>
                     <h2>Đang sử dụng: @Model.CurrentSubscription.PackageName</h2>
-                    <p class="ops-muted mb-0">Có hiệu lực đến @Model.CurrentSubscription.EndsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm").</p>
+                    <p class="ops-muted mb-0">Có hiệu lực đến @Model.CurrentSubscription.ValidUntilLabel.</p>
                 </div>
                 <span class="rbl-status is-success">@Model.CurrentSubscription.Status</span>
             </div>
         </section>
     }
 
-    <div class="row g-3">
+    <div class="row g-3 package-plan-grid">
         @foreach (var package in Model.Packages)
         {
-            <div class="col-12 col-md-4">
-                <article class="ops-command-card h-100">
+            <div class="col-12 col-md-4 package-plan-column">
+                <article class="ops-command-card h-100 package-plan-card @(package.IsCurrentPackage ? "is-current" : "") @(package.IsLifetime ? "is-lifetime" : "")">
+                    <span class="package-plan-card__accent" aria-hidden="true"></span>
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex align-items-start justify-content-between gap-3">
                             <div>
@@ -62,11 +63,12 @@
                             }
                         </div>
                         <p class="ops-muted mt-3">@package.Description</p>
+                        <div class="package-plan-meter" aria-hidden="true">
+                            <span></span>
+                        </div>
                         <ul class="list-unstyled small mb-4 ops-stack">
                             <li><strong>@package.MonthlyChatLimit.ToString("N0")</strong> lượt chat/tháng</li>
-                            <li><strong>@package.MonthlyDocumentUploadLimit.ToString("N0")</strong> lượt upload/tháng</li>
-                            <li><strong>@package.StorageLimitMb.ToString("N0") MB</strong> lưu trữ</li>
-                            <li><strong>@package.DurationDays</strong> ngày sử dụng</li>
+                            <li><strong>@package.DurationLabel</strong> thời hạn sử dụng</li>
                         </ul>
                         @if (package.IsCurrentPackage)
                         {
