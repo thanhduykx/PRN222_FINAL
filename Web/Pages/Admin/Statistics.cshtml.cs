@@ -74,6 +74,9 @@ public sealed class StatisticsModel : PageModel
         PaidRevenueVnd = dto.PaidRevenueVnd,
         PaidPaymentCount = dto.PaidPaymentCount,
         PendingPaymentCount = dto.PendingPaymentCount,
+        TotalSubscriptionCount = dto.TotalSubscriptionCount,
+        NewSubscriptionCount = dto.NewSubscriptionCount,
+        CanceledSubscriptionCount = dto.CanceledSubscriptionCount,
         ActiveSubscriptionCount = dto.ActiveSubscriptionCount,
         SubjectUsage = dto.SubjectUsage.Select(subject => new SubjectUsageViewModel
         {
@@ -107,6 +110,12 @@ public sealed class StatisticsModel : PageModel
             QuestionCount = day.QuestionCount,
             SessionCount = day.SessionCount,
             ActiveUserCount = day.ActiveUserCount
+        }).ToList(),
+        DailySubscriptionUsage = dto.DailySubscriptionUsage.Select(day => new DailySubscriptionUsageViewModel
+        {
+            DateLabel = day.Date.ToString("dd/MM"),
+            NewSubscriptionCount = day.NewSubscriptionCount,
+            SuccessfulPaymentCount = day.SuccessfulPaymentCount
         }).ToList(),
         TopChatUsers = dto.TopChatUsers.Select(user => new UserChatUsageViewModel
         {
@@ -142,7 +151,7 @@ public sealed class StatisticsModel : PageModel
     private static string NormalizeTab(string value)
     {
         var normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
-        return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "billing" or "export"
+        return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "subscription" or "billing" or "export"
             ? normalized
             : "overview";
     }

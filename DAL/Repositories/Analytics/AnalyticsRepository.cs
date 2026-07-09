@@ -133,6 +133,17 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                 payment.PaidAt))
             .ToListAsync(cancellationToken);
 
+        var subscriptions = await context.Subscriptions
+            .AsNoTracking()
+            .Select(subscription => new SubscriptionRow(
+                subscription.Id,
+                subscription.PackageId,
+                subscription.Status,
+                subscription.StartsAt,
+                subscription.EndsAt,
+                subscription.CreatedAt))
+            .ToListAsync(cancellationToken);
+
         var activeSubscriptionCounts = await context.Subscriptions
             .AsNoTracking()
             .Where(subscription => subscription.Status == SubscriptionStatus.Active
@@ -170,10 +181,14 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             PaidRevenueVnd = payments.Where(payment => payment.Status == PaymentStatus.Paid).Sum(payment => payment.AmountVnd),
             PaidPaymentCount = payments.Count(payment => payment.Status == PaymentStatus.Paid),
             PendingPaymentCount = payments.Count(payment => payment.Status == PaymentStatus.Pending),
+            TotalSubscriptionCount = subscriptions.Count,
+            NewSubscriptionCount = subscriptions.Count(subscription => subscription.CreatedAt >= fromUtc && subscription.CreatedAt <= toUtc),
+            CanceledSubscriptionCount = subscriptions.Count(subscription => subscription.Status == SubscriptionStatus.Canceled),
             ActiveSubscriptionCount = activeSubscriptionCounts.Values.Sum(),
             SubjectUsage = BuildSubjectUsage(subjects, documents, citationRows, accessRows, lecturerCounts, studentCounts),
             PackagePurchases = BuildPackagePurchases(packages, payments, activeSubscriptionCounts),
             DailyChatUsage = BuildDailyChatUsage(questionRows),
+            DailySubscriptionUsage = BuildDailySubscriptionUsage(subscriptions, payments, fromUtc, toUtc),
             TopChatUsers = BuildTopChatUsers(questionRows),
             RecentDocuments = BuildRecentDocuments(documents, citationRows),
             RecentPayments = payments
@@ -304,6 +319,32 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
+    private static IReadOnlyList<DailySubscriptionUsageDto> BuildDailySubscriptionUsage(
+        IReadOnlyList<SubscriptionRow> subscriptions,
+        IReadOnlyList<PaymentRow> payments,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc)
+    {
+        var startDate = DateOnly.FromDateTime(fromUtc.LocalDateTime.Date);
+        var endDate = DateOnly.FromDateTime(toUtc.LocalDateTime.Date);
+        var results = new List<DailySubscriptionUsageDto>();
+
+        for (var date = startDate; date <= endDate; date = date.AddDays(1))
+        {
+            results.Add(new DailySubscriptionUsageDto
+            {
+                Date = date,
+                NewSubscriptionCount = subscriptions.Count(subscription =>
+                    DateOnly.FromDateTime(subscription.CreatedAt.LocalDateTime.Date) == date),
+                SuccessfulPaymentCount = payments.Count(payment =>
+                    payment.Status == PaymentStatus.Paid
+                    && DateOnly.FromDateTime((payment.PaidAt ?? payment.CreatedAt).LocalDateTime.Date) == date)
+            });
+        }
+
+        return results;
+    }
+
     private static IReadOnlyList<DocumentAnalyticsDto> BuildRecentDocuments(
         IReadOnlyList<DocumentRow> documents,
         IReadOnlyList<CitationRow> citations)
@@ -365,6 +406,13 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
     private sealed record AccessRow(Guid SubjectId, DateTimeOffset AccessedAt);
     private sealed record PackageRow(Guid Id, string Code, string Name);
     private sealed record CountRow(Guid Id, int Count);
+    private sealed record SubscriptionRow(
+        Guid Id,
+        Guid PackageId,
+        SubscriptionStatus Status,
+        DateTimeOffset StartsAt,
+        DateTimeOffset EndsAt,
+        DateTimeOffset CreatedAt);
     private sealed record PaymentRow(
         Guid Id,
         Guid PackageId,

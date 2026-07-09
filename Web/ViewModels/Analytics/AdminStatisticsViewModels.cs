@@ -17,10 +17,14 @@ public sealed class AdminStatisticsViewModel
     public decimal PaidRevenueVnd { get; set; }
     public int PaidPaymentCount { get; set; }
     public int PendingPaymentCount { get; set; }
+    public int TotalSubscriptionCount { get; set; }
+    public int NewSubscriptionCount { get; set; }
+    public int CanceledSubscriptionCount { get; set; }
     public int ActiveSubscriptionCount { get; set; }
     public IReadOnlyList<SubjectUsageViewModel> SubjectUsage { get; set; } = Array.Empty<SubjectUsageViewModel>();
     public IReadOnlyList<PackagePurchaseStatsViewModel> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsViewModel>();
     public IReadOnlyList<DailyChatUsageViewModel> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageViewModel>();
+    public IReadOnlyList<DailySubscriptionUsageViewModel> DailySubscriptionUsage { get; set; } = Array.Empty<DailySubscriptionUsageViewModel>();
     public IReadOnlyList<UserChatUsageViewModel> TopChatUsers { get; set; } = Array.Empty<UserChatUsageViewModel>();
     public IReadOnlyList<DocumentAnalyticsViewModel> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsViewModel>();
     public IReadOnlyList<RecentPaymentViewModel> RecentPayments { get; set; } = Array.Empty<RecentPaymentViewModel>();
@@ -60,6 +64,13 @@ public sealed class DailyChatUsageViewModel
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
     public int ActiveUserCount { get; set; }
+}
+
+public sealed class DailySubscriptionUsageViewModel
+{
+    public string DateLabel { get; set; } = string.Empty;
+    public int NewSubscriptionCount { get; set; }
+    public int SuccessfulPaymentCount { get; set; }
 }
 
 public sealed class UserChatUsageViewModel
