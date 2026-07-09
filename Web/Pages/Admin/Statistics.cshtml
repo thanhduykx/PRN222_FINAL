@@ -6,6 +6,14 @@
     ViewData["ActiveNav"] = "admin";
     ViewData["ShellTitle"] = "Thống kê";
     ViewData["AdminSection"] = "statistics";
+    var maxDailyQuestions = Math.Max(1, Model.Dashboard.DailyChatUsage.Select(item => item.QuestionCount).DefaultIfEmpty(0).Max());
+    var maxPackageRevenue = Math.Max(1m, Model.Dashboard.PackagePurchases.Select(item => item.RevenueVnd).DefaultIfEmpty(0m).Max());
+    var topSubjectUsage = Model.Dashboard.SubjectUsage
+        .OrderByDescending(item => item.CourseAccessCount)
+        .ThenByDescending(item => item.ChatCitationCount)
+        .Take(8)
+        .ToList();
+    var maxSubjectActivity = Math.Max(1, topSubjectUsage.Select(item => Math.Max(item.CourseAccessCount, item.ChatCitationCount)).DefaultIfEmpty(0).Max());
 }
 
 <section class="ops-page">
@@ -40,6 +48,84 @@
             <article class="ops-kpi"><span>Môn học</span><strong>@Model.Dashboard.TotalSubjects.ToString("N0")</strong><small>@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu</small></article>
             <article class="ops-kpi"><span>Doanh thu đã thanh toán</span><strong>@Model.Dashboard.PaidRevenueVnd.ToString("N0") VND</strong><small>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid</small></article>
             <article class="ops-kpi"><span>Subscription active</span><strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong><small>@Model.Dashboard.PendingPaymentCount.ToString("N0") payment pending</small></article>
+        </div>
+
+        <div class="analytics-chart-grid mt-4">
+            <section class="ops-panel analytics-chart-card analytics-chart-card--wide">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Biểu đồ sử dụng chat</h2>
+                        <p class="ops-muted mb-0">Số câu hỏi theo ngày trong khoảng lọc.</p>
+                    </div>
+                </div>
+                @if (Model.Dashboard.DailyChatUsage.Count == 0)
+                {
+                    <div class="ops-empty compact">Chưa có dữ liệu chat trong khoảng này.</div>
+                }
+                else
+                {
+                    <div class="analytics-day-chart" aria-label="Biểu đồ cột số câu hỏi chat theo ngày">
+                        @foreach (var day in Model.Dashboard.DailyChatUsage)
+                        {
+                            var barValue = Math.Max(4, (int)Math.Round(day.QuestionCount * 100.0 / maxDailyQuestions));
+                            <div class="analytics-day-bar" style="--bar:@barValue">
+                                <span class="analytics-day-bar__value">@day.QuestionCount.ToString("N0")</span>
+                                <span class="analytics-day-bar__fill"></span>
+                                <span class="analytics-day-bar__label">@day.DateLabel</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="ops-panel analytics-chart-card">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Doanh thu theo gói</h2>
+                        <p class="ops-muted mb-0">Tỷ trọng doanh thu paid từng package.</p>
+                    </div>
+                </div>
+                <div class="analytics-horizontal-chart">
+                    @foreach (var package in Model.Dashboard.PackagePurchases)
+                    {
+                        var revenueBar = package.RevenueVnd <= 0 ? 2 : Math.Max(6, (int)Math.Round(package.RevenueVnd * 100m / maxPackageRevenue));
+                        <div class="analytics-bar-row" style="--bar:@revenueBar">
+                            <div class="analytics-bar-row__meta">
+                                <strong>@package.PackageName</strong>
+                                <span>@package.RevenueVnd.ToString("N0") VND</span>
+                            </div>
+                            <span class="analytics-bar-row__track"><span></span></span>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <section class="ops-panel analytics-chart-card">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Môn được truy cập nhiều</h2>
+                        <p class="ops-muted mb-0">So sánh lượt mở môn và citation chat.</p>
+                    </div>
+                </div>
+                <div class="analytics-horizontal-chart">
+                    @foreach (var subject in topSubjectUsage)
+                    {
+                        var accessBar = subject.CourseAccessCount <= 0 ? 2 : Math.Max(6, (int)Math.Round(subject.CourseAccessCount * 100.0 / maxSubjectActivity));
+                        var citationBar = subject.ChatCitationCount <= 0 ? 2 : Math.Max(6, (int)Math.Round(subject.ChatCitationCount * 100.0 / maxSubjectActivity));
+                        <div class="analytics-bar-row analytics-bar-row--dual" style="--bar:@accessBar;--bar-alt:@citationBar">
+                            <div class="analytics-bar-row__meta">
+                                <strong>@subject.SubjectCode</strong>
+                                <span>@subject.CourseAccessCount.ToString("N0") truy cập / @subject.ChatCitationCount.ToString("N0") citation</span>
+                            </div>
+                            <span class="analytics-bar-row__track"><span></span><i></i></span>
+                        </div>
+                    }
+                    @if (topSubjectUsage.Count == 0)
+                    {
+                        <div class="ops-empty compact">Chưa có dữ liệu truy cập môn.</div>
+                    }
+                </div>
+            </section>
         </div>
 
         <div class="ops-admin-layout mt-4">
