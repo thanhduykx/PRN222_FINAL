@@ -1,13 +1,10 @@
-﻿using PRN222_FINAL.DAL;
+using PRN222_FINAL.DAL;
 using System.Text;
 using PRN222_FINAL.Models;
+using PRN222_FINAL.Models.DTOs.Documents;
 using PRN222_FINAL.DAL.Repositories;
 
 namespace PRN222_FINAL.BLL;
-
-public sealed record DocumentUploadResult(Guid DocumentId, int ChunkCount, string Message);
-
-public sealed record DocumentUploaderInfo(Guid? UserId, string? Name, string? Email);
 
 public sealed record DocumentIndexingProgressUpdate(
     Guid DocumentId,
@@ -21,24 +18,12 @@ public sealed record DocumentIndexingProgressUpdate(
 
 public interface IDocumentIndexingService
 {
-    Task<IReadOnlyList<IndexedDocument>> GetDocumentsAsync(CancellationToken cancellationToken = default);
-    Task<DocumentUploadResult> QueueFileAsync(
-        Stream fileStream,
-        string fileName,
-        string contentType,
-        string subject,
-        string chapter,
-        string uploadsRoot,
-        DocumentUploaderInfo uploader,
+    Task<IReadOnlyList<DocumentDto>> GetDocumentsAsync(CancellationToken cancellationToken = default);
+    Task<DocumentUploadResultDto> QueueFileAsync(
+        DocumentFileUploadRequestDto request,
         CancellationToken cancellationToken = default);
-    Task<DocumentUploadResult> QueueTextAsync(
-        string text,
-        string sourceName,
-        string contentType,
-        string subject,
-        string chapter,
-        string uploadsRoot,
-        DocumentUploaderInfo uploader,
+    Task<DocumentUploadResultDto> QueueTextAsync(
+        DocumentTextUploadRequestDto request,
         CancellationToken cancellationToken = default);
     Task ProcessDocumentAsync(
         Guid documentId,
@@ -70,31 +55,28 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
 
     private string EffectiveChunkingStrategy => $"{_chunker.StrategyName}+{_chunkEnrichment.StrategyName}";
 
-    public Task<IReadOnlyList<IndexedDocument>> GetDocumentsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DocumentDto>> GetDocumentsAsync(CancellationToken cancellationToken = default)
     {
-        return _repository.GetDocumentsAsync(cancellationToken);
+        var documents = await _repository.GetDocumentsAsync(cancellationToken);
+        return documents.Select(DocumentDtoMapper.ToDto).ToList();
     }
 
-    public async Task<DocumentUploadResult> QueueFileAsync(
-        Stream fileStream,
-        string fileName,
-        string contentType,
-        string subject,
-        string chapter,
-        string uploadsRoot,
-        DocumentUploaderInfo uploader,
+    public async Task<DocumentUploadResultDto> QueueFileAsync(
+        DocumentFileUploadRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        var uploadsRoot = NormalizeRequiredText(request.UploadsRoot, "Upload path is required.");
         Directory.CreateDirectory(uploadsRoot);
 
         await using var copy = new MemoryStream();
-        await fileStream.CopyToAsync(copy, cancellationToken);
+        await request.FileStream.CopyToAsync(copy, cancellationToken);
         if (copy.Length == 0)
         {
             throw new InvalidOperationException("The selected file is empty and cannot be indexed.");
         }
 
-        var safeFileName = NormalizeFileName(fileName);
+        var safeFileName = NormalizeFileName(request.FileName);
         var storedPath = Path.Combine(uploadsRoot, $"{Guid.NewGuid():N}{Path.GetExtension(safeFileName)}");
         copy.Position = 0;
         await using (var savedFile = File.Create(storedPath))
@@ -104,51 +86,46 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
 
         var document = CreateProcessingDocument(
             safeFileName,
-            contentType,
-            subject,
-            chapter,
+            request.ContentType,
+            request.Subject,
+            request.Chapter,
             storedPath,
             copy.Length,
-            uploader);
+            request.Uploader);
 
         await _repository.AddDocumentAsync(document, Array.Empty<DocumentChunk>(), cancellationToken);
-        return new DocumentUploadResult(document.Id, 0, $"Queued {document.FileName} for indexing.");
+        return new DocumentUploadResultDto(document.Id, 0, $"Queued {document.FileName} for indexing.");
     }
 
-    public async Task<DocumentUploadResult> QueueTextAsync(
-        string text,
-        string sourceName,
-        string contentType,
-        string subject,
-        string chapter,
-        string uploadsRoot,
-        DocumentUploaderInfo uploader,
+    public async Task<DocumentUploadResultDto> QueueTextAsync(
+        DocumentTextUploadRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(text))
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.Text))
         {
             throw new InvalidOperationException("No readable text could be extracted from this source.");
         }
 
+        var uploadsRoot = NormalizeRequiredText(request.UploadsRoot, "Upload path is required.");
         Directory.CreateDirectory(uploadsRoot);
-        var safeSourceName = MakeSafeSourceName(sourceName);
+        var safeSourceName = MakeSafeSourceName(request.SourceName);
         var storedPath = Path.Combine(uploadsRoot, $"{Guid.NewGuid():N}.txt");
-        var normalizedText = TextEncodingHelper.NormalizeForIndexing(text);
+        var normalizedText = TextEncodingHelper.NormalizeForIndexing(request.Text);
         await File.WriteAllTextAsync(storedPath, normalizedText, Encoding.UTF8, cancellationToken);
 
         var document = CreateProcessingDocument(
             safeSourceName,
-            contentType,
-            subject,
-            chapter,
+            request.ContentType,
+            request.Subject,
+            request.Chapter,
             storedPath,
             Encoding.UTF8.GetByteCount(normalizedText),
-            uploader);
+            request.Uploader);
 
         await _repository.AddDocumentAsync(document, Array.Empty<DocumentChunk>(), cancellationToken);
-        return new DocumentUploadResult(document.Id, 0, $"Queued {document.FileName} for indexing.");
+        return new DocumentUploadResultDto(document.Id, 0, $"Queued {document.FileName} for indexing.");
     }
-
     public async Task ProcessDocumentAsync(
         Guid documentId,
         IProgress<DocumentIndexingProgressUpdate>? progress = null,
@@ -266,7 +243,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         string chapter,
         string storedPath,
         long fileSizeBytes,
-        DocumentUploaderInfo uploader)
+        DocumentUploaderDto uploader)
     {
         return new IndexedDocument
         {
