@@ -1,5 +1,6 @@
-﻿using PRN222_FINAL.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
+using PRN222_FINAL.DAL.Entities;
+using PRN222_FINAL.DAL.Entities.Billing;
 
 namespace PRN222_FINAL.DAL.Context;
 
@@ -18,6 +19,9 @@ public sealed class KnowledgeSqlDbContext : DbContext
     public DbSet<KnowledgeSqlCitation> Citations => Set<KnowledgeSqlCitation>();
     public DbSet<KnowledgeSqlSubjectLecturer> SubjectLecturers => Set<KnowledgeSqlSubjectLecturer>();
     public DbSet<KnowledgeSqlSubjectStudent> SubjectStudents => Set<KnowledgeSqlSubjectStudent>();
+    public DbSet<KnowledgeSqlPackage> Packages => Set<KnowledgeSqlPackage>();
+    public DbSet<KnowledgeSqlPayment> Payments => Set<KnowledgeSqlPayment>();
+    public DbSet<KnowledgeSqlSubscription> Subscriptions => Set<KnowledgeSqlSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -93,6 +97,46 @@ public sealed class KnowledgeSqlDbContext : DbContext
         modelBuilder.Entity<KnowledgeSqlCitation>(entity =>
         {
             entity.HasIndex(c => c.DocumentId);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlPackage>(entity =>
+        {
+            entity.Property(package => package.PriceVnd).HasColumnType("numeric(18,2)");
+            entity.HasIndex(package => package.Code).IsUnique();
+            entity.HasIndex(package => package.IsActive);
+            entity.HasIndex(package => package.SortOrder);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlPayment>(entity =>
+        {
+            entity.Property(payment => payment.Provider).HasConversion<string>().HasMaxLength(32);
+            entity.Property(payment => payment.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(payment => payment.AmountVnd).HasColumnType("numeric(18,2)");
+            entity.HasIndex(payment => new { payment.Provider, payment.OrderCode }).IsUnique();
+            entity.HasIndex(payment => payment.UserId);
+            entity.HasIndex(payment => payment.Status);
+
+            entity.HasOne(payment => payment.Package)
+                .WithMany()
+                .HasForeignKey(payment => payment.PackageId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlSubscription>(entity =>
+        {
+            entity.Property(subscription => subscription.Status).HasConversion<string>().HasMaxLength(32);
+            entity.HasIndex(subscription => new { subscription.UserId, subscription.Status, subscription.EndsAt });
+            entity.HasIndex(subscription => subscription.PaymentId).IsUnique();
+
+            entity.HasOne(subscription => subscription.Package)
+                .WithMany()
+                .HasForeignKey(subscription => subscription.PackageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(subscription => subscription.Payment)
+                .WithMany()
+                .HasForeignKey(subscription => subscription.PaymentId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

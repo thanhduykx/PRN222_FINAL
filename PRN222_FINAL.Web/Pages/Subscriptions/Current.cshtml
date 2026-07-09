@@ -1,0 +1,46 @@
+@page
+@model PRN222_FINAL.Web.Pages.Subscriptions.CurrentModel
+@{
+    ViewData["Title"] = "Current subscription";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "billing";
+    ViewData["ShellTitle"] = "Current subscription";
+}
+
+<section class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0">Current subscription</h1>
+        <a class="btn btn-outline-primary" asp-page="/Packages/Index">Packages</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    else if (Model.Subscription is null)
+    {
+        <div class="alert alert-info">No active subscription.</div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5">@Model.Subscription.PackageName</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">@Model.Subscription.Status</dd>
+                    <dt class="col-sm-4">Valid from</dt>
+                    <dd class="col-sm-8">@Model.Subscription.StartsAt.LocalDateTime</dd>
+                    <dt class="col-sm-4">Valid until</dt>
+                    <dd class="col-sm-8">@Model.Subscription.EndsAt.LocalDateTime</dd>
+                    <dt class="col-sm-4">Chat/month</dt>
+                    <dd class="col-sm-8">@Model.Subscription.MonthlyChatLimit.ToString("N0")</dd>
+                    <dt class="col-sm-4">Uploads/month</dt>
+                    <dd class="col-sm-8">@Model.Subscription.MonthlyDocumentUploadLimit.ToString("N0")</dd>
+                    <dt class="col-sm-4">Storage</dt>
+                    <dd class="col-sm-8">@Model.Subscription.StorageLimitMb.ToString("N0") MB</dd>
+                </dl>
+            </div>
+        </div>
+    }
+</section>

@@ -1,0 +1,37 @@
+@page
+@model PRN222_FINAL.Web.Pages.Payments.ReturnModel
+@{
+    ViewData["Title"] = "Payment result";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "billing";
+    ViewData["ShellTitle"] = "Payment result";
+}
+
+<section class="container py-4">
+    <h1 class="h3 mb-3">Payment result</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-warning">@Model.ErrorMessage</div>
+    }
+    else if (Model.Status is not null)
+    {
+        <div class="card">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Provider</dt>
+                    <dd class="col-sm-9">@Model.Status.Provider</dd>
+                    <dt class="col-sm-3">Order</dt>
+                    <dd class="col-sm-9">@Model.Status.OrderCode</dd>
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">@Model.Status.Status</dd>
+                    <dt class="col-sm-3">Message</dt>
+                    <dd class="col-sm-9">@Model.Status.Message</dd>
+                </dl>
+            </div>
+        </div>
+    }
+    <div class="mt-3 d-flex gap-2">
+        <a class="btn btn-primary" asp-page="/Subscriptions/Current">View subscription</a>
+        <a class="btn btn-outline-secondary" asp-page="/Packages/Index">Back to packages</a>
+    </div>
+</section>

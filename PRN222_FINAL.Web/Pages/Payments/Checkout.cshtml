@@ -1,0 +1,30 @@
+@page
+@using PRN222_FINAL.Models
+@model PRN222_FINAL.Web.Pages.Payments.CheckoutModel
+@{
+    ViewData["Title"] = "Checkout";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "billing";
+    ViewData["ShellTitle"] = "Checkout";
+}
+
+<section class="container py-4">
+    <h1 class="h3 mb-3">Checkout</h1>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <p class="text-muted">Select a payment provider. The final amount is loaded from the server package table.</p>
+            <form method="post" class="d-flex flex-column flex-sm-row gap-2">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="PackageId" />
+                <button type="submit" name="provider" value="@PaymentProvider.MoMo" class="btn btn-danger">Pay with MoMo</button>
+                <button type="submit" name="provider" value="@PaymentProvider.PayOS" class="btn btn-primary">Pay with PayOS</button>
+            </form>
+        </div>
+    </div>
+</section>
