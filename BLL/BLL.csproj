@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\PRN222_FINAL.Models\PRN222_FINAL.Models.csproj" />
-    <ProjectReference Include="..\PRN222_FINAL.DAL\PRN222_FINAL.DAL.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\DAL\DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
