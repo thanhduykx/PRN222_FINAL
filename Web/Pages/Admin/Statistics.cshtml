@@ -23,6 +23,15 @@
         .ToList();
     var maxDailyQuestions = Math.Max(1, Model.Dashboard.DailyChatUsage.Select(day => day.QuestionCount).DefaultIfEmpty(0).Max());
     var hasChatData = Model.Dashboard.DailyChatUsage.Count > 0 || Model.Dashboard.TopChatUsers.Count > 0;
+    var dailyChartPoints = Model.Dashboard.DailyChatUsage
+        .Select((day, index) =>
+        {
+            var x = Model.Dashboard.DailyChatUsage.Count <= 1 ? 50 : 5 + (index * 90d / (Model.Dashboard.DailyChatUsage.Count - 1));
+            var y = 88 - (day.QuestionCount * 72d / maxDailyQuestions);
+            return new { Day = day, X = x, Y = y };
+        })
+        .ToList();
+    var dailyChartPath = string.Join(" ", dailyChartPoints.Select(point => FormattableString.Invariant($"{point.X:0.##},{point.Y:0.##}")));
     var tabs = new[]
     {
         new { Key = "overview", Label = "Tổng quan" },
@@ -30,7 +39,6 @@
         new { Key = "documents", Label = "Tài liệu" },
         new { Key = "users", Label = "Người dùng" },
         new { Key = "permissions", Label = "Phân quyền" },
-        new { Key = "billing", Label = "Thanh toán" },
         new { Key = "export", Label = "Xuất báo cáo" }
     };
 
@@ -135,14 +143,6 @@
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
-                    <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">check_circle</span>
-                    <div class="ops-kpi-content">
-                        <span>Tỷ lệ trả lời được</span>
-                        <strong>@answerRate%</strong>
-                        <small>Dựa trên câu trả lời assistant</small>
-                    </div>
-                </article>
-                <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span>
                     <div class="ops-kpi-content">
                         <span>Tài liệu</span>
@@ -159,6 +159,17 @@
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
+                    <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">check_circle</span>
+                    <div class="ops-kpi-content">
+                        <span>Tỷ lệ trả lời được</span>
+                        <strong>@answerRate%</strong>
+                        <small>Dựa trên câu trả lời assistant</small>
+                    </div>
+                </article>
+            </section>
+
+            <section class="ops-stat-alert-strip" aria-label="Cảnh báo nhanh">
+                <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span>
                     <div class="ops-kpi-content">
                         <span>Chưa trả lời</span>
@@ -166,7 +177,7 @@
                         <small>Cần bổ sung nguồn học liệu</small>
                     </div>
                 </article>
-                <article class="ops-kpi ops-stat-kpi">
+                <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">warning</span>
                     <div class="ops-kpi-content">
                         <span>Lỗi tài liệu</span>
@@ -195,14 +206,28 @@
                     else
                     {
                         <div class="ops-line-chart" aria-label="Biểu đồ sử dụng chat theo ngày">
-                            @foreach (var day in Model.Dashboard.DailyChatUsage)
-                            {
-                                var barHeight = Math.Max(8, day.QuestionCount * 100 / maxDailyQuestions);
-                                <div class="ops-line-chart__point" style="--bar-height:@barHeight%">
-                                    <span class="ops-line-chart__bar" title="@day.QuestionCount.ToString("N0") câu hỏi"></span>
-                                    <small>@day.DateLabel</small>
-                                </div>
-                            }
+                            <svg class="ops-line-chart__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="chatUsageFill" x1="0" x2="0" y1="0" y2="1">
+                                        <stop offset="0%" stop-color="#0a7cf5" stop-opacity=".22" />
+                                        <stop offset="100%" stop-color="#0a7cf5" stop-opacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <polyline class="ops-line-chart__area" points="5,92 @dailyChartPath 95,92" />
+                                <polyline class="ops-line-chart__line" points="@dailyChartPath" />
+                            </svg>
+                            <div class="ops-line-chart__markers">
+                                @foreach (var point in dailyChartPoints)
+                                {
+                                    <span class="ops-line-chart__marker" style="left:@FormattableString.Invariant($"{point.X:0.##}")%; top:@FormattableString.Invariant($"{point.Y:0.##}")%;" title="@point.Day.QuestionCount.ToString("N0") câu hỏi"></span>
+                                }
+                            </div>
+                            <div class="ops-line-chart__labels">
+                                @foreach (var point in dailyChartPoints)
+                                {
+                                    <small>@point.Day.DateLabel</small>
+                                }
+                            </div>
                         </div>
                     }
                 </section>
@@ -247,6 +272,18 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @if (topSubjects.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="ops-empty ops-stat-empty ops-stat-empty--compact">
+                                                <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                                                <strong>Chưa có dữ liệu</strong>
+                                                <p>Không có môn học nào được hỏi trong khoảng thời gian này.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
                                 @foreach (var subject in topSubjects)
                                 {
                                     var readiness = subject.DocumentCount == 0 ? 0 : Math.Min(100, (int)Math.Round(subject.IndexedDocumentCount * 100d / subject.DocumentCount));
@@ -408,10 +445,9 @@
 
         @if (Model.Tab == "users")
         {
-            <div class="ops-stat-three-column">
+            <div class="ops-stat-user-summary">
                 <section class="ops-panel"><div class="ops-panel-head"><div><h2>Sinh viên</h2><p class="ops-muted mb-0">Mức độ sử dụng chatbot.</p></div></div><div class="ops-metric-list"><div><span>Tổng sinh viên</span><strong>@Model.StudentUsers.ToString("N0")</strong></div><div><span>Hoạt động trong @Model.Days ngày</span><strong>@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong></div><div><span>Hỏi nhiều nhất</span><strong>@(Model.Dashboard.TopChatUsers.FirstOrDefault()?.UserName ?? "-")</strong></div></div></section>
                 <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giảng viên</h2><p class="ops-muted mb-0">Theo quyền upload và tài liệu.</p></div></div><div class="ops-metric-list"><div><span>Tổng giảng viên</span><strong>@Model.LecturerUsers.ToString("N0")</strong></div><div><span>Quyền upload đang hoạt động</span><strong>@uploadPermissionCount.ToString("N0")</strong></div><div><span>TB tài liệu/môn</span><strong>@(Model.Dashboard.TotalSubjects == 0 ? "0" : (Model.Dashboard.TotalDocuments / Math.Max(1, Model.Dashboard.TotalSubjects)).ToString("N0"))</strong></div></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Trưởng bộ môn</h2><p class="ops-muted mb-0">Môn học có người phụ trách.</p></div></div><div class="ops-metric-list"><div><span>Đã gán phụ trách</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong></div><div><span>Chưa có phụ trách</span><strong>@subjectsWithoutOwner</strong></div><div><span>Môn chưa có tài liệu</span><strong>@subjectsWithoutDocuments</strong></div></div></section>
             </div>
 
             <section class="ops-panel">
@@ -433,14 +469,14 @@
         @if (Model.Tab == "permissions")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Số trưởng bộ môn</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Môn đã có người phụ trách</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Giảng viên phụ trách</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Môn đã có người phụ trách</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">upload</span><div class="ops-kpi-content"><span>Quyền upload</span><strong>@uploadPermissionCount</strong><small>Đang gán theo môn</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn chưa phụ trách</span><strong>@subjectsWithoutOwner</strong><small>Cần gán trưởng bộ môn</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn chưa phụ trách</span><strong>@subjectsWithoutOwner</strong><small>Cần gán giảng viên phụ trách</small></div></article>
             </section>
             <section class="ops-panel">
                 <div class="ops-panel-head">
                     <div><h2>Báo cáo phân quyền</h2><p class="ops-muted mb-0">Theo dõi người phụ trách môn và quyền upload tài liệu.</p></div>
-                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán trưởng bộ môn</a>
+                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán giảng viên phụ trách</a>
                 </div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
@@ -449,7 +485,7 @@
                             @foreach (var subject in Model.Dashboard.SubjectUsage)
                             {
                                 var owner = string.IsNullOrWhiteSpace(subject.OwnerName) ? subject.OwnerEmail : subject.OwnerName;
-                                <tr><td data-label="Người dùng"><strong>@(string.IsNullOrWhiteSpace(owner) ? "Chưa phân công" : owner)</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò">Trưởng bộ môn</td><td data-label="Môn phụ trách">@subject.SubjectCode</td><td data-label="Quyền upload">@(subject.LecturerCount > 0 ? "Có" : "Chưa có")</td><td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
+                                <tr><td data-label="Người dùng"><strong>@(string.IsNullOrWhiteSpace(owner) ? "Chưa phân công" : owner)</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò">Giảng viên phụ trách</td><td data-label="Môn phụ trách">@subject.SubjectCode</td><td data-label="Quyền upload">@(subject.LecturerCount > 0 ? "Có" : "Chưa có")</td><td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
                             }
                         </tbody>
                     </table>
