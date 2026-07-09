@@ -26,6 +26,8 @@ public sealed class AdminAnalyticsDashboardDto
     public int TotalSubjects { get; set; }
     public int TotalDocuments { get; set; }
     public int IndexedDocuments { get; set; }
+    public int ProcessingDocuments { get; set; }
+    public int FailedDocuments { get; set; }
     public decimal PaidRevenueVnd { get; set; }
     public int PaidPaymentCount { get; set; }
     public int PendingPaymentCount { get; set; }
@@ -34,6 +36,7 @@ public sealed class AdminAnalyticsDashboardDto
     public IReadOnlyList<PackagePurchaseStatsDto> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsDto>();
     public IReadOnlyList<DailyChatUsageDto> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageDto>();
     public IReadOnlyList<UserChatUsageDto> TopChatUsers { get; set; } = Array.Empty<UserChatUsageDto>();
+    public IReadOnlyList<DocumentAnalyticsDto> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsDto>();
     public IReadOnlyList<RecentPaymentDto> RecentPayments { get; set; } = Array.Empty<RecentPaymentDto>();
 }
 
@@ -83,6 +86,17 @@ public sealed class UserChatUsageDto
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
     public DateTimeOffset? LastQuestionAt { get; set; }
+}
+
+public sealed class DocumentAnalyticsDto
+{
+    public string FileName { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string UploadedByName { get; set; } = string.Empty;
+    public string UploadedByEmail { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int CitationCount { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
 }
 
 public sealed class RecentPaymentDto
