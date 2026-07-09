@@ -243,7 +243,9 @@ namespace PRN222_FINAL.Web
                 .GetAwaiter()
                 .GetResult();
 
-            if (!app.Environment.IsDevelopment())
+            var hostingEnvironment = (builder.Configuration["Hosting:Environment"] ?? string.Empty).Trim();
+            var isDevelopment = hostingEnvironment.Equals("Development", StringComparison.OrdinalIgnoreCase);
+            if (!isDevelopment)
             {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
