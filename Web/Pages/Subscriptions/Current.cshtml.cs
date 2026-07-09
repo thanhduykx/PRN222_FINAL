@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Billing;
+using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.ViewModels.Billing;
 
 namespace PRN222_FINAL.Web.Pages.Subscriptions;
@@ -22,8 +24,13 @@ public sealed class CurrentModel : PageModel
     public IReadOnlyList<PaymentHistoryItemViewModel> PaymentHistory { get; private set; } = Array.Empty<PaymentHistoryItemViewModel>();
     public string ErrorMessage { get; private set; } = string.Empty;
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
+        if (!IsStudent())
+        {
+            return RedirectForRole();
+        }
+
         try
         {
             var userId = GetUserId();
@@ -31,7 +38,7 @@ public sealed class CurrentModel : PageModel
             if (subscription is null)
             {
                 PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
-                return;
+                return Page();
             }
 
             Subscription = new SubscriptionViewModel
@@ -42,8 +49,7 @@ public sealed class CurrentModel : PageModel
                 StartsAt = subscription.StartsAt,
                 EndsAt = subscription.EndsAt,
                 MonthlyChatLimit = subscription.MonthlyChatLimit,
-                MonthlyDocumentUploadLimit = subscription.MonthlyDocumentUploadLimit,
-                StorageLimitMb = subscription.StorageLimitMb
+                IsLifetime = subscription.IsLifetime
             };
             PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
         }
@@ -51,6 +57,8 @@ public sealed class CurrentModel : PageModel
         {
             ErrorMessage = ex.Message;
         }
+
+        return Page();
     }
 
     private async Task<IReadOnlyList<PaymentHistoryItemViewModel>> LoadPaymentHistoryAsync(Guid userId, CancellationToken cancellationToken)
@@ -74,5 +82,17 @@ public sealed class CurrentModel : PageModel
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(value, out var userId) ? userId : Guid.Empty;
+    }
+
+    private bool IsStudent()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Student;
+    }
+
+    private IActionResult RedirectForRole()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Admin
+            ? RedirectToPage("/Admin/Statistics")
+            : RedirectToPage("/Home/Courses");
     }
 }

@@ -11,6 +11,7 @@ public sealed class Package
     public int MonthlyChatLimit { get; set; }
     public int MonthlyDocumentUploadLimit { get; set; }
     public int StorageLimitMb { get; set; }
+    public bool IsLifetime { get; set; }
     public bool IsActive { get; set; }
     public int SortOrder { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

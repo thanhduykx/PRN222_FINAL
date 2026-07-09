@@ -35,13 +35,8 @@ public sealed class PackageService : IPackageService
 
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
-        var existing = await _packages.GetAllAsync(cancellationToken);
-        if (existing.Count > 0)
-        {
-            return;
-        }
-
         var now = DateTimeOffset.UtcNow;
+        var existingPackages = await _packages.GetAllAsync(cancellationToken);
         var defaults = new[]
         {
             new Package
@@ -49,12 +44,13 @@ public sealed class PackageService : IPackageService
                 Id = Guid.NewGuid(),
                 Code = "FREE",
                 Name = "Free",
-                Description = "Goi dung thu cho chat va upload tai lieu gioi han.",
+                Description = "Gói dùng thử cho sinh viên hỏi chatbot ở mức cơ bản.",
                 PriceVnd = 0,
                 DurationDays = 30,
                 MonthlyChatLimit = 50,
-                MonthlyDocumentUploadLimit = 3,
-                StorageLimitMb = 100,
+                MonthlyDocumentUploadLimit = 0,
+                StorageLimitMb = 0,
+                IsLifetime = false,
                 IsActive = true,
                 SortOrder = 10,
                 CreatedAt = now
@@ -64,12 +60,13 @@ public sealed class PackageService : IPackageService
                 Id = Guid.NewGuid(),
                 Code = "STUDENT",
                 Name = "Student",
-                Description = "Goi hoc tap cho sinh vien voi luot chat va upload cao hon.",
+                Description = "Gói học tập hằng tháng cho sinh viên hỏi chatbot theo môn.",
                 PriceVnd = 49000,
                 DurationDays = 30,
                 MonthlyChatLimit = 1000,
-                MonthlyDocumentUploadLimit = 50,
-                StorageLimitMb = 1024,
+                MonthlyDocumentUploadLimit = 0,
+                StorageLimitMb = 0,
+                IsLifetime = false,
                 IsActive = true,
                 SortOrder = 20,
                 CreatedAt = now
@@ -79,21 +76,56 @@ public sealed class PackageService : IPackageService
                 Id = Guid.NewGuid(),
                 Code = "PRO",
                 Name = "Pro",
-                Description = "Goi nang cao cho su dung RAG chatbot, upload va luu tru lon.",
+                Description = "Gói nâng cao cho sinh viên cần hỏi chatbot thường xuyên.",
                 PriceVnd = 149000,
                 DurationDays = 30,
                 MonthlyChatLimit = 5000,
-                MonthlyDocumentUploadLimit = 300,
-                StorageLimitMb = 10240,
+                MonthlyDocumentUploadLimit = 0,
+                StorageLimitMb = 0,
+                IsLifetime = false,
                 IsActive = true,
                 SortOrder = 30,
+                CreatedAt = now
+            },
+            new Package
+            {
+                Id = Guid.NewGuid(),
+                Code = "LIFETIME",
+                Name = "Vĩnh viễn",
+                Description = "Thanh toán một lần, dùng chatbot theo môn lâu dài.",
+                PriceVnd = 499000,
+                DurationDays = 0,
+                MonthlyChatLimit = 1000000,
+                MonthlyDocumentUploadLimit = 0,
+                StorageLimitMb = 0,
+                IsLifetime = true,
+                IsActive = true,
+                SortOrder = 40,
                 CreatedAt = now
             }
         };
 
         foreach (var package in defaults)
         {
-            await _packages.UpsertAsync(package, cancellationToken);
+            var existing = existingPackages.FirstOrDefault(item => item.Code.Equals(package.Code, StringComparison.OrdinalIgnoreCase));
+            if (existing is null || DefaultPackageNeedsUpdate(existing, package))
+            {
+                await _packages.UpsertAsync(package, cancellationToken);
+            }
         }
+    }
+
+    private static bool DefaultPackageNeedsUpdate(Package existing, Package expected)
+    {
+        return existing.Name != expected.Name
+               || existing.Description != expected.Description
+               || existing.PriceVnd != expected.PriceVnd
+               || existing.DurationDays != expected.DurationDays
+               || existing.MonthlyChatLimit != expected.MonthlyChatLimit
+               || existing.MonthlyDocumentUploadLimit != expected.MonthlyDocumentUploadLimit
+               || existing.StorageLimitMb != expected.StorageLimitMb
+               || existing.IsLifetime != expected.IsLifetime
+               || existing.IsActive != expected.IsActive
+               || existing.SortOrder != expected.SortOrder;
     }
 }

@@ -14,4 +14,5 @@ public sealed class SubscriptionDto
     public int MonthlyChatLimit { get; set; }
     public int MonthlyDocumentUploadLimit { get; set; }
     public int StorageLimitMb { get; set; }
+    public bool IsLifetime { get; set; }
 }

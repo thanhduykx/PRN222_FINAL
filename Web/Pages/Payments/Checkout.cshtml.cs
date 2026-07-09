@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Billing;
 using PRN222_FINAL.Models;
 using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.Web.Security;
 
 namespace PRN222_FINAL.Web.Pages.Payments;
 
@@ -28,6 +29,11 @@ public sealed class CheckoutModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
+        if (!IsStudent())
+        {
+            return RedirectForRole();
+        }
+
         if (PackageId == Guid.Empty)
         {
             return RedirectToPage("/Packages/Index");
@@ -39,6 +45,11 @@ public sealed class CheckoutModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string provider, CancellationToken cancellationToken)
     {
+        if (!IsStudent())
+        {
+            return RedirectForRole();
+        }
+
         if (!Enum.TryParse<PaymentProvider>(provider, true, out var parsedProvider))
         {
             ErrorMessage = "Payment provider is invalid.";
@@ -80,5 +91,17 @@ public sealed class CheckoutModel : PageModel
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(value, out var userId) ? userId : Guid.Empty;
+    }
+
+    private bool IsStudent()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Student;
+    }
+
+    private IActionResult RedirectForRole()
+    {
+        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Admin
+            ? RedirectToPage("/Admin/Statistics")
+            : RedirectToPage("/Home/Courses");
     }
 }

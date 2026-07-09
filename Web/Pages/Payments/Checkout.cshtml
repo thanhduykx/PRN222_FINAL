@@ -13,7 +13,7 @@
         <div>
             <span class="ops-eyebrow">Checkout</span>
             <h1>Thanh toán gói dịch vụ</h1>
-            <p>Xác nhận gói và chọn cổng thanh toán. Số tiền thanh toán được lấy từ bảng package trên server.</p>
+            <p>Xác nhận gói chatbot và chọn cổng thanh toán. Số tiền thanh toán được lấy từ bảng package trên server.</p>
         </div>
         <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
             <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
@@ -39,9 +39,8 @@
                 </div>
                 <div class="ops-kpi-grid">
                     <article class="ops-kpi"><span>Chat/tháng</span><strong>@Model.Package.MonthlyChatLimit.ToString("N0")</strong></article>
-                    <article class="ops-kpi"><span>Upload/tháng</span><strong>@Model.Package.MonthlyDocumentUploadLimit.ToString("N0")</strong></article>
-                    <article class="ops-kpi"><span>Lưu trữ</span><strong>@Model.Package.StorageLimitMb.ToString("N0") MB</strong></article>
-                    <article class="ops-kpi"><span>Thời hạn</span><strong>@Model.Package.DurationDays ngày</strong></article>
+                    <article class="ops-kpi"><span>Thời hạn</span><strong>@(Model.Package.IsLifetime ? "Vĩnh viễn" : $"{Model.Package.DurationDays} ngày")</strong></article>
+                    <article class="ops-kpi"><span>Đối tượng</span><strong>Student</strong></article>
                 </div>
             </article>
 

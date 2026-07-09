@@ -16,6 +16,7 @@ public static class BillingDtoMapper
         MonthlyChatLimit = package.MonthlyChatLimit,
         MonthlyDocumentUploadLimit = package.MonthlyDocumentUploadLimit,
         StorageLimitMb = package.StorageLimitMb,
+        IsLifetime = package.IsLifetime,
         IsActive = package.IsActive
     };
 
@@ -33,7 +34,8 @@ public static class BillingDtoMapper
             EndsAt = subscription.EndsAt,
             MonthlyChatLimit = package?.MonthlyChatLimit ?? 0,
             MonthlyDocumentUploadLimit = package?.MonthlyDocumentUploadLimit ?? 0,
-            StorageLimitMb = package?.StorageLimitMb ?? 0
+            StorageLimitMb = package?.StorageLimitMb ?? 0,
+            IsLifetime = package?.IsLifetime == true
         };
     }
 }
