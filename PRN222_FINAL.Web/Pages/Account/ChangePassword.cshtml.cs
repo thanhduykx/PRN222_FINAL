@@ -49,7 +49,7 @@ public sealed class ChangePasswordModel : PageModel
             return Page();
         }
 
-        TempData["AccountSuccess"] = "Äá»•i máº­t kháº©u thÃ nh cÃ´ng.";
+        TempData["AccountSuccess"] = "Đổi mật khẩu thành công.";
         return RedirectToPage();
     }
 
@@ -57,20 +57,20 @@ public sealed class ChangePasswordModel : PageModel
     {
         if (message.Contains("does not have a local password", StringComparison.OrdinalIgnoreCase))
         {
-            return "TÃ i khoáº£n nÃ y chÆ°a cÃ³ máº­t kháº©u ná»™i bá»™. DÃ¹ng chá»©c nÄƒng quÃªn máº­t kháº©u Ä‘á»ƒ táº¡o máº­t kháº©u.";
+            return "Tài khoản này chưa có mật khẩu nội bộ. Dùng chức năng quên mật khẩu để tạo mật khẩu.";
         }
 
         if (message.Contains("Current password is incorrect", StringComparison.OrdinalIgnoreCase))
         {
-            return "Máº­t kháº©u hiá»‡n táº¡i khÃ´ng Ä‘Ãºng.";
+            return "Mật khẩu hiện tại không đúng.";
         }
 
         if (message.Contains("at least 8 characters", StringComparison.OrdinalIgnoreCase))
         {
-            return "Máº­t kháº©u má»›i pháº£i cÃ³ Ã­t nháº¥t 8 kÃ½ tá»±.";
+            return "Mật khẩu mới phải có ít nhất 8 ký tự.";
         }
 
-        return string.IsNullOrWhiteSpace(message) ? "KhÃ´ng thá»ƒ Ä‘á»•i máº­t kháº©u." : message;
+        return string.IsNullOrWhiteSpace(message) ? "Không thể đổi mật khẩu." : message;
     }
 }
 

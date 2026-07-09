@@ -79,7 +79,7 @@ public sealed class EditDocumentModel : HomePageModelBase
                 Chapter,
                 cancellationToken);
             await SyncCourseCatalogFromDocumentsAsync(new[] { document }, cancellationToken);
-            TempData["Success"] = $"ÄÃ£ cáº­p nháº­t tÃ i liá»‡u {document.FileName}.";
+            TempData["Success"] = $"Đã cập nhật tài liệu {document.FileName}.";
             return RedirectToPage("/Home/Index");
         }
         catch (Exception ex)

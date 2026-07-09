@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using PRN222_FINAL.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -389,7 +389,7 @@ public abstract class HomePageModelBase : PageModel
                         Id = CreateStableCatalogId(parsed.Code),
                         Code = parsed.Code,
                         Name = parsed.Code,
-                        Description = "Tá»± Ä‘á»“ng bá»™ tá»« tÃ i liá»‡u Ä‘Ã£ index.",
+                        Description = "Tự đồng bộ từ tài liệu đã index.",
                         CreatedAt = document.UploadedAt
                     };
                     synchronized.Add(subject);
@@ -464,20 +464,20 @@ public abstract class HomePageModelBase : PageModel
         {
             if (message.Contains("Only PDF, DOCX, PPTX, and TXT files", StringComparison.OrdinalIgnoreCase))
             {
-                return "Chá»‰ há»— trá»£ file PDF, DOCX, PPTX vÃ  TXT.";
+                return "Chỉ hỗ trợ file PDF, DOCX, PPTX và TXT.";
             }
 
             if (message.Contains("selected file is empty", StringComparison.OrdinalIgnoreCase))
             {
-                return "File Ä‘Ã£ chá»n Ä‘ang trá»‘ng nÃªn khÃ´ng thá»ƒ index.";
+                return "File đã chọn đang trống nên không thể index.";
             }
 
             if (message.Contains("already", StringComparison.OrdinalIgnoreCase))
             {
-                return "TÃ i liá»‡u nÃ y Ä‘Ã£ tá»“n táº¡i trong kho.";
+                return "Tài liệu này đã tồn tại trong kho.";
             }
 
-            return string.IsNullOrWhiteSpace(message) ? "KhÃ´ng thá»ƒ xá»­ lÃ½ tÃ i liá»‡u." : message;
+            return string.IsNullOrWhiteSpace(message) ? "Không thể xử lý tài liệu." : message;
         }
 
         protected async Task SyncCourseCatalogFromDocumentsAsync(
@@ -516,7 +516,7 @@ public abstract class HomePageModelBase : PageModel
                     subjectId: null,
                     code: parsed.Code,
                     name: parsed.Code,
-                    description: "Tá»± Ä‘á»“ng bá»™ tá»« tÃ i liá»‡u Ä‘Ã£ index.",
+                    description: "Tự đồng bộ từ tài liệu đã index.",
                     cancellationToken);
             }
             else if (string.IsNullOrWhiteSpace(subject.Name)
@@ -607,55 +607,55 @@ public abstract class HomePageModelBase : PageModel
         {
             if (message.Contains("Subject code is required", StringComparison.OrdinalIgnoreCase))
             {
-                return "MÃ£ mÃ´n há»c lÃ  báº¯t buá»™c.";
+                return "Mã môn học là bắt buộc.";
             }
 
             if (message.Contains("Subject code already exists", StringComparison.OrdinalIgnoreCase))
             {
-                return "MÃ£ mÃ´n há»c Ä‘Ã£ tá»“n táº¡i.";
+                return "Mã môn học đã tồn tại.";
             }
 
             if (message.Contains("Lecturer owner not found", StringComparison.OrdinalIgnoreCase))
             {
-                return "KhÃ´ng tÃ¬m tháº¥y giáº£ng viÃªn phá»¥ trÃ¡ch há»£p lá»‡.";
+                return "Không tìm thấy giảng viên phụ trách hợp lệ.";
             }
 
             if (message.Contains("Chapter title is required", StringComparison.OrdinalIgnoreCase))
             {
-                return "TÃªn chÆ°Æ¡ng lÃ  báº¯t buá»™c.";
+                return "Tên chương là bắt buộc.";
             }
 
             if (message.Contains("Chapter already exists", StringComparison.OrdinalIgnoreCase))
             {
-                return "ChÆ°Æ¡ng nÃ y Ä‘Ã£ tá»“n táº¡i trong mÃ´n há»c.";
+                return "Chương này đã tồn tại trong môn học.";
             }
 
-            return string.IsNullOrWhiteSpace(message) ? "KhÃ´ng thá»ƒ lÆ°u danh má»¥c mÃ´n/chÆ°Æ¡ng." : message;
+            return string.IsNullOrWhiteSpace(message) ? "Không thể lưu danh mục môn/chương." : message;
         }
 
         protected static string ToVietnameseDocumentError(string message)
         {
             if (message.Contains("Document not found", StringComparison.OrdinalIgnoreCase))
             {
-                return "KhÃ´ng tÃ¬m tháº¥y tÃ i liá»‡u.";
+                return "Không tìm thấy tài liệu.";
             }
 
             if (message.Contains("File name is required", StringComparison.OrdinalIgnoreCase))
             {
-                return "TÃªn file lÃ  báº¯t buá»™c.";
+                return "Tên file là bắt buộc.";
             }
 
             if (message.Contains("Subject is required", StringComparison.OrdinalIgnoreCase))
             {
-                return "Subject lÃ  báº¯t buá»™c.";
+                return "Subject là bắt buộc.";
             }
 
             if (message.Contains("Chapter is required", StringComparison.OrdinalIgnoreCase))
             {
-                return "Chapter lÃ  báº¯t buá»™c.";
+                return "Chapter là bắt buộc.";
             }
 
-            return string.IsNullOrWhiteSpace(message) ? "KhÃ´ng thá»ƒ cáº­p nháº­t tÃ i liá»‡u." : message;
+            return string.IsNullOrWhiteSpace(message) ? "Không thể cập nhật tài liệu." : message;
         }
 
         protected string GetUploadsRoot()
@@ -742,7 +742,7 @@ public abstract class HomePageModelBase : PageModel
 
             if (string.IsNullOrWhiteSpace(firstQuestion))
             {
-                return "PhiÃªn chÆ°a cÃ³ cÃ¢u há»i";
+                return "Phiên chưa có câu hỏi";
             }
 
             return firstQuestion.Length <= 56 ? firstQuestion : $"{firstQuestion[..56]}...";
@@ -758,7 +758,7 @@ public abstract class HomePageModelBase : PageModel
             var firstQuestion = session.FirstUserMessagePreview?.Trim();
             if (string.IsNullOrWhiteSpace(firstQuestion))
             {
-                return "PhiÃªn chÆ°a cÃ³ cÃ¢u há»i";
+                return "Phiên chưa có câu hỏi";
             }
 
             return firstQuestion.Length <= 56 ? firstQuestion : $"{firstQuestion[..56]}...";

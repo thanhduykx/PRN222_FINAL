@@ -4,7 +4,7 @@
     ViewData["Title"] = "Chatbot";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "chat";
-    ViewData["ShellTitle"] = "Chatbot tÃ i liá»‡u";
+    ViewData["ShellTitle"] = "Chatbot tài liệu";
     ViewData["ShellTitleI18n"] = "chat.title";
     ViewData["HideAssistantLauncher"] = true;
 
@@ -16,16 +16,16 @@
     var suggestedQuestions = subjectOptions.Count == 0
         ? new (string En, string Vi, string Subject)[]
         {
-            ("Which subjects have indexed documents?", "Hiá»‡n cÃ³ nhá»¯ng mÃ´n nÃ o Ä‘Ã£ index tÃ i liá»‡u?", string.Empty),
-            ("Summarize the uploaded documents.", "TÃ³m táº¯t cÃ¡c tÃ i liá»‡u Ä‘Ã£ upload.", string.Empty),
-            ("What can I ask from the document repository?", "TÃ´i cÃ³ thá»ƒ há»i gÃ¬ tá»« kho tÃ i liá»‡u?", string.Empty)
+            ("Which subjects have indexed documents?", "Hiện có những môn nào đã index tài liệu?", string.Empty),
+            ("Summarize the uploaded documents.", "Tóm tắt các tài liệu đã upload.", string.Empty),
+            ("What can I ask from the document repository?", "Tôi có thể hỏi gì từ kho tài liệu?", string.Empty)
         }
         : subjectOptions
             .Take(6)
             .Select(subject => new
             {
                 En = $"What is {subject} about?",
-                Vi = $"{subject} lÃ  mÃ´n gÃ¬?",
+                Vi = $"{subject} là môn gì?",
                 Subject = subject
             })
             .Select(item => (item.En, item.Vi, item.Subject))
@@ -36,13 +36,13 @@
             .Take(12)
             .SelectMany(subject => new[]
             {
-                ($"How many credits does {subject} have?", $"{subject} cÃ³ bao nhiÃªu tÃ­n chá»‰?", subject),
-                ($"What is {subject} about?", $"{subject} lÃ  mÃ´n gÃ¬?", subject),
-                ($"What are the main contents of {subject}?", $"Ná»™i dung chÃ­nh cá»§a {subject} gá»“m nhá»¯ng gÃ¬?", subject),
-                ($"How is {subject} assessed?", $"{subject} Ä‘Æ°á»£c Ä‘Ã¡nh giÃ¡ nhÆ° tháº¿ nÃ o?", subject),
-                ($"What learning outcomes does {subject} mention?", $"{subject} cÃ³ chuáº©n Ä‘áº§u ra nÃ o?", subject),
-                ($"What materials or resources are used in {subject}?", $"{subject} dÃ¹ng tÃ i liá»‡u hoáº·c nguá»“n há»c nÃ o?", subject),
-                ($"What does the syllabus say students need to do in {subject}?", $"Sinh viÃªn cáº§n lÃ m gÃ¬ trong {subject}?", subject)
+                ($"How many credits does {subject} have?", $"{subject} có bao nhiêu tín chỉ?", subject),
+                ($"What is {subject} about?", $"{subject} là môn gì?", subject),
+                ($"What are the main contents of {subject}?", $"Nội dung chính của {subject} gồm những gì?", subject),
+                ($"How is {subject} assessed?", $"{subject} được đánh giá như thế nào?", subject),
+                ($"What learning outcomes does {subject} mention?", $"{subject} có chuẩn đầu ra nào?", subject),
+                ($"What materials or resources are used in {subject}?", $"{subject} dùng tài liệu hoặc nguồn học nào?", subject),
+                ($"What does the syllabus say students need to do in {subject}?", $"Sinh viên cần làm gì trong {subject}?", subject)
             })
             .ToArray();
     var suggestionsEn = suggestedQuestions.Select(item => item.En).ToArray();
@@ -69,8 +69,8 @@
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages">
             <div class="chat-empty-state rbl-chat-empty">
                 <span class="rbl-bot-mark">AI</span>
-                <h3 data-i18n="chat.emptyTitle">Báº¯t Ä‘áº§u báº±ng má»™t cÃ¢u há»i cá»¥ thá»ƒ</h3>
-                <p data-i18n="chat.emptyText">Chá»n gá»£i Ã½ bÃªn dÆ°á»›i hoáº·c nháº­p cÃ¢u há»i vá» tÃ i liá»‡u mÃ´n há»c.</p>
+                <h3 data-i18n="chat.emptyTitle">Bắt đầu bằng một câu hỏi cụ thể</h3>
+                <p data-i18n="chat.emptyText">Chọn gợi ý bên dưới hoặc nhập câu hỏi về tài liệu môn học.</p>
                 <div class="suggestion-grid rbl-suggestion-grid" aria-label="Question suggestions" data-i18n-aria-label="chat.suggestionsAria">
                     @foreach (var question in suggestedQuestions)
                     {
@@ -79,7 +79,7 @@
                 </div>
             </div>
             <div class="message assistant">
-                <div class="bubble" data-i18n="chat.welcome">Báº¡n cÃ³ thá»ƒ há»i vá» ná»™i dung tÃ i liá»‡u Ä‘Ã£ upload. CÃ¢u tráº£ lá»i sáº½ Æ°u tiÃªn ngáº¯n gá»n vÃ  cÃ³ nguá»“n.</div>
+                <div class="bubble" data-i18n="chat.welcome">Bạn có thể hỏi về nội dung tài liệu đã upload. Câu trả lời sẽ ưu tiên ngắn gọn và có nguồn.</div>
             </div>
         </div>
 
@@ -106,7 +106,7 @@
                     </div>
                 </div>
             }
-            <textarea id="questionInput" rows="2" placeholder="Há»i vá» mÃ´n, chÆ°Æ¡ng hoáº·c tÃ i liá»‡u Ä‘Ã£ index..." data-i18n-placeholder="chat.placeholder"></textarea>
+            <textarea id="questionInput" rows="2" placeholder="Hỏi về môn, chương hoặc tài liệu đã index..." data-i18n-placeholder="chat.placeholder"></textarea>
             <button type="submit" class="rbl-submit-button" data-i18n="chat.send">
                 <span class="material-symbols-outlined" aria-hidden="true">send</span>
                 Send
@@ -123,7 +123,7 @@
         </div>
 
         <div class="rbl-session-header">
-            <strong data-i18n="chat.history">Lá»‹ch sá»­ há»™i thoáº¡i</strong>
+            <strong data-i18n="chat.history">Lịch sử hội thoại</strong>
             <span><span id="sessionCount">@Model.ChatSessions.Count</span> <span data-i18n="chat.sessionsUnit">sessions</span></span>
         </div>
 

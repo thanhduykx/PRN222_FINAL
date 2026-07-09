@@ -17,7 +17,7 @@ namespace PRN222_FINAL.Web.Pages.Account;
 [AllowAnonymous]
 public sealed class LoginModel : PageModel
 {
-    private const string AccountProvisioningMessage = "TÃ i khoáº£n Ä‘Æ°á»£c cáº¥p bá»Ÿi NhÃ  trÆ°á»ng. Vui lÃ²ng liÃªn há»‡ NhÃ  trÆ°á»ng Ä‘á»ƒ xin cáº¥p tÃ i khoáº£n.";
+    private const string AccountProvisioningMessage = "Tài khoản được cấp bởi Nhà trường. Vui lòng liên hệ Nhà trường để xin cấp tài khoản.";
 
     private readonly IUserAccountStore _users;
     private readonly IAuthenticationSchemeProvider _schemes;

@@ -1,4 +1,4 @@
-const translations = {
+﻿const translations = {
   en: {
     "nav.documents": "Documents",
     "nav.chat": "Chat",
@@ -27,9 +27,9 @@ const translations = {
     "admin.subjectsAssigned": "assigned",
     "admin.directory": "Directory",
     "admin.usersUnit": "users",
-    "admin.searchDirectory": "Search / Tìm kiếm",
+    "admin.searchDirectory": "Search / T�m kiếm",
     "admin.searchDirectoryPlaceholder": "Name, email, provider, subject...",
-    "admin.roleFilter": "Role / Vai trò",
+    "admin.roleFilter": "Role / Vai tr�",
     "admin.allRoles": "All roles",
     "admin.filter": "Filter",
     "admin.clear": "Clear",
@@ -37,9 +37,9 @@ const translations = {
     "admin.noMatchingUsersHint": "Clear filters or create a new account from the command panel.",
     "admin.thUser": "User",
     "admin.thCreated": "Created",
-    "admin.thRole": "Role / Vai trò",
+    "admin.thRole": "Role / Vai tr�",
     "admin.thSubjects": "Subjects",
-    "admin.unassignedSubject": "Chưa đăng ký môn",
+    "admin.unassignedSubject": "Chưa đăng k� m�n",
     "admin.allIndexedDocs": "All indexed documents",
     "admin.notApplicable": "Not applicable",
     "admin.delete": "Delete",
@@ -343,307 +343,307 @@ const translations = {
     ]
   },
   vi: {
-    "nav.documents": "Tài liệu",
-    "nav.chat": "Hỏi đáp",
+    "nav.documents": "T�i liệu",
+    "nav.chat": "Hỏi đ�p",
     "nav.logout": "Đăng xuất",
     "nav.login": "Đăng nhập",
-    "nav.register": "Tạo tài khoản",
+    "nav.register": "Tạo t�i khoản",
     "shell.portal": "Cổng học tập",
     "shell.chatbot": "Chatbot",
-    "shell.courses": "Môn học",
-    "shell.documents": "Kho tài liệu",
-    "shell.users": "Người dùng",
-    "shell.help": "Trợ giúp",
-    "shell.search": "Tìm kiếm trong hệ thống...",
-    "shell.notifications": "Thông báo",
+    "shell.courses": "M�n học",
+    "shell.documents": "Kho t�i liệu",
+    "shell.users": "Người d�ng",
+    "shell.help": "Trợ gi�p",
+    "shell.search": "T�m kiếm trong hệ thống...",
+    "shell.notifications": "Th�ng b�o",
     "shell.history": "Lịch sử",
     "shell.changePassword": "Đổi mật khẩu",
-    "admin.totalUsers": "Tổng người dùng",
+    "admin.totalUsers": "Tổng người d�ng",
     "admin.usersShown": "hiển thị",
-    "admin.admins": "QUẢN TRỊ VIÊN",
-    "admin.fullSystemAccess": "Toàn quyền hệ thống",
-    "admin.lecturers": "GIẢNG VIÊN",
-    "admin.manageSubjects": "Quản lý môn được phân công",
-    "admin.students": "SINH VIÊN",
-    "admin.readChatAccess": "Quyền đọc và chat",
-    "admin.subjects": "MÔN HỌC",
-    "admin.subjectsAssigned": "đã phân công",
+    "admin.admins": "QUẢN TRỊ VI�N",
+    "admin.fullSystemAccess": "To�n quyền hệ thống",
+    "admin.lecturers": "GIẢNG VI�N",
+    "admin.manageSubjects": "Quản l� m�n được ph�n c�ng",
+    "admin.students": "SINH VI�N",
+    "admin.readChatAccess": "Quyền đọc v� chat",
+    "admin.subjects": "M�N HỌC",
+    "admin.subjectsAssigned": "đ� ph�n c�ng",
     "admin.directory": "Danh bạ",
-    "admin.usersUnit": "người dùng",
-    "admin.searchDirectory": "Tìm kiếm",
-    "admin.searchDirectoryPlaceholder": "Tên, email, vai trò, môn học...",
-    "admin.roleFilter": "Vai trò",
-    "admin.allRoles": "Tất cả vai trò",
+    "admin.usersUnit": "người d�ng",
+    "admin.searchDirectory": "T�m kiếm",
+    "admin.searchDirectoryPlaceholder": "T�n, email, vai tr�, m�n học...",
+    "admin.roleFilter": "Vai tr�",
+    "admin.allRoles": "Tất cả vai tr�",
     "admin.filter": "Lọc",
-    "admin.clear": "Xóa bộ lọc",
-    "admin.noMatchingUsers": "Không có người dùng phù hợp.",
-    "admin.noMatchingUsersHint": "Xóa bộ lọc hoặc tạo tài khoản mới từ bảng điều khiển.",
-    "admin.thUser": "NGƯỜI DÙNG",
-    "admin.thCreated": "NGÀY TẠO",
-    "admin.thRole": "VAI TRÒ",
-    "admin.thSubjects": "MÔN HỌC",
-    "admin.unassignedSubject": "Chưa đăng ký môn",
-    "admin.allIndexedDocs": "Tất cả tài liệu đã index",
-    "admin.notApplicable": "Không áp dụng",
-    "admin.delete": "Xóa",
-    "admin.lecturerManagement": "Quản lý giảng viên",
-    "admin.lecturerTableHeading": "Bảng giảng viên",
-    "admin.lecturersUnit": "giảng viên",
-    "admin.noLecturersFound": "Không tìm thấy giảng viên nào.",
-    "admin.createLecturerHint": "Hãy tạo tài khoản giảng viên trước.",
-    "admin.thName": "TÊN",
-    "admin.subjectLeaderSuffix": " (Trưởng bộ môn)",
-    "admin.leaderRole": "Trưởng bộ môn",
-    "admin.noSubjectsAvailable": "Không có môn nào",
-    "admin.selectSubjectAssign": "Chọn môn để đăng ký",
-    "admin.assignButton": "Đăng ký",
-    "admin.studentManagement": "Quản lý học sinh",
+    "admin.clear": "X�a bộ lọc",
+    "admin.noMatchingUsers": "Kh�ng c� người d�ng ph� hợp.",
+    "admin.noMatchingUsersHint": "X�a bộ lọc hoặc tạo t�i khoản mới từ bảng điều khiển.",
+    "admin.thUser": "NGƯỜI D�NG",
+    "admin.thCreated": "NG�Y TẠO",
+    "admin.thRole": "VAI TR�",
+    "admin.thSubjects": "M�N HỌC",
+    "admin.unassignedSubject": "Chưa đăng k� m�n",
+    "admin.allIndexedDocs": "Tất cả t�i liệu đ� index",
+    "admin.notApplicable": "Kh�ng �p dụng",
+    "admin.delete": "X�a",
+    "admin.lecturerManagement": "Quản l� giảng vi�n",
+    "admin.lecturerTableHeading": "Bảng giảng vi�n",
+    "admin.lecturersUnit": "giảng vi�n",
+    "admin.noLecturersFound": "Kh�ng t�m thấy giảng vi�n n�o.",
+    "admin.createLecturerHint": "H�y tạo t�i khoản giảng vi�n trước.",
+    "admin.thName": "T�N",
+    "admin.subjectLeaderSuffix": " (Trưởng bộ m�n)",
+    "admin.leaderRole": "Trưởng bộ m�n",
+    "admin.noSubjectsAvailable": "Kh�ng c� m�n n�o",
+    "admin.selectSubjectAssign": "Chọn m�n để đăng k�",
+    "admin.assignButton": "Đăng k�",
+    "admin.studentManagement": "Quản l� học sinh",
     "admin.studentTableHeading": "Bảng học sinh",
     "admin.studentsUnit": "học sinh",
-    "admin.noStudentsFound": "Không tìm thấy học sinh nào.",
-    "admin.createStudentHint": "Hãy tạo tài khoản học sinh trước.",
+    "admin.noStudentsFound": "Kh�ng t�m thấy học sinh n�o.",
+    "admin.createStudentHint": "H�y tạo t�i khoản học sinh trước.",
     "admin.roleStudent": "Học sinh",
-    "admin.roleLecturer": "Giảng viên",
-    "admin.roleAdmin": "Quản trị viên",
-    "admin.createAccountHeading": "Thêm user",
-    "admin.fullName": "Họ và tên",
+    "admin.roleLecturer": "Giảng vi�n",
+    "admin.roleAdmin": "Quản trị vi�n",
+    "admin.createAccountHeading": "Th�m user",
+    "admin.fullName": "Họ v� t�n",
     "admin.email": "Email",
     "admin.password": "Mật khẩu",
-    "admin.role": "Vai trò",
-    "admin.subjectsForLecturer": "Môn học phân công",
-    "admin.createUserBtn": "Tạo người dùng",
-    "documents.shellTitle": "Chi tiết môn học",
-    "documents.backToCatalog": "Quay lại danh sách môn",
+    "admin.role": "Vai tr�",
+    "admin.subjectsForLecturer": "M�n học ph�n c�ng",
+    "admin.createUserBtn": "Tạo người d�ng",
+    "documents.shellTitle": "Chi tiết m�n học",
+    "documents.backToCatalog": "Quay lại danh s�ch m�n",
     "documents.eyebrow": "Course documents",
-    "documents.defaultDescription": "Quản lý chương, file và link bài giảng của môn này.",
-    "documents.documentsUnit": "tài liệu",
+    "documents.defaultDescription": "Quản l� chương, file v� link b�i giảng của m�n n�y.",
+    "documents.documentsUnit": "t�i liệu",
     "documents.chaptersUnit": "chương",
-    "documents.editSubjectInfo": "Sửa thông tin môn",
-    "documents.subjectCode": "Mã môn",
-    "documents.subjectDesc": "Mô tả",
-    "documents.deleteSubject": "Xóa môn",
-    "documents.saveSubject": "Lưu môn",
-    "documents.addChapter": "Thêm chương/mục",
-    "documents.chapterTitle": "Tên chương/mục",
+    "documents.editSubjectInfo": "Sửa th�ng tin m�n",
+    "documents.subjectCode": "M� m�n",
+    "documents.subjectDesc": "M� tả",
+    "documents.deleteSubject": "X�a m�n",
+    "documents.saveSubject": "Lưu m�n",
+    "documents.addChapter": "Th�m chương/mục",
+    "documents.chapterTitle": "T�n chương/mục",
     "documents.chapterTitlePlaceholder": "VD: Chapter 1 / Muc 1.1",
     "documents.sortOrder": "Thứ tự",
-    "documents.addChapterBtn": "Thêm chương",
-    "documents.addDocument": "Thêm tài liệu",
-    "documents.documentFile": "File tài liệu",
-    "documents.orLectureUrl": "Hoặc URL bài giảng",
-    "documents.indexDocumentBtn": "Index tài liệu",
-    "documents.chaptersAndDocuments": "Chương và tài liệu",
-    "documents.noChapters": "Môn này chưa có chương/mục.",
-    "documents.noChaptersHint": "Thêm chương trước, sau đó upload tài liệu vào đúng mục.",
+    "documents.addChapterBtn": "Th�m chương",
+    "documents.addDocument": "Th�m t�i liệu",
+    "documents.documentFile": "File t�i liệu",
+    "documents.orLectureUrl": "Hoặc URL b�i giảng",
+    "documents.indexDocumentBtn": "Index t�i liệu",
+    "documents.chaptersAndDocuments": "Chương v� t�i liệu",
+    "documents.noChapters": "M�n n�y chưa c� chương/mục.",
+    "documents.noChaptersHint": "Th�m chương trước, sau đ� upload t�i liệu v�o đ�ng mục.",
     "documents.updateBtn": "Cập nhật",
-    "documents.deleteBtn": "Xóa",
-    "documents.addFileTo": "Thêm file vào ",
+    "documents.deleteBtn": "X�a",
+    "documents.addFileTo": "Th�m file v�o ",
     "documents.chapterLabel": "Chương/mục",
-    "documents.emptyChapter": "Chưa có tài liệu trong chương/mục này.",
+    "documents.emptyChapter": "Chưa c� t�i liệu trong chương/mục n�y.",
     "documents.previewBtn": "Xem",
     "documents.editBtn": "Sửa",
     "documents.reindexBtn": "Re-index",
-    "documents.deleteDocBtn": "Xóa",
-    "documents.indexedContent": "Nội dung đã index",
-    "documents.previewTitle": "Tài liệu",
-    "documents.loadingContent": "Đang tải nội dung đã index...",
-    "documents.reindexConfirm": "Re-index tài liệu này?",
-    "documents.deleteConfirm": "Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.",
-    "documents.deleteChapterConfirm": "Xóa chương/mục này? Thao tác này không thể hoàn tác.",
-    "documents.deleteSubjectConfirm": "Xóa môn này và toàn bộ chương bên trong? Thao tác này không thể hoàn tác.",
-    "documents.navCatalog": "Danh mục môn học",
-    "documents.catalogEmptyDesc": "Danh sách các chương đã tạo",
-    "documents.emptyCatalogTitle": "Chưa có danh mục môn học.",
-    "documents.emptyCatalogHint": "Tạo môn học trước, sau đó thêm chương để upload tài liệu theo danh mục chuẩn.",
-    "documents.createFirstChapterBtn": "Tạo chương đầu tiên",
-    "documents.uploadTitle": "Tải tài liệu",
-    "documents.docInfo": "Thông tin tài liệu",
+    "documents.deleteDocBtn": "X�a",
+    "documents.indexedContent": "Nội dung đ� index",
+    "documents.previewTitle": "T�i liệu",
+    "documents.loadingContent": "Đang tải nội dung đ� index...",
+    "documents.reindexConfirm": "Re-index t�i liệu n�y?",
+    "documents.deleteConfirm": "X�a t�i liệu n�y khỏi kho index? Thao t�c n�y kh�ng thể ho�n t�c.",
+    "documents.deleteChapterConfirm": "X�a chương/mục n�y? Thao t�c n�y kh�ng thể ho�n t�c.",
+    "documents.deleteSubjectConfirm": "X�a m�n n�y v� to�n bộ chương b�n trong? Thao t�c n�y kh�ng thể ho�n t�c.",
+    "documents.navCatalog": "Danh mục m�n học",
+    "documents.catalogEmptyDesc": "Danh s�ch c�c chương đ� tạo",
+    "documents.emptyCatalogTitle": "Chưa c� danh mục m�n học.",
+    "documents.emptyCatalogHint": "Tạo m�n học trước, sau đ� th�m chương để upload t�i liệu theo danh mục chuẩn.",
+    "documents.createFirstChapterBtn": "Tạo chương đầu ti�n",
+    "documents.uploadTitle": "Tải t�i liệu",
+    "documents.docInfo": "Th�ng tin t�i liệu",
     "documents.chooseFileBtn": "Chọn file",
-    "documents.url": "URL trang bài giảng",
-    "documents.enterUrl": "Nhập URL trang bài giảng",
-    "admin.usersTitle": "Người dùng",
-    "admin.navDirectory": "Bảng người dùng",
-    "admin.navOnlineUsers": "Người dùng online",
-    "admin.navLecturerTable": "Bảng giảng viên",
+    "documents.url": "URL trang b�i giảng",
+    "documents.enterUrl": "Nhập URL trang b�i giảng",
+    "admin.usersTitle": "Người d�ng",
+    "admin.navDirectory": "Bảng người d�ng",
+    "admin.navOnlineUsers": "Người d�ng online",
+    "admin.navLecturerTable": "Bảng giảng vi�n",
     "admin.navStudentTable": "Bảng học sinh",
-    "admin.navCreateAccount": "Thêm tài khoản",
+    "admin.navCreateAccount": "Th�m t�i khoản",
     "admin.navImportExcel": "Nhập từ Excel",
-    "admin.navCreateSubject": "Thêm môn",
-    "admin.navSubjectManagement": "Quản lý môn học",
-    "admin.noneLeader": "Chưa có",
-    "admin.subjectCode": "Mã môn",
-    "admin.description": "Mô tả",
-    "admin.optional": "Không bắt buộc",
-    "admin.subjectList": "Danh sách môn học",
-    "admin.subjectsUnit": "môn",
-    "admin.noSubjects": "Chưa có môn học nào.",
-    "admin.createSubjectPrompt": "Tạo môn học mới ở trên.",
-    "admin.thSubject": "MÔN HỌC",
-    "admin.thLeader": "TRƯỞNG MÔN",
-    "admin.thStudents": "SINH VIÊN",
-    "admin.thStatus": "TRẠNG THÁI",
-    "admin.thActions": "THAO TÁC",
+    "admin.navCreateSubject": "Th�m m�n",
+    "admin.navSubjectManagement": "Quản l� m�n học",
+    "admin.noneLeader": "Chưa c�",
+    "admin.subjectCode": "M� m�n",
+    "admin.description": "M� tả",
+    "admin.optional": "Kh�ng bắt buộc",
+    "admin.subjectList": "Danh s�ch m�n học",
+    "admin.subjectsUnit": "m�n",
+    "admin.noSubjects": "Chưa c� m�n học n�o.",
+    "admin.createSubjectPrompt": "Tạo m�n học mới ở tr�n.",
+    "admin.thSubject": "M�N HỌC",
+    "admin.thLeader": "TRƯỞNG M�N",
+    "admin.thStudents": "SINH VI�N",
+    "admin.thStatus": "TRẠNG TH�I",
+    "admin.thActions": "THAO T�C",
     "admin.active": "Đang mở",
-    "admin.inactive": "Đã ẩn",
+    "admin.inactive": "Đ� ẩn",
     "admin.deactivate": "Ẩn",
     "admin.activate": "Mở",
-    "courses.eyebrow": "Không gian học tập",
-    "courses.description": "Mở không gian học tập để xem tài liệu, chương/mục và trao đổi về môn học.",
-    "courses.emptyTitle": "Chưa có không gian môn học nào.",
-    "courses.emptyHint": "Vui lòng tải lên và index tài liệu môn học trước, sau đó quay lại đây.",
-    "courses.noDescription": "Chưa có mô tả.",
-    "courses.unassigned": "Chưa phân công",
+    "courses.eyebrow": "Kh�ng gian học tập",
+    "courses.description": "Mở kh�ng gian học tập để xem t�i liệu, chương/mục v� trao đổi về m�n học.",
+    "courses.emptyTitle": "Chưa c� kh�ng gian m�n học n�o.",
+    "courses.emptyHint": "Vui l�ng tải l�n v� index t�i liệu m�n học trước, sau đ� quay lại đ�y.",
+    "courses.noDescription": "Chưa c� m� tả.",
+    "courses.unassigned": "Chưa ph�n c�ng",
     "courses.chaptersUnit": "Chương",
-    "courseWorkspace.backToCourses": "Quay lại danh sách",
-    "courseWorkspace.defaultDescription": "Không gian môn học chứa tài liệu, các chương và chat môn học.",
-    "courseWorkspace.chatCourse": "Chat môn này",
-    "courseWorkspace.manageDocuments": "Quản lý tài liệu",
-    "courseWorkspace.documents": "TÀI LIỆU",
+    "courseWorkspace.backToCourses": "Quay lại danh s�ch",
+    "courseWorkspace.defaultDescription": "Kh�ng gian m�n học chứa t�i liệu, c�c chương v� chat m�n học.",
+    "courseWorkspace.chatCourse": "Chat m�n n�y",
+    "courseWorkspace.manageDocuments": "Quản l� t�i liệu",
+    "courseWorkspace.documents": "T�I LIỆU",
     "courseWorkspace.chapters": "CHƯƠNG",
-    "courseWorkspace.lecturer": "GIẢNG VIÊN",
-    "courseWorkspace.noEmail": "Chưa có email",
-    "courseWorkspace.courseMap": "Bản đồ môn học",
-    "courseWorkspace.chaptersAndDocs": "Chương và tài liệu",
-    "courseWorkspace.emptyChaptersTitle": "Chưa có chương nào được tải nội dung lên.",
-    "courseWorkspace.emptyChaptersHint": "Tải tài liệu lên hoặc nhờ giảng viên bổ sung nội dung.",
-    "courseWorkspace.docsUnit": "tài liệu",
+    "courseWorkspace.lecturer": "GIẢNG VI�N",
+    "courseWorkspace.noEmail": "Chưa c� email",
+    "courseWorkspace.courseMap": "Bản đồ m�n học",
+    "courseWorkspace.chaptersAndDocs": "Chương v� t�i liệu",
+    "courseWorkspace.emptyChaptersTitle": "Chưa c� chương n�o được tải nội dung l�n.",
+    "courseWorkspace.emptyChaptersHint": "Tải t�i liệu l�n hoặc nhờ giảng vi�n bổ sung nội dung.",
+    "courseWorkspace.docsUnit": "t�i liệu",
     "courseWorkspace.chunksUnit": "chunks",
     "admin.importExcelEyebrow": "Excel",
     "admin.importExcelTitle": "Nhập từ Excel",
     "admin.excelFile": "File Excel",
-    "admin.excelImportHint": "Hệ thống tự động trích xuất cột Họ & Tên và Email.",
-    "admin.defaultRole": "Vai trò mặc định",
-    "admin.defaultLecturerSubjects": "Môn mặc định cho giảng viên",
-    "admin.noUnassignedSubjects": "Không còn môn chưa gán",
-    "admin.importUsers": "Nhập người dùng",
-    "admin.importWelcomeNote": "Email chào mừng sẽ có vai trò và quyền truy cập môn học.",
-    "admin.confirmImportUsers": "Tạo người dùng hàng loạt và gửi email chào mừng?",
-    "admin.confirmRoleChange": "Đổi vai trò của {user} sang {role}?",
-    "admin.roleChangeTitle": "Đổi vai trò sẽ hỏi xác nhận và tự lưu.",
-    "onlineUsers.title": "Người dùng online",
+    "admin.excelImportHint": "Hệ thống tự động tr�ch xuất cột Họ & T�n v� Email.",
+    "admin.defaultRole": "Vai tr� mặc định",
+    "admin.defaultLecturerSubjects": "M�n mặc định cho giảng vi�n",
+    "admin.noUnassignedSubjects": "Kh�ng c�n m�n chưa g�n",
+    "admin.importUsers": "Nhập người d�ng",
+    "admin.importWelcomeNote": "Email ch�o mừng sẽ c� vai tr� v� quyền truy cập m�n học.",
+    "admin.confirmImportUsers": "Tạo người d�ng h�ng loạt v� gửi email ch�o mừng?",
+    "admin.confirmRoleChange": "Đổi vai tr� của {user} sang {role}?",
+    "admin.roleChangeTitle": "Đổi vai tr� sẽ hỏi x�c nhận v� tự lưu.",
+    "onlineUsers.title": "Người d�ng online",
     "onlineUsers.connecting": "Đang kết nối...",
-    "onlineUsers.loading": "Đang tải người dùng online...",
-    "onlineUsers.empty": "Hiện không có người dùng nào hoạt động.",
+    "onlineUsers.loading": "Đang tải người d�ng online...",
+    "onlineUsers.empty": "Hiện kh�ng c� người d�ng n�o hoạt động.",
     "onlineUsers.activeNow": "Đang hoạt động",
-    "onlineUsers.realtimeNote": "Trạng thái realtime",
-    "onlineUsers.statusHelp": "Danh sách tự cập nhật khi người dùng vào hoặc rời hệ thống.",
-    "onlineUsers.summaryOne": "1 người dùng online (đang hoạt động)",
-    "onlineUsers.summaryMany": "{count} người dùng online (đang hoạt động)",
+    "onlineUsers.realtimeNote": "Trạng th�i realtime",
+    "onlineUsers.statusHelp": "Danh s�ch tự cập nhật khi người d�ng v�o hoặc rời hệ thống.",
+    "onlineUsers.summaryOne": "1 người d�ng online (đang hoạt động)",
+    "onlineUsers.summaryMany": "{count} người d�ng online (đang hoạt động)",
     "onlineUsers.youAreOnline": "Bạn đang online",
     "onlineUsers.online": "Online",
     "onlineUsers.tabs": "{count} tab",
-    "onlineUsers.expand": "Mở danh sách người dùng online",
-    "onlineUsers.collapse": "Thu gọn danh sách người dùng online",
-    "documents.shellTitle": "Kho tài liệu",
-    "documents.manageTitle": "Quản lý kho tài liệu",
-    "documents.manageSubtitle": "Upload tài liệu học tập, trích xuất nội dung và index để chatbot trả lời có nguồn.",
+    "onlineUsers.expand": "Mở danh s�ch người d�ng online",
+    "onlineUsers.collapse": "Thu gọn danh s�ch người d�ng online",
+    "documents.shellTitle": "Kho t�i liệu",
+    "documents.manageTitle": "Quản l� kho t�i liệu",
+    "documents.manageSubtitle": "Upload t�i liệu học tập, tr�ch xuất nội dung v� index để chatbot trả lời c� nguồn.",
     "documents.uploadKicker": "Upload",
-    "documents.dropTitle": "Kéo thả tài liệu vào đây",
-    "documents.chooseFile": "Chọn tệp hoặc kéo thả vào đây",
-    "documents.urlRenderHint": "Trang SPA/React/Vue sẽ được render trước khi trích xuất DOM.",
+    "documents.dropTitle": "K�o thả t�i liệu v�o đ�y",
+    "documents.chooseFile": "Chọn tệp hoặc k�o thả v�o đ�y",
+    "documents.urlRenderHint": "Trang SPA/React/Vue sẽ được render trước khi tr�ch xuất DOM.",
     "documents.storage": "Lưu trữ",
-    "documents.uploadedSize": "Dung lượng đã upload",
-    "documents.totalUploaded": "Tổng đã upload",
-    "documents.documentList": "Danh sách tài liệu",
+    "documents.uploadedSize": "Dung lượng đ� upload",
+    "documents.totalUploaded": "Tổng đ� upload",
+    "documents.documentList": "Danh s�ch t�i liệu",
     "documents.showing": "Hiển thị",
-    "documents.fileName": "Tên file",
-    "documents.status": "Trạng thái",
-    "documents.uploadDate": "Ngày upload",
-    "documents.indexedStatus": "Đã Index",
-    "documents.emptyTitle": "Chưa có tài liệu.",
-    "documents.emptyHint": "Upload giáo trình hoặc URL bài giảng để bắt đầu hỏi đáp theo nguồn.",
+    "documents.fileName": "T�n file",
+    "documents.status": "Trạng th�i",
+    "documents.uploadDate": "Ng�y upload",
+    "documents.indexedStatus": "Đ� Index",
+    "documents.emptyTitle": "Chưa c� t�i liệu.",
+    "documents.emptyHint": "Upload gi�o tr�nh hoặc URL b�i giảng để bắt đầu hỏi đ�p theo nguồn.",
     "assistant.open": "Mở trang chat",
-    "assistant.hidden": "Chào bạn, mình là chatbot hỗ trợ tìm kiếm thông tin nhanh hơn.",
-    "documents.title": "Kho tài liệu môn học",
-    "documents.subtitle": "Quản lý tài liệu đã upload, trích xuất nội dung và lập chỉ mục cho trang hỏi đáp riêng.",
+    "assistant.hidden": "Ch�o bạn, m�nh l� chatbot hỗ trợ t�m kiếm th�ng tin nhanh hơn.",
+    "documents.title": "Kho t�i liệu m�n học",
+    "documents.subtitle": "Quản l� t�i liệu đ� upload, tr�ch xuất nội dung v� lập chỉ mục cho trang hỏi đ�p ri�ng.",
     "documents.openChat": "Mở trang chat",
-    "documents.statsAria": "Thống kê kho tài liệu",
-    "documents.statsDocuments": "Tài liệu",
-    "documents.statsIndexed": "Đã index",
-    "documents.statsProcessing": "Đang xử lý",
-    "documents.uploadTitle": "Upload tài liệu",
-    "documents.uploadSubtitle": "PDF, DOCX, PPTX, TXT hoặc URL trang bài giảng sẽ được trích xuất, chunk và embed tự động.",
-    "documents.subject": "Môn học",
+    "documents.statsAria": "Thống k� kho t�i liệu",
+    "documents.statsDocuments": "T�i liệu",
+    "documents.statsIndexed": "Đ� index",
+    "documents.statsProcessing": "Đang xử l�",
+    "documents.uploadTitle": "Upload t�i liệu",
+    "documents.uploadSubtitle": "PDF, DOCX, PPTX, TXT hoặc URL trang b�i giảng sẽ được tr�ch xuất, chunk v� embed tự động.",
+    "documents.subject": "M�n học",
     "documents.chapter": "Chương",
     "documents.source": "Nguồn",
     "documents.subjectPlaceholder": "VD: IOT102",
     "documents.chapterPlaceholder": "VD: Chương 1 hoặc Tuần 1",
-    "documents.dropzoneTitle": "Kéo thả tài liệu hoặc bấm để chọn file",
+    "documents.dropzoneTitle": "K�o thả t�i liệu hoặc bấm để chọn file",
     "documents.dropzoneDefault": "Hỗ trợ PDF, DOCX, PPTX, TXT",
     "documents.or": "hoặc",
-    "documents.url": "URL trang bài giảng",
+    "documents.url": "URL trang b�i giảng",
     "documents.urlPlaceholder": "https://example.com/bai-giang-react-vue",
-    "documents.urlHint": "Trang SPA/React/Vue sẽ được render bằng Playwright trước khi trích xuất DOM.",
-    "documents.submit": "Tải lên và index",
-    "documents.indexedTitle": "Tài liệu đã lập chỉ mục",
+    "documents.urlHint": "Trang SPA/React/Vue sẽ được render bằng Playwright trước khi tr�ch xuất DOM.",
+    "documents.submit": "Tải l�n v� index",
+    "documents.indexedTitle": "T�i liệu đ� lập chỉ mục",
     "documents.filesUnit": "file",
-    "documents.empty": "Chưa có tài liệu nào. Hãy tải tài liệu môn học để bắt đầu hỏi đáp theo nguồn.",
+    "documents.empty": "Chưa c� t�i liệu n�o. H�y tải t�i liệu m�n học để bắt đầu hỏi đ�p theo nguồn.",
     "documents.view": "Xem",
     "documents.navList": "Danh s\u00e1ch t\u00e0i li\u1ec7u",
     "documents.navUpload": "Upload & index",
     "documents.navUpload": "Upload & index",
     "documents.navCatalog": "Danh m\u1ee5c m\u00f4n h\u1ecdc",
-    "documents.eyebrow": "Quản lý nội dung học tập",
+    "documents.eyebrow": "Quản l� nội dung học tập",
     "documents.kpiTotal": "Tổng cộng",
     "documents.kpiFailed": "Thất bại",
-    "documents.selectSubject": "Chọn môn học",
-    "documents.noSubjectAssigned": "Chưa có môn nào được gán cho tài khoản này.",
-    "documents.reindexStale": "Re-index tài liệu cũ",
-    "documents.search": "Tìm kiếm",
-    "documents.searchPlaceholder": "Tên file, môn học, chương...",
-    "documents.allSubjects": "Tất cả môn học",
-    "documents.allStatus": "Tất cả trạng thái",
+    "documents.selectSubject": "Chọn m�n học",
+    "documents.noSubjectAssigned": "Chưa c� m�n n�o được g�n cho t�i khoản n�y.",
+    "documents.reindexStale": "Re-index t�i liệu cũ",
+    "documents.search": "T�m kiếm",
+    "documents.searchPlaceholder": "T�n file, m�n học, chương...",
+    "documents.allSubjects": "Tất cả m�n học",
+    "documents.allStatus": "Tất cả trạng th�i",
     "documents.filter": "Lọc",
-    "documents.clear": "Xóa bộ lọc",
-    "documents.uploader": "Người tải lên",
-    "documents.subjectChapter": "Môn học / Chương",
-    "documents.chunksSize": "Số chunk / Kích thước",
+    "documents.clear": "X�a bộ lọc",
+    "documents.uploader": "Người tải l�n",
+    "documents.subjectChapter": "M�n học / Chương",
+    "documents.chunksSize": "Số chunk / K�ch thước",
     "documents.chunksUnit": "chunk",
-    "documents.unknown": "Không rõ",
-    "documents.actions": "Thao tác",
+    "documents.unknown": "Kh�ng r�",
+    "documents.actions": "Thao t�c",
     "documents.edit": "Sửa",
     "documents.reindex": "Re-index",
-    "documents.delete": "Xóa",
-    "chat.sessionsAria": "Lịch sử phiên chat",
-    "chat.documents": "Kho tài liệu",
-    "chat.newSession": "Phiên mới",
-    "chat.history": "Lịch sử phiên",
-    "chat.sessionsUnit": "phiên",
+    "documents.delete": "X�a",
+    "chat.sessionsAria": "Lịch sử phi�n chat",
+    "chat.documents": "Kho t�i liệu",
+    "chat.newSession": "Phi�n mới",
+    "chat.history": "Lịch sử phi�n",
+    "chat.sessionsUnit": "phi�n",
     "chat.messagesUnit": "tin",
-    "chat.noSessions": "Chưa có phiên nào.",
-    "chat.mainAria": "Chat theo tài liệu",
-    "chat.title": "Chat tài liệu",
-    "chat.subtitle": "Hỏi theo kho tài liệu đã index. Câu hỏi ngoài phạm vi tài liệu sẽ được báo không đủ dữ liệu.",
-    "chat.headerKicker": "Trợ lý môn học",
-    "chat.headerTitle": "Nhập môn AI",
-    "chat.headerSubtitle": "Hỏi đáp dựa trên tài liệu đã index. Nếu dữ liệu không đủ, chatbot phải báo thiếu nguồn thay vì đoán.",
-    "chat.currentSession": "Phiên hiện tại",
-    "chat.emptyTitle": "Bắt đầu bằng một câu hỏi cụ thể",
-    "chat.emptyText": "Chọn gợi ý bên dưới hoặc nhập câu hỏi của bạn. Nếu tài liệu không đủ dữ liệu, chatbot sẽ báo rõ thay vì đoán.",
-    "chat.suggestionsAria": "Gợi ý câu hỏi",
-    "chat.welcome": "Chào bạn, hỏi mình về tài liệu đã upload nhé. Có đủ dữ liệu thì mình trả lời gọn và kèm nguồn.",
-    "chat.placeholder": "Hỏi về môn, chương hoặc tài liệu đã index...",
+    "chat.noSessions": "Chưa c� phi�n n�o.",
+    "chat.mainAria": "Chat theo t�i liệu",
+    "chat.title": "Chat t�i liệu",
+    "chat.subtitle": "Hỏi theo kho t�i liệu đ� index. C�u hỏi ngo�i phạm vi t�i liệu sẽ được b�o kh�ng đủ dữ liệu.",
+    "chat.headerKicker": "Trợ l� m�n học",
+    "chat.headerTitle": "Nhập m�n AI",
+    "chat.headerSubtitle": "Hỏi đ�p dựa tr�n t�i liệu đ� index. Nếu dữ liệu kh�ng đủ, chatbot phải b�o thiếu nguồn thay v� đo�n.",
+    "chat.currentSession": "Phi�n hiện tại",
+    "chat.emptyTitle": "Bắt đầu bằng một c�u hỏi cụ thể",
+    "chat.emptyText": "Chọn gợi � b�n dưới hoặc nhập c�u hỏi của bạn. Nếu t�i liệu kh�ng đủ dữ liệu, chatbot sẽ b�o r� thay v� đo�n.",
+    "chat.suggestionsAria": "Gợi � c�u hỏi",
+    "chat.welcome": "Ch�o bạn, hỏi m�nh về t�i liệu đ� upload nh�. C� đủ dữ liệu th� m�nh trả lời gọn v� k�m nguồn.",
+    "chat.placeholder": "Hỏi về m�n, chương hoặc t�i liệu đ� index...",
     "chat.send": "Gửi",
-    "chat.relatedLabel": "Câu hỏi liên quan",
-    "chat.relatedAria": "Câu hỏi liên quan",
-    "chat.allSubjects": "Tất cả môn",
-    "chat.defaultSessionTitle": "Phiên chưa có câu hỏi",
-    "chat.sessionActions": "Thao tác phiên",
+    "chat.relatedLabel": "C�u hỏi li�n quan",
+    "chat.relatedAria": "C�u hỏi li�n quan",
+    "chat.allSubjects": "Tất cả m�n",
+    "chat.defaultSessionTitle": "Phi�n chưa c� c�u hỏi",
+    "chat.sessionActions": "Thao t�c phi�n",
     "chat.starSession": "Ghim",
     "chat.unstarSession": "Bỏ ghim",
-    "chat.renameSession": "Đổi tên",
-    "chat.deleteSession": "Xóa",
-    "chat.renamePrompt": "Tên phiên mới",
-    "chat.deleteConfirm": "Xóa phiên chat này?",
-    "chat.sessionActionError": "Không cập nhật được phiên chat.",
-    "chat.loading": "Chờ mình chút, đang dò trong tài liệu...",
-    "chat.requestError": "Không xử lý được câu hỏi.",
-    "chat.connectionError": "Không kết nối được server. Kiểm tra lại ứng dụng rồi thử tiếp.",
+    "chat.renameSession": "Đổi t�n",
+    "chat.deleteSession": "X�a",
+    "chat.renamePrompt": "T�n phi�n mới",
+    "chat.deleteConfirm": "X�a phi�n chat n�y?",
+    "chat.sessionActionError": "Kh�ng cập nhật được phi�n chat.",
+    "chat.loading": "Chờ m�nh ch�t, đang d� trong t�i liệu...",
+    "chat.requestError": "Kh�ng xử l� được c�u hỏi.",
+    "chat.connectionError": "Kh�ng kết nối được server. Kiểm tra lại ứng dụng rồi thử tiếp.",
     "chat.suggestions": [
-      "Hiện có những môn nào đã index tài liệu?",
-      "Tóm tắt các tài liệu đã upload.",
-      "Tôi có thể hỏi gì từ kho tài liệu?",
-      "Nên đọc tài liệu nào trước?"
+      "Hiện c� những m�n n�o đ� index t�i liệu?",
+      "T�m tắt c�c t�i liệu đ� upload.",
+      "T�i c� thể hỏi g� từ kho t�i liệu?",
+      "N�n đọc t�i liệu n�o trước?"
     ]
   }
 };
@@ -791,19 +791,19 @@ function readRelatedQuestionPool() {
       id: "available-subjects",
       subject: "",
       en: "Which subjects have indexed documents?",
-      vi: "Hiện có những môn nào đã index tài liệu?"
+      vi: "Hiện c� những m�n n�o đ� index t�i liệu?"
     },
     {
       id: "summarize-documents",
       subject: "",
       en: "Summarize the uploaded documents.",
-      vi: "Tóm tắt các tài liệu đã upload."
+      vi: "T�m tắt c�c t�i liệu đ� upload."
     },
     {
       id: "askable-content",
       subject: "",
       en: "What can I ask from the document repository?",
-      vi: "Tôi có thể hỏi gì từ kho tài liệu?"
+      vi: "T�i c� thể hỏi g� từ kho t�i liệu?"
     }
   ];
 }
@@ -876,7 +876,7 @@ function applyLanguage() {
   document.querySelectorAll("[data-assistant-greeting]").forEach((element) => {
     const name = element.dataset.assistantName || "you";
     element.textContent = language === "vi"
-      ? `Chào ${name}, mình sẽ hỗ trợ bạn tìm kiếm thông tin nhanh hơn.`
+      ? `Ch�o ${name}, m�nh sẽ hỗ trợ bạn t�m kiếm th�ng tin nhanh hơn.`
       : `Hi ${name}, I can help you find information faster.`;
   });
 
@@ -1062,87 +1062,87 @@ function buildSubjectQuestionItems(subject) {
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-credits`,
       en: `How many credits does ${trimmedSubject} have?`,
-      vi: `${trimmedSubject} có bao nhiêu tín chỉ?`
+      vi: `${trimmedSubject} c� bao nhi�u t�n chỉ?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-about`,
       en: `What is ${trimmedSubject} about?`,
-      vi: `${trimmedSubject} là môn gì?`
+      vi: `${trimmedSubject} l� m�n g�?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-contents`,
       en: `What are the main contents of ${trimmedSubject}?`,
-      vi: `Nội dung chính của ${trimmedSubject} gồm những gì?`
+      vi: `Nội dung ch�nh của ${trimmedSubject} gồm những g�?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-assessment`,
       en: `How is ${trimmedSubject} assessed?`,
-      vi: `${trimmedSubject} được đánh giá như thế nào?`
+      vi: `${trimmedSubject} được đ�nh gi� như thế n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-outcomes`,
       en: `What learning outcomes does ${trimmedSubject} mention?`,
-      vi: `${trimmedSubject} có chuẩn đầu ra nào?`
+      vi: `${trimmedSubject} c� chuẩn đầu ra n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-materials`,
       en: `What materials or resources are used in ${trimmedSubject}?`,
-      vi: `${trimmedSubject} dùng tài liệu hoặc nguồn học nào?`
+      vi: `${trimmedSubject} d�ng t�i liệu hoặc nguồn học n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-student-tasks`,
       en: `What does the syllabus say students need to do in ${trimmedSubject}?`,
-      vi: `Sinh viên cần làm gì trong ${trimmedSubject}?`
+      vi: `Sinh vi�n cần l�m g� trong ${trimmedSubject}?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-exams`,
       en: `What exam or assessment percentages are listed for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có tỷ lệ thi hoặc đánh giá nào?`
+      vi: `${trimmedSubject} c� tỷ lệ thi hoặc đ�nh gi� n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-chapters`,
       en: `Which chapters or sections are indexed for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} đã index những chương hoặc phần nào?`
+      vi: `${trimmedSubject} đ� index những chương hoặc phần n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-objectives`,
       en: `What are the objectives of ${trimmedSubject}?`,
-      vi: `Mục tiêu của ${trimmedSubject} là gì?`
+      vi: `Mục ti�u của ${trimmedSubject} l� g�?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-prerequisites`,
       en: `Does ${trimmedSubject} mention any prerequisites?`,
-      vi: `${trimmedSubject} có yêu cầu tiên quyết nào không?`
+      vi: `${trimmedSubject} c� y�u cầu ti�n quyết n�o kh�ng?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-schedule`,
       en: `What study schedule or weekly plan is listed for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có lịch học hoặc kế hoạch tuần nào?`
+      vi: `${trimmedSubject} c� lịch học hoặc kế hoạch tuần n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-activities`,
       en: `What learning activities are mentioned in ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có những hoạt động học tập nào?`
+      vi: `${trimmedSubject} c� những hoạt động học tập n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-tools`,
       en: `What tools or platforms are used in ${trimmedSubject}?`,
-      vi: `${trimmedSubject} sử dụng công cụ hoặc nền tảng nào?`
+      vi: `${trimmedSubject} sử dụng c�ng cụ hoặc nền tảng n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-completion`,
       en: `What completion criteria are listed for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có tiêu chí hoàn thành nào?`
+      vi: `${trimmedSubject} c� ti�u ch� ho�n th�nh n�o?`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-summary`,
       en: `Summarize the indexed syllabus for ${trimmedSubject}.`,
-      vi: `Tóm tắt syllabus đã index của ${trimmedSubject}.`
+      vi: `T�m tắt syllabus đ� index của ${trimmedSubject}.`
     },
     {
       id: `${normalizeSubjectForCompare(trimmedSubject)}-important-notes`,
       en: `What important notes should students remember for ${trimmedSubject}?`,
-      vi: `Sinh viên cần lưu ý gì khi học ${trimmedSubject}?`
+      vi: `Sinh vi�n cần lưu � g� khi học ${trimmedSubject}?`
     }
   ];
 }
@@ -1162,27 +1162,27 @@ function buildRecoveryQuestionItems(subject) {
     {
       id: `${subjectKey}-recovery-teacher-expectations`,
       en: `What does the lecturer expect students to prepare for ${trimmedSubject}?`,
-      vi: `Giảng viên yêu cầu sinh viên chuẩn bị gì cho ${trimmedSubject}?`
+      vi: `Giảng vi�n y�u cầu sinh vi�n chuẩn bị g� cho ${trimmedSubject}?`
     },
     {
       id: `${subjectKey}-recovery-output-products`,
       en: `What products, assignments, or submissions are required in ${trimmedSubject}?`,
-      vi: `${trimmedSubject} yêu cầu bài tập, sản phẩm hoặc bài nộp nào?`
+      vi: `${trimmedSubject} y�u cầu b�i tập, sản phẩm hoặc b�i nộp n�o?`
     },
     {
       id: `${subjectKey}-recovery-study-resources`,
       en: `Which links, files, or learning resources are mentioned for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có link, file hoặc nguồn học nào được nhắc đến?`
+      vi: `${trimmedSubject} c� link, file hoặc nguồn học n�o được nhắc đến?`
     },
     {
       id: `${subjectKey}-recovery-grading-guide`,
       en: `What grading guide or rubrics are mentioned for ${trimmedSubject}?`,
-      vi: `${trimmedSubject} có hướng dẫn chấm điểm hoặc rubric nào?`
+      vi: `${trimmedSubject} c� hướng dẫn chấm điểm hoặc rubric n�o?`
     },
     {
       id: `${subjectKey}-recovery-first-read`,
       en: `What should I read first in the indexed material for ${trimmedSubject}?`,
-      vi: `Nên đọc phần nào trước trong tài liệu đã index của ${trimmedSubject}?`
+      vi: `N�n đọc phần n�o trước trong t�i liệu đ� index của ${trimmedSubject}?`
     }
   ];
 }
@@ -1195,7 +1195,7 @@ function updateRelatedQuestionsLabel(selectedSubject) {
 
   label.textContent = selectedSubject
     ? t("chat.relatedLabel")
-    : (getLanguage() === "vi" ? "Câu hỏi gợi ý" : "Suggested questions");
+    : (getLanguage() === "vi" ? "C�u hỏi gợi �" : "Suggested questions");
 }
 
 function renderRelatedQuestions() {
@@ -1571,9 +1571,9 @@ function renderDocumentPreview(document) {
     ? `Embedding: ${document.embeddingModel}${document.embeddingDimensions ? ` (${document.embeddingDimensions} dims)` : ""}`
     : "";
   const indexedLabel = document.indexedAt ? `Indexed: ${formatPreviewDate(document.indexedAt)}` : "";
-  const uploader = document.uploadedByName ? `Upload: ${document.uploadedByName}` : "Upload: Không rõ";
-  const subjectOwner = document.subjectOwnerName ? `Phụ trách: ${document.subjectOwnerName}` : "Phụ trách: Chưa phân công";
-  documentPreviewTitle.textContent = document.fileName || "Tài liệu";
+  const uploader = document.uploadedByName ? `Upload: ${document.uploadedByName}` : "Upload: Kh�ng r�";
+  const subjectOwner = document.subjectOwnerName ? `Phụ tr�ch: ${document.subjectOwnerName}` : "Phụ tr�ch: Chưa ph�n c�ng";
+  documentPreviewTitle.textContent = document.fileName || "T�i liệu";
   documentPreviewMeta.textContent = [
     document.subject,
     document.chapter,
@@ -1591,8 +1591,8 @@ function renderDocumentPreview(document) {
   if (chunks.length === 0) {
     documentPreviewBody.innerHTML = `
       <div class="rbl-empty-state compact">
-        <strong>Chưa có nội dung index.</strong>
-        <p>Tài liệu này chưa có chunk text để hiển thị.</p>
+        <strong>Chưa c� nội dung index.</strong>
+        <p>T�i liệu n�y chưa c� chunk text để hiển thị.</p>
       </div>`;
     return;
   }
@@ -1625,12 +1625,12 @@ async function openDocumentPreview(url) {
   documentPreviewModal.classList.add("is-open");
   documentPreviewModal.setAttribute("aria-hidden", "false");
   if (documentPreviewTitle) {
-    documentPreviewTitle.textContent = "Tài liệu";
+    documentPreviewTitle.textContent = "T�i liệu";
   }
   if (documentPreviewMeta) {
     documentPreviewMeta.textContent = "";
   }
-  documentPreviewBody.innerHTML = `<p class="rbl-catalog-muted">Đang tải nội dung đã index...</p>`;
+  documentPreviewBody.innerHTML = `<p class="rbl-catalog-muted">Đang tải nội dung đ� index...</p>`;
 
   try {
     const response = await fetch(url, { headers: { "Accept": "application/json" } });
@@ -1643,7 +1643,7 @@ async function openDocumentPreview(url) {
   } catch (error) {
     documentPreviewBody.innerHTML = `
       <div class="rbl-alert is-error">
-        ${escapeHtml(error.message || "Không tải được nội dung tài liệu.")}
+        ${escapeHtml(error.message || "Kh�ng tải được nội dung t�i liệu.")}
       </div>`;
   }
 }
@@ -1952,7 +1952,7 @@ function updateDocumentRow(row, document) {
     const sizeLabel = row.dataset.documentSizeLabel || "";
     treeMeta.textContent = [getDocumentStatusLabel(document.status), `${document.chunkCount || 0} chunks`, sizeLabel]
       .filter(Boolean)
-      .join(" · ");
+      .join(" � ");
   }
 
   clearDocumentProgress(row);
@@ -2593,7 +2593,7 @@ function initConfirmForms() {
     form.dataset.confirmBound = "true";
     form.addEventListener("submit", (event) => {
       const message = getLanguage() === "vi"
-        ? (form.dataset.confirmVi || form.dataset.confirm || "Bạn có chắc muốn tiếp tục?")
+        ? (form.dataset.confirmVi || form.dataset.confirm || "Bạn c� chắc muốn tiếp tục?")
         : (form.dataset.confirmEn || form.dataset.confirm || "Are you sure you want to continue?");
       if (!window.confirm(message)) {
         event.preventDefault();

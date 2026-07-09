@@ -22,7 +22,7 @@ public sealed class KnowledgeSqlCourseSubject
 
     public bool IsActive { get; set; } = true;
 
-    // Subject Leader (tá»‘i Ä‘a 1)
+    // Subject Leader (tối đa 1)
     public Guid? OwnerUserId { get; set; }
 
     [MaxLength(255)]

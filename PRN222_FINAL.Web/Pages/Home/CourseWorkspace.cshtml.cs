@@ -11,7 +11,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class CourseWorkspaceModel : HomePageModelBase
 {
-    private static readonly Regex SentenceRegex = new(@"(?<=[.!?ã€‚])\s+|\r?\n+", RegexOptions.Compiled);
+    private static readonly Regex SentenceRegex = new(@"(?<=[.!?。])\s+|\r?\n+", RegexOptions.Compiled);
     public CourseWorkspaceModel(
         ILogger<HomePageModelBase> logger,
         IKnowledgeService knowledge,

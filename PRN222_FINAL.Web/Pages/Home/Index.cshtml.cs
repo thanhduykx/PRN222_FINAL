@@ -1,4 +1,4 @@
-using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.Models;
 using PRN222_FINAL.Models.DTOs.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -180,7 +180,7 @@ public sealed class IndexModel : HomePageModelBase
         try
         {
             await _knowledge.UpsertSubjectAsync(model.Id, model.Code, model.Code, model.Description, cancellationToken);
-            TempData["Success"] = "ÄÃ£ lÆ°u mÃ´n há»c.";
+            TempData["Success"] = "Đã lưu môn học.";
         }
         catch (Exception ex)
         {
@@ -198,7 +198,7 @@ public sealed class IndexModel : HomePageModelBase
         }
 
         await _knowledge.DeleteSubjectAsync(id, cancellationToken);
-        TempData["Success"] = "ÄÃ£ xÃ³a mÃ´n há»c.";
+        TempData["Success"] = "Đã xóa môn học.";
         return RedirectToPage("/Home/Index");
     }
 
@@ -212,7 +212,7 @@ public sealed class IndexModel : HomePageModelBase
             }
 
             await _knowledge.UpsertChapterAsync(model.Id, model.SubjectId, model.Title, model.SortOrder, cancellationToken);
-            TempData["Success"] = "ÄÃ£ lÆ°u chÆ°Æ¡ng.";
+            TempData["Success"] = "Đã lưu chương.";
         }
         catch (Exception ex)
         {
@@ -230,7 +230,7 @@ public sealed class IndexModel : HomePageModelBase
         }
 
         await _knowledge.DeleteChapterAsync(id, cancellationToken);
-        TempData["Success"] = "ÄÃ£ xÃ³a chÆ°Æ¡ng.";
+        TempData["Success"] = "Đã xóa chương.";
         return RedirectToPage("/Home/Index");
     }
 
@@ -240,7 +240,7 @@ public sealed class IndexModel : HomePageModelBase
         if (base.IsAdmin())
         {
             TempData["Error"] = isVietnamese 
-                ? "Admin khÃ´ng Ä‘Æ°á»£c phÃ©p upload tÃ i liá»‡u. Chá»‰ giáº£ng viÃªn má»›i cÃ³ quyá»n upload." 
+                ? "Admin không được phép upload tài liệu. Chỉ giảng viên mới có quyền upload." 
                 : "Admin is not allowed to upload documents. Only teachers can upload.";
             return RedirectToPage("/Home/Index");
         }
@@ -248,7 +248,7 @@ public sealed class IndexModel : HomePageModelBase
         if ((model.File is null || model.File.Length == 0) && string.IsNullOrWhiteSpace(model.SourceUrl))
         {
             TempData["Error"] = isVietnamese
-                ? "HÃ£y chá»n file PDF, DOCX, PPTX, TXT hoáº·c nháº­p URL trang bÃ i giáº£ng trÆ°á»›c khi index."
+                ? "Hãy chọn file PDF, DOCX, PPTX, TXT hoặc nhập URL trang bài giảng trước khi index."
                 : "Choose a PDF, DOCX, PPTX, TXT file or enter a web page URL before indexing.";
             return RedirectToPage("/Home/Index");
         }
@@ -258,7 +258,7 @@ public sealed class IndexModel : HomePageModelBase
             if (string.IsNullOrWhiteSpace(model.Subject) || string.IsNullOrWhiteSpace(model.Chapter))
             {
                 TempData["Error"] = isVietnamese
-                    ? "MÃ´n há»c vÃ  chÆ°Æ¡ng/má»¥c lÃ  báº¯t buá»™c khi upload tÃ i liá»‡u."
+                    ? "Môn học và chương/mục là bắt buộc khi upload tài liệu."
                     : "Subject and Chapter are required when uploading a document.";
                 return RedirectToPage("/Home/Index");
             }
@@ -305,7 +305,7 @@ public sealed class IndexModel : HomePageModelBase
             }
 
             TempData["Success"] = isVietnamese
-                ? "ÄÃ£ nháº­n tÃ i liá»‡u vÃ  Ä‘ang index."
+                ? "Đã nhận tài liệu và đang index."
                 : "The document has been queued for indexing.";
 
             var indexedDocument = await _knowledge.GetDocumentAsync(result.DocumentId, cancellationToken);
@@ -331,7 +331,7 @@ public sealed class IndexModel : HomePageModelBase
         var document = await _knowledge.GetDocumentAsync(id, cancellationToken);
         if (document is null)
         {
-            TempData["Error"] = "KhÃ´ng tÃ¬m tháº¥y tÃ i liá»‡u Ä‘á»ƒ xÃ³a.";
+            TempData["Error"] = "Không tìm thấy tài liệu để xóa.";
             return RedirectToPage("/Home/Index");
         }
 
@@ -342,7 +342,7 @@ public sealed class IndexModel : HomePageModelBase
 
         await _knowledge.DeleteDocumentAsync(id, cancellationToken);
         TryDeleteStoredFile(document);
-        TempData["Success"] = $"ÄÃ£ xÃ³a tÃ i liá»‡u {document.FileName}.";
+        TempData["Success"] = $"Đã xóa tài liệu {document.FileName}.";
         return RedirectToPage("/Home/Index");
     }
 
@@ -472,12 +472,12 @@ public sealed class IndexModel : HomePageModelBase
                     Code = subjectCode,
                     Name = subjectCode,
                     DisplayName = subjectCode,
-                    Description = "Táº¡o tá»« tÃ i liá»‡u Ä‘Ã£ upload nhÆ°ng chÆ°a cÃ³ trong catalog."
+                    Description = "Tạo từ tài liệu đã upload nhưng chưa có trong catalog."
                 };
                 subjects.Add(subjectNode);
             }
 
-            var chapterTitle = string.IsNullOrWhiteSpace(document.Chapter) ? "ChÆ°a phÃ¢n loáº¡i" : document.Chapter.Trim();
+            var chapterTitle = string.IsNullOrWhiteSpace(document.Chapter) ? "Chưa phân loại" : document.Chapter.Trim();
             var chapterNode = subjectNode.Chapters.FirstOrDefault(chapter =>
                 chapter.Title.Equals(chapterTitle, StringComparison.OrdinalIgnoreCase));
             if (chapterNode is null)

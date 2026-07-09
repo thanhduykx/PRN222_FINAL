@@ -1,9 +1,9 @@
-/*!
+﻿/*!
  * jQuery Validation Plugin v1.21.0
  *
  * https://jqueryvalidation.org/
  *
- * Copyright (c) 2024 Jörn Zaefferer
+ * Copyright (c) 2024 J�rn Zaefferer
  * Released under the MIT license
  */
 (function( factory ) {
@@ -24,7 +24,7 @@
 		return value.replace( /<.[^<>]*?>/g, " " ).replace( /&nbsp;|&#160;/gi, " " )
 
 		// Remove punctuation
-		.replace( /[.(),;:!?%#$'\"_+=\/\-“”’]*/g, "" );
+		.replace( /[.(),;:!?%#$'\"_+=\/\-���]*/g, "" );
 	}
 
 	$.validator.addMethod( "maxWords", function( value, element, params ) {
@@ -174,7 +174,7 @@ $.validator.addMethod( "bic", function( value, element ) {
 }, "Please specify a valid BIC code." );
 
 /*
- * Código de identificación fiscal ( CIF ) is the tax identification code for Spanish legal entities
+ * C�digo de identificaci�n fiscal ( CIF ) is the tax identification code for Spanish legal entities
  * Further rules can be found in Spanish on http://es.wikipedia.org/wiki/C%C3%B3digo_de_identificaci%C3%B3n_fiscal
  *
  * Spanish CIF structure:
@@ -414,7 +414,7 @@ $.validator.addMethod( "cnpjBR", function( value, element ) {
 }, "Please specify a CNPJ value number." );
 
 /*
- * Brazillian CPF number (Cadastrado de Pessoas Físicas) is the equivalent of a Brazilian tax registration number.
+ * Brazillian CPF number (Cadastrado de Pessoas F�sicas) is the equivalent of a Brazilian tax registration number.
  * CPF numbers have 11 digits in total: 9 numbers followed by 2 check numbers that are being used for validation.
  */
 $.validator.addMethod( "cpfBR", function( value, element ) {
@@ -595,7 +595,7 @@ $.validator.addMethod( "creditcardtypes", function( value, element, param ) {
  * Symbols can be optional or required. Symbols required by default
  *
  * Usage examples:
- *  currency: ["£", false] - Use false for soft currency validation
+ *  currency: ["�", false] - Use false for soft currency validation
  *  currency: ["$", false]
  *  currency: ["RM", false] - also works with text based symbols such as "RM" - Malaysia Ringgit etc
  *
@@ -615,7 +615,7 @@ $.validator.addMethod( "creditcardtypes", function( value, element, param ) {
  *
  * Multiple Symbols
  *  currencyInput: {
- *     currency: "$,£,¢"
+ *     currency: "$,�,�"
  *  }
  */
 $.validator.addMethod( "currency", function( value, element, param ) {
@@ -983,11 +983,11 @@ $.validator.addMethod( "netmask", function( value, element ) {
 }, "Please enter a valid netmask." );
 
 /*
- * The NIE (Número de Identificación de Extranjero) is a Spanish tax identification number assigned by the Spanish
+ * The NIE (N�mero de Identificaci�n de Extranjero) is a Spanish tax identification number assigned by the Spanish
  * authorities to any foreigner.
  *
- * The NIE is the equivalent of a Spaniards Número de Identificación Fiscal (NIF) which serves as a fiscal
- * identification number. The CIF number (Certificado de Identificación Fiscal) is equivalent to the NIF, but applies to
+ * The NIE is the equivalent of a Spaniards N�mero de Identificaci�n Fiscal (NIF) which serves as a fiscal
+ * identification number. The CIF number (Certificado de Identificaci�n Fiscal) is equivalent to the NIF, but applies to
  * companies rather than individuals. The NIE consists of an 'X' or 'Y' followed by 7 or 8 digits then another letter.
  */
 $.validator.addMethod( "nieES", function( value, element ) {
@@ -1023,7 +1023,7 @@ $.validator.addMethod( "nieES", function( value, element ) {
 }, "Please specify a valid NIE number." );
 
 /*
- * The Número de Identificación Fiscal ( NIF ) is the way tax identification used in Spain for individuals
+ * The N�mero de Identificaci�n Fiscal ( NIF ) is the way tax identification used in Spain for individuals
  */
 $.validator.addMethod( "nifES", function( value, element ) {
 	"use strict";
@@ -1078,13 +1078,13 @@ $.validator.addMethod( "nipPL", function( value ) {
 
 /**
  * Created for project jquery-validation.
- * @Description Brazillian PIS or NIS number (Número de Identificação Social Pis ou Pasep) is the equivalent of a
+ * @Description Brazillian PIS or NIS number (N�mero de Identifica��o Social Pis ou Pasep) is the equivalent of a
  * Brazilian tax registration number NIS of PIS numbers have 11 digits in total: 10 numbers followed by 1 check numbers
  * that are being used for validation.
- * @copyright (c) 21/08/2018 13:14, Cleiton da Silva Mendonça
- * @author Cleiton da Silva Mendonça <cleiton.mendonca@gmail.com>
- * @link http://gitlab.com/csmendonca Gitlab of Cleiton da Silva Mendonça
- * @link http://github.com/csmendonca Github of Cleiton da Silva Mendonça
+ * @copyright (c) 21/08/2018 13:14, Cleiton da Silva Mendon�a
+ * @author Cleiton da Silva Mendon�a <cleiton.mendonca@gmail.com>
+ * @link http://gitlab.com/csmendonca Gitlab of Cleiton da Silva Mendon�a
+ * @link http://github.com/csmendonca Github of Cleiton da Silva Mendon�a
  */
 $.validator.addMethod( "nisBR", function( value ) {
 	var number;
@@ -1258,7 +1258,7 @@ $.validator.addMethod( "phoneUS", function( phone_number, element ) {
 */
 $.validator.addMethod( "postalcodeBR", function( cep_value, element ) {
 	return this.optional( element ) || /^\d{2}.\d{3}-\d{3}?$|^\d{5}-?\d{3}?$/.test( cep_value );
-}, "Informe um CEP válido." );
+}, "Informe um CEP v�lido." );
 
 /**
  * Matches a valid Canadian Postal Code
@@ -1443,7 +1443,7 @@ $.validator.addMethod( "time12h", function( value, element ) {
 
 // Same as url, but TLD is optional
 $.validator.addMethod( "url2", function( value, element ) {
-	return this.optional( element ) || /^(?:(?:(?:https?|ftp):)?\/\/)(?:(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})+(?::(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9¡-￿][a-z0-9¡-￿_-]{0,62})?[a-z0-9¡-￿]\.)+(?:[a-z¡-￿]{2,}\.?)|(?:(?:[a-z0-9¡-￿][a-z0-9¡-￿_-]{0,62})?[a-z0-9¡-￿])|(?:(?:[a-z0-9¡-￿][a-z0-9¡-￿_-]{0,62}\.)))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test( value );
+	return this.optional( element ) || /^(?:(?:(?:https?|ftp):)?\/\/)(?:(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})+(?::(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9�-￿][a-z0-9�-￿_-]{0,62})?[a-z0-9�-￿]\.)+(?:[a-z�-￿]{2,}\.?)|(?:(?:[a-z0-9�-￿][a-z0-9�-￿_-]{0,62})?[a-z0-9�-￿])|(?:(?:[a-z0-9�-￿][a-z0-9�-￿_-]{0,62}\.)))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test( value );
 }, $.validator.messages.url );
 
 /**

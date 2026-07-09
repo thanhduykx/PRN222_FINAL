@@ -2,10 +2,10 @@
 @using PRN222_FINAL.Models
 @model PRN222_FINAL.Web.Pages.Home.IndexModel
 @{
-    ViewData["Title"] = "Kho tÃ i liá»‡u / Documents";
+    ViewData["Title"] = "Kho tài liệu / Documents";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "documents";
-    ViewData["ShellTitle"] = "Kho tÃ i liá»‡u / Documents";
+    ViewData["ShellTitle"] = "Kho tài liệu / Documents";
     ViewData["ShellTitleI18n"] = "documents.shellTitle";
 
     var documents = Model.Documents.OrderByDescending(item => item.UploadedAt).ToList();
@@ -101,8 +101,8 @@
     <header class="ops-page-header">
         <div>
             <span class="ops-eyebrow" data-i18n="documents.eyebrow">Learning content operations</span>
-            <h1 data-i18n="documents.shellTitle">Kho tÃ i liá»‡u</h1>
-            <p data-i18n="documents.manageSubtitle">Quáº£n lÃ½ tÃ i liá»‡u, danh má»¥c mÃ´n há»c vÃ  tráº¡ng thÃ¡i index Ä‘á»ƒ chatbot tráº£ lá»i Ä‘Ãºng nguá»“n.</p>
+            <h1 data-i18n="documents.shellTitle">Kho tài liệu</h1>
+            <p data-i18n="documents.manageSubtitle">Quản lý tài liệu, danh mục môn học và trạng thái index để chatbot trả lời đúng nguồn.</p>
         </div>
         <a class="ops-button ops-button--secondary" asp-page="/Home/Chat">
             <span class="material-symbols-outlined" aria-hidden="true">chat</span>
@@ -177,12 +177,12 @@
                 <input type="hidden" name="Language" value="vi" data-language-field />
 
                 <div class="ops-upload-file-card">
-                    <h2><span class="material-symbols-outlined" aria-hidden="true">description</span> <span data-i18n="documents.docInfo">ThÃ´ng tin tÃ i liá»‡u</span></h2>
+                    <h2><span class="material-symbols-outlined" aria-hidden="true">description</span> <span data-i18n="documents.docInfo">Thông tin tài liệu</span></h2>
                 <div class="ops-form-row">
                     <label class="ops-field">
-                        <span data-i18n="documents.subject">MÃ´n há»c</span>
+                        <span data-i18n="documents.subject">Môn học</span>
                         <select name="Subject" required disabled="@(!canUploadToSubject)">
-                            <option value="" data-i18n="documents.selectSubject">Chá»n mÃ´n há»c</option>
+                            <option value="" data-i18n="documents.selectSubject">Chọn môn học</option>
                             @foreach (var subject in subjectOptions)
                             {
                                 <option value="@subject">@subject</option>
@@ -190,12 +190,12 @@
                         </select>
                         @if (!canUploadToSubject)
                         {
-                            <small data-i18n="documents.noSubjectAssigned">ChÆ°a cÃ³ mÃ´n nÃ o Ä‘Æ°á»£c gÃ¡n cho tÃ i khoáº£n nÃ y.</small>
+                            <small data-i18n="documents.noSubjectAssigned">Chưa có môn nào được gán cho tài khoản này.</small>
                         }
                     </label>
                     <label class="ops-field">
-                        <span data-i18n="documents.chapter">ChÆ°Æ¡ng</span>
-                        <input name="Chapter" list="chapterOptions" placeholder="Chapter 1 hoáº·c Week 1" data-i18n-placeholder="documents.chapterPlaceholder" />
+                        <span data-i18n="documents.chapter">Chương</span>
+                        <input name="Chapter" list="chapterOptions" placeholder="Chapter 1 hoặc Week 1" data-i18n-placeholder="documents.chapterPlaceholder" />
                     </label>
                 </div>
 
@@ -216,20 +216,20 @@
                             <i class="ops-upload-spark is-two"></i>
                             <i class="ops-upload-spark is-three"></i>
                         </span>
-                        <strong data-i18n="documents.dropzoneTitle">KÃ©o &amp; tháº£ file vÃ o Ä‘Ã¢y hoáº·c báº¥m Ä‘á»ƒ chá»n</strong>
+                        <strong data-i18n="documents.dropzoneTitle">Kéo &amp; thả file vào đây hoặc bấm để chọn</strong>
                         <small id="documentFileName" data-default-en="PDF, DOCX, PPTX, TXT"
                                data-default-vi="PDF, DOCX, PPTX, TXT">PDF, DOCX, PPTX, TXT</small>
-                        <span class="ops-button ops-button--secondary"><span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.chooseFileBtn">Chá»n file</span></span>
+                        <span class="ops-button ops-button--secondary"><span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.chooseFileBtn">Chọn file</span></span>
                     </label>
                 </div>
                 </div>
 
                     <div class="ops-ingest-actions ops-upload-url-card">
-                        <h2><span class="material-symbols-outlined" aria-hidden="true">link</span> <span data-i18n="documents.url">URL trang bÃ i giáº£ng</span></h2>
+                        <h2><span class="material-symbols-outlined" aria-hidden="true">link</span> <span data-i18n="documents.url">URL trang bài giảng</span></h2>
                         <label class="ops-field ops-url-field">
-                            <span data-i18n="documents.enterUrl">Nháº­p URL trang bÃ i giáº£ng</span>
+                            <span data-i18n="documents.enterUrl">Nhập URL trang bài giảng</span>
                             <input name="SourceUrl" type="url" placeholder="https://example.com/lecture" data-i18n-placeholder="documents.urlPlaceholder" />
-                            <small data-i18n="documents.urlHint">SPA/React/Vue sáº½ Ä‘Æ°á»£c render trÆ°á»›c khi trÃ­ch xuáº¥t ná»™i dung.</small>
+                            <small data-i18n="documents.urlHint">SPA/React/Vue sẽ được render trước khi trích xuất nội dung.</small>
                         </label>
 
                         <button type="submit" class="ops-button ops-button--primary ops-upload-submit"
@@ -249,7 +249,7 @@
             <form asp-page="/Home/Index" method="get" class="ops-filter-bar">
                 <input type="hidden" name="section" value="list" />
                 <label class="ops-field ops-field--search">
-                    <span data-i18n="documents.search">TÃ¬m kiáº¿m</span>
+                    <span data-i18n="documents.search">Tìm kiếm</span>
                     <input name="q" value="@Model.Query" placeholder="File, subject, chapter, uploader..." data-i18n-placeholder="documents.searchPlaceholder" />
                 </label>
                 <label class="ops-field">
@@ -311,12 +311,12 @@
             {
                 <div class="ops-empty ops-documents-empty">
                     <span class="ops-empty-icon material-symbols-outlined" aria-hidden="true">note_add</span>
-                    <strong data-i18n="documents.emptyTitle">ChÆ°a cÃ³ tÃ i liá»‡u</strong>
-                    <p data-i18n="documents.emptyHint">Äiá»u chá»‰nh bá»™ lá»c hoáº·c upload tÃ i liá»‡u má»›i Ä‘á»ƒ báº¯t Ä‘áº§u há»i Ä‘Ã¡p theo nguá»“n.</p>
+                    <strong data-i18n="documents.emptyTitle">Chưa có tài liệu</strong>
+                    <p data-i18n="documents.emptyHint">Điều chỉnh bộ lọc hoặc upload tài liệu mới để bắt đầu hỏi đáp theo nguồn.</p>
                     @if (Model.IsLecturer)
                     {
                         <a class="ops-button ops-button--primary" asp-page="/Home/Index" asp-route-section="upload">
-                            <span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.uploadTitle">Táº£i tÃ i liá»‡u</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.uploadTitle">Tải tài liệu</span>
                         </a>
                     }
                 </div>
@@ -388,18 +388,18 @@
                                             }
                                             @if (canManageDocuments && Model.CanEditDocumentMetadata(document, courseCatalog))
                                             {
-                                                <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id"><span data-i18n="documents.edit">Sá»­a</span></a>
+                                                <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id"><span data-i18n="documents.edit">Sửa</span></a>
                                                     <form asp-page-handler="ReindexDocument" method="post"
-                                                          data-confirm="Re-index tÃ i liá»‡u nÃ y?">
+                                                          data-confirm="Re-index tài liệu này?">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
                                                         <button type="submit" class="ops-mini-button"><span data-i18n="documents.reindex">Re-index</span></button>
                                                     </form>
                                                     <form asp-page-handler="DeleteDocument" method="post"
-                                                          data-confirm="XÃ³a tÃ i liá»‡u nÃ y khá»i kho index? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.">
+                                                          data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
-                                                        <button type="submit" class="ops-mini-button ops-mini-button--danger"><span data-i18n="documents.delete">XÃ³a</span></button>
+                                                        <button type="submit" class="ops-mini-button ops-mini-button--danger"><span data-i18n="documents.delete">Xóa</span></button>
                                                     </form>
                                                 }
                                             </div>
@@ -429,12 +429,12 @@
                         <div class="ops-empty ops-catalog-empty">
                             <div class="ops-catalog-empty-heading">
                                 <span class="material-symbols-outlined" aria-hidden="true">list_alt</span>
-                                <div><h2 data-i18n="documents.navCatalog">Danh má»¥c mÃ´n há»c</h2><p data-i18n="documents.catalogEmptyDesc">Danh sÃ¡ch cÃ¡c chÆ°Æ¡ng Ä‘Ã£ táº¡o</p></div>
+                                <div><h2 data-i18n="documents.navCatalog">Danh mục môn học</h2><p data-i18n="documents.catalogEmptyDesc">Danh sách các chương đã tạo</p></div>
                             </div>
                             <span class="ops-empty-icon material-symbols-outlined" aria-hidden="true">playlist_add</span>
-                            <strong data-i18n="documents.emptyCatalogTitle">ChÆ°a cÃ³ danh má»¥c mÃ´n há»c.</strong>
-                            <p data-i18n="documents.emptyCatalogHint">Táº¡o mÃ´n há»c trÆ°á»›c, sau Ä‘Ã³ thÃªm chÆ°Æ¡ng Ä‘á»ƒ upload tÃ i liá»‡u theo danh má»¥c chuáº©n.</p>
-                            <a href="#course-catalog" class="ops-button ops-button--secondary"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> <span data-i18n="documents.createFirstChapterBtn">Táº¡o chÆ°Æ¡ng Ä‘áº§u tiÃªn</span></a>
+                            <strong data-i18n="documents.emptyCatalogTitle">Chưa có danh mục môn học.</strong>
+                            <p data-i18n="documents.emptyCatalogHint">Tạo môn học trước, sau đó thêm chương để upload tài liệu theo danh mục chuẩn.</p>
+                            <a href="#course-catalog" class="ops-button ops-button--secondary"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span> <span data-i18n="documents.createFirstChapterBtn">Tạo chương đầu tiên</span></a>
                         </div>
                     }
                     else
@@ -450,12 +450,12 @@
                                         <span class="material-symbols-outlined" aria-hidden="true">folder</span>
                                         <span class="ops-folder-main">
                                             <strong>@subject.DisplayName</strong>
-                                            <small>@(string.IsNullOrWhiteSpace(subject.Description) ? "ChÆ°a cÃ³ mÃ´ táº£." :
+                                            <small>@(string.IsNullOrWhiteSpace(subject.Description) ? "Chưa có mô tả." :
                                                                                                                                                                                 subject.Description)</small>
                                             </span>
                                             <span class="ops-chip">Owner: @PersonLabel(subject.OwnerName, "Unassigned")</span>
-                                            <span class="ops-chip">@subject.Chapters.Count chÆ°Æ¡ng</span>
-                                            <span class="ops-chip">@subject.DocumentCount tÃ i liá»‡u</span>
+                                            <span class="ops-chip">@subject.Chapters.Count chương</span>
+                                            <span class="ops-chip">@subject.DocumentCount tài liệu</span>
                                         </summary>
                                         <div class="ops-folder-subject-body">
                                             @if (isAdmin)
@@ -468,7 +468,7 @@
                                                     <button type="submit" class="ops-mini-button">Update</button>
                                                 </form>
                                                 <form asp-page-handler="DeleteSubject" method="post" class="ops-danger-form"
-                                                      data-confirm="XÃ³a mÃ´n nÃ y vÃ  toÃ n bá»™ chÆ°Æ¡ng bÃªn trong? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.">
+                                                      data-confirm="Xóa môn này và toàn bộ chương bên trong? Thao tác này không thể hoàn tác.">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@subject.SubjectId" />
                                                     <button type="submit" class="ops-mini-button ops-mini-button--danger">Delete
@@ -482,16 +482,16 @@
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="SubjectId" value="@subject.SubjectId" />
                                                         <label class="ops-field">
-                                                            <span>ThÃªm chÆ°Æ¡ng/má»¥c trong @subject.Code</span>
-                                                            <input name="Title" placeholder="VD: Chapter 1 / Má»¥c 1.1" />
+                                                            <span>Thêm chương/mục trong @subject.Code</span>
+                                                            <input name="Title" placeholder="VD: Chapter 1 / Mục 1.1" />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>Thá»© tá»±</span>
+                                                            <span>Thứ tự</span>
                                                             <input name="SortOrder" type="number" value="@(subject.Chapters.Count + 1)" />
                                                         </label>
                                                         <button type="submit" class="ops-mini-button">
                                                             <span class="material-symbols-outlined" aria-hidden="true">create_new_folder</span>
-                                                            ThÃªm má»¥c
+                                                            Thêm mục
                                                         </button>
                                                     </form>
                                                 }
@@ -505,20 +505,20 @@
                                                         <input type="hidden" name="Subject" value="@subject.DisplayName" />
 
                                                         <label class="ops-field">
-                                                            <span>ChÆ°Æ¡ng/má»¥c</span>
-                                                            <input name="Chapter" placeholder="VD: Chapter 1 / Má»¥c 1.1" required />
+                                                            <span>Chương/mục</span>
+                                                            <input name="Chapter" placeholder="VD: Chapter 1 / Mục 1.1" required />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>File tÃ i liá»‡u</span>
+                                                            <span>File tài liệu</span>
                                                             <input name="File" type="file" accept=".pdf,.docx,.pptx,.txt" />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>Hoáº·c URL bÃ i giáº£ng</span>
+                                                            <span>Hoặc URL bài giảng</span>
                                                             <input name="SourceUrl" type="url" placeholder="https://example.com/lecture" />
                                                         </label>
                                                         <button type="submit" class="ops-button ops-button--primary">
                                                             <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
-                                                            ThÃªm tÃ i liá»‡u vÃ o mÃ´n
+                                                            Thêm tài liệu vào môn
                                                         </button>
                                                     </form>
                                                 }
@@ -526,7 +526,7 @@
                                                 <div class="ops-folder-chapter-list">
                                                     @if (subject.Chapters.Count == 0)
                                                     {
-                                                        <p class="ops-muted">MÃ´n nÃ y chÆ°a cÃ³ chÆ°Æ¡ng/má»¥c.</p>
+                                                        <p class="ops-muted">Môn này chưa có chương/mục.</p>
                                                     }
                                                     @foreach (var chapter in subject.Chapters.OrderBy(item => item.SortOrder).ThenBy(item =>
                                         item.Title))
@@ -536,7 +536,7 @@
                                                                 <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
                                                                 <span class="ops-folder-main">
                                                                     <strong>@chapter.Title</strong>
-                                                                    <small>@chapter.Documents.Count tÃ i liá»‡u</small>
+                                                                    <small>@chapter.Documents.Count tài liệu</small>
                                                                 </span>
                                                             </summary>
 
@@ -559,7 +559,7 @@
                                                                         @if (chapter.ChapterId.HasValue)
                                                                         {
                                                                             <form asp-page-handler="DeleteChapter" method="post"
-                                                                                  data-confirm="XÃ³a chÆ°Æ¡ng/má»¥c nÃ y? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.">
+                                                                                  data-confirm="Xóa chương/mục này? Thao tác này không thể hoàn tác.">
                                                                                 @Html.AntiForgeryToken()
                                                                                 <input type="hidden" name="id" value="@chapter.ChapterId" />
                                                                                 <button type="submit"
@@ -579,25 +579,25 @@
                                                                         <input type="hidden" name="Chapter" value="@chapter.Title" />
 
                                                                         <label class="ops-field">
-                                                                            <span>ThÃªm file vÃ o @chapter.Title</span>
+                                                                            <span>Thêm file vào @chapter.Title</span>
                                                                             <input name="File" type="file" accept=".pdf,.docx,.pptx,.txt" />
                                                                         </label>
                                                                         <label class="ops-field">
-                                                                            <span>Hoáº·c URL bÃ i giáº£ng</span>
+                                                                            <span>Hoặc URL bài giảng</span>
                                                                             <input name="SourceUrl" type="url"
                                                                                    placeholder="https://example.com/lecture" />
                                                                         </label>
                                                                         <button type="submit" class="ops-button ops-button--primary">
                                                                             <span class="material-symbols-outlined"
                                                                                   aria-hidden="true">upload_file</span>
-                                                                            ThÃªm tÃ i liá»‡u
+                                                                            Thêm tài liệu
                                                                         </button>
                                                                     </form>
                                                                 }
 
                                                                 @if (chapter.Documents.Count == 0)
                                                                 {
-                                                                    <p class="ops-muted">ChÆ°a cÃ³ tÃ i liá»‡u trong chÆ°Æ¡ng/má»¥c nÃ y.</p>
+                                                                    <p class="ops-muted">Chưa có tài liệu trong chương/mục này.</p>
                                                                 }
                                                                 else
                                                                 {
@@ -612,8 +612,8 @@
                                                                                       aria-hidden="true">description</span>
                                                                                 <div class="ops-tree-document-main">
                                                                                     <strong title="@document.FileName">@document.FileName</strong>
-                                                                                    <small data-document-tree-meta>@StatusLabel(document) Â·
-                                                                                        @document.ChunkCount chunks Â·
+                                                                                    <small data-document-tree-meta>@StatusLabel(document) ·
+                                                                                        @document.ChunkCount chunks ·
                                                                                         @FormatBytes(document.FileSizeBytes)</small>
                                                                                 </div>
                                                                                 <div class="ops-document-progress" data-document-progress hidden></div>
@@ -633,19 +633,19 @@
                                                                                         @if (Model.CanEditDocumentMetadata(document, courseCatalog))
                                                                                         {
                                                                                             <a class="ops-mini-button" asp-page="/Home/EditDocument"
-                                                                                               asp-route-id="@document.Id">Sá»­a</a>
+                                                                                               asp-route-id="@document.Id">Sửa</a>
                                                                                             <form asp-page-handler="ReindexDocument" method="post"
-                                                                                                  data-confirm="Re-index tÃ i liá»‡u nÃ y?">
+                                                                                                  data-confirm="Re-index tài liệu này?">
                                                                                                 @Html.AntiForgeryToken()
                                                                                                 <input type="hidden" name="id" value="@document.Id" />
                                                                                                 <button type="submit" class="ops-mini-button">Re-index</button>
                                                                                             </form>
                                                                                             <form asp-page-handler="DeleteDocument" method="post"
-                                                                                                  data-confirm="XÃ³a tÃ i liá»‡u nÃ y khá»i kho index? Thao tÃ¡c nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.">
+                                                                                                  data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.">
                                                                                                 @Html.AntiForgeryToken()
                                                                                                 <input type="hidden" name="id" value="@document.Id" />
                                                                                                 <button type="submit"
-                                                                                                        class="ops-mini-button ops-mini-button--danger">XÃ³a</button>
+                                                                                                        class="ops-mini-button ops-mini-button--danger">Xóa</button>
                                                                                             </form>
                                                                                         }
                                                                                     </div>
@@ -673,7 +673,7 @@
                             <header class="rbl-document-preview-header">
                                 <div>
                                     <span class="rbl-section-label">Indexed content</span>
-                                    <h2 id="documentPreviewTitle">TÃ i liá»‡u</h2>
+                                    <h2 id="documentPreviewTitle">Tài liệu</h2>
                                     <p id="documentPreviewMeta"></p>
                                 </div>
                                 <button type="button" class="rbl-icon-button" aria-label="Close preview" data-document-preview-close>
@@ -681,7 +681,7 @@
                                 </button>
                             </header>
                             <div id="documentPreviewBody" class="rbl-document-preview-body">
-                                <p class="rbl-catalog-muted">Äang táº£i ná»™i dung Ä‘Ã£ index...</p>
+                                <p class="rbl-catalog-muted">Đang tải nội dung đã index...</p>
                             </div>
                         </section>
                     </div>

@@ -23,7 +23,7 @@ public sealed class ResetPasswordModel : PageModel
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
         {
-            TempData["AuthError"] = "LiÃªn káº¿t Ä‘áº·t láº¡i máº­t kháº©u khÃ´ng há»£p lá»‡.";
+            TempData["AuthError"] = "Liên kết đặt lại mật khẩu không hợp lệ.";
             return RedirectToPage("/Account/ForgotPassword");
         }
 
@@ -49,7 +49,7 @@ public sealed class ResetPasswordModel : PageModel
             return Page();
         }
 
-        TempData["AuthSuccess"] = "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng. Báº¡n cÃ³ thá»ƒ Ä‘Äƒng nháº­p báº±ng máº­t kháº©u má»›i.";
+        TempData["AuthSuccess"] = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.";
         return RedirectToPage("/Account/Login");
     }
 
@@ -57,15 +57,15 @@ public sealed class ResetPasswordModel : PageModel
     {
         if (message.Contains("invalid or expired", StringComparison.OrdinalIgnoreCase))
         {
-            return "LiÃªn káº¿t Ä‘áº·t láº¡i máº­t kháº©u khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.";
+            return "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
         }
 
         if (message.Contains("at least 8 characters", StringComparison.OrdinalIgnoreCase))
         {
-            return "Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 8 kÃ½ tá»±.";
+            return "Mật khẩu phải có ít nhất 8 ký tự.";
         }
 
-        return string.IsNullOrWhiteSpace(message) ? "KhÃ´ng thá»ƒ Ä‘áº·t láº¡i máº­t kháº©u." : message;
+        return string.IsNullOrWhiteSpace(message) ? "Không thể đặt lại mật khẩu." : message;
     }
 }
 

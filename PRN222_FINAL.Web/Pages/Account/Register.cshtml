@@ -1,22 +1,22 @@
 ﻿@page
 @model PRN222_FINAL.Web.Pages.Account.RegisterModel
 @{
-    ViewData["Title"] = "Táº¡o tÃ i khoáº£n";
+    ViewData["Title"] = "Tạo tài khoản";
     ViewData["BodyClass"] = "auth-body";
 }
 
 <section class="auth-page">
     <partial name="_AuthStars" />
     <div class="auth-panel">
-        <p class="eyebrow">TÃ i khoáº£n má»›i</p>
-        <h1>Táº¡o tÃ i khoáº£n</h1>
-        <p class="subtitle">Táº¡o tÃ i khoáº£n ná»™i bá»™ Ä‘á»ƒ quáº£n lÃ½ tÃ i liá»‡u vÃ  sá»­ dá»¥ng phiÃªn há»i Ä‘Ã¡p.</p>
+        <p class="eyebrow">Tài khoản mới</p>
+        <h1>Tạo tài khoản</h1>
+        <p class="subtitle">Tạo tài khoản nội bộ để quản lý tài liệu và sử dụng phiên hỏi đáp.</p>
 
         <form asp-page="/Account/Register" method="post" class="auth-form">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <label>
-                Há» tÃªn
+                Họ tên
                 <input asp-for="FullName" class="form-control" autocomplete="name" />
                 <span asp-validation-for="FullName" class="text-danger"></span>
             </label>
@@ -26,19 +26,19 @@
                 <span asp-validation-for="Email" class="text-danger"></span>
             </label>
             <label>
-                Máº­t kháº©u
+                Mật khẩu
                 <input asp-for="Password" class="form-control" autocomplete="new-password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </label>
             <label>
-                Nháº­p láº¡i máº­t kháº©u
+                Nhập lại mật khẩu
                 <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </label>
-            <button type="submit" class="btn btn-primary">Táº¡o tÃ i khoáº£n</button>
+            <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
         </form>
 
-        <p class="auth-switch">ÄÃ£ cÃ³ tÃ i khoáº£n? <a asp-page="/Account/Login">ÄÄƒng nháº­p</a></p>
+        <p class="auth-switch">Đã có tài khoản? <a asp-page="/Account/Login">Đăng nhập</a></p>
     </div>
 </section>
 

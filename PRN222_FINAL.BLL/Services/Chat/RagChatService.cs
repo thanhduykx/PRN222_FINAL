@@ -41,7 +41,7 @@ public sealed class RagChatService : IRagChatService
     private const double MinimumLocalRerankScore = 0.48;
     private const double MinimumLlmRerankScore = 0.55;
     private const double MinimumAnswerGroundingRatio = 0.42;
-    private const string OutOfScopeAnswer = "MÃ¬nh khÃ´ng Ä‘á»§ dá»¯ liá»‡u trong tÃ i liá»‡u Ä‘á»ƒ tráº£ lá»i cÃ¢u há»i nÃ y.";
+    private const string OutOfScopeAnswer = "Mình không đủ dữ liệu trong tài liệu để trả lời câu hỏi này.";
 
     private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}]+", RegexOptions.Compiled);
     private static readonly string[] PromptInjectionSignals =
@@ -598,7 +598,7 @@ public sealed class RagChatService : IRagChatService
         }
 
         var grouped = chunks
-            .GroupBy(chunk => string.IsNullOrWhiteSpace(chunk.Chapter) ? "KhÃ´ng rÃµ chÆ°Æ¡ng" : chunk.Chapter.Trim(), StringComparer.OrdinalIgnoreCase)
+            .GroupBy(chunk => string.IsNullOrWhiteSpace(chunk.Chapter) ? "Không rõ chương" : chunk.Chapter.Trim(), StringComparer.OrdinalIgnoreCase)
             .OrderBy(group => group.Min(chunk => chunk.ChunkIndex))
             .Take(12)
             .ToList();
@@ -623,7 +623,7 @@ public sealed class RagChatService : IRagChatService
         });
 
         var answer = language == "vi"
-            ? $"MÃ¬nh tháº¥y {ExtractSubjectCode(subject)} Ä‘Ã£ index cÃ¡c chÆ°Æ¡ng/pháº§n sau:\n\n{string.Join("\n", lines)}"
+            ? $"Mình thấy {ExtractSubjectCode(subject)} đã index các chương/phần sau:\n\n{string.Join("\n", lines)}"
             : $"I found these indexed chapters/sections for {ExtractSubjectCode(subject)}:\n\n{string.Join("\n", lines)}";
 
         var citationChunks = grouped.Select(group => group.First()).Take(5).ToList();
@@ -866,7 +866,7 @@ public sealed class RagChatService : IRagChatService
     private static IReadOnlyList<string> FindAmbiguousCandidateSubjects(IReadOnlyList<ScoredChunk> candidates)
     {
         var ranked = candidates
-            .GroupBy(item => string.IsNullOrWhiteSpace(item.Chunk.Subject) ? "KhÃ´ng rÃµ mÃ´n" : item.Chunk.Subject.Trim(), StringComparer.OrdinalIgnoreCase)
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.Chunk.Subject) ? "Không rõ môn" : item.Chunk.Subject.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new
             {
                 Subject = group.Key,
@@ -992,7 +992,7 @@ public sealed class RagChatService : IRagChatService
 
         var optionText = string.Join("\n", options.Select(subject => $"- {subject}"));
         return language == "vi"
-            ? $"MÃ¬nh tháº¥y cÃ¢u nÃ y cháº¡m tá»›i vÃ i mÃ´n. Báº¡n chá»n Ä‘Ãºng mÃ´n giÃºp mÃ¬nh nhÃ©:\n\n{optionText}"
+            ? $"Mình thấy câu này chạm tới vài môn. Bạn chọn đúng môn giúp mình nhé:\n\n{optionText}"
             : $"I found relevant data in a few subjects. Which one should I use?\n\n{optionText}";
     }
 
@@ -1026,7 +1026,7 @@ public sealed class RagChatService : IRagChatService
 
         var courseLabel = ResolveFactCourseLabel(question, evidence.Chunk);
         var answer = language == "vi"
-            ? $"MÃ¬nh xem trong tÃ i liá»‡u rá»“i: {courseLabel} cÃ³ {FormatCreditValue(evidence.Credit.Value)} tÃ­n chá»‰."
+            ? $"Mình xem trong tài liệu rồi: {courseLabel} có {FormatCreditValue(evidence.Credit.Value)} tín chỉ."
             : $"I checked the documents: {courseLabel} has {FormatCreditValue(evidence.Credit.Value)} credits.";
         var citations = new[]
         {
@@ -1071,12 +1071,12 @@ public sealed class RagChatService : IRagChatService
         var displayName = string.IsNullOrWhiteSpace(subjectName) ? subject : subjectName;
 
         var answer = language == "vi"
-            ? $"MÃ¬nh tháº¥y trong syllabus: {displayCode} lÃ  mÃ´n {displayName}."
+            ? $"Mình thấy trong syllabus: {displayCode} là môn {displayName}."
             : $"I found this in the syllabus: {displayCode} is the course {displayName}.";
         if (credit is not null)
         {
             answer += language == "vi"
-                ? $" MÃ´n nÃ y cÃ³ {FormatCreditValue(credit.Value)} tÃ­n chá»‰."
+                ? $" Môn này có {FormatCreditValue(credit.Value)} tín chỉ."
                 : $" This course has {FormatCreditValue(credit.Value)} credits.";
         }
 
@@ -1146,8 +1146,8 @@ public sealed class RagChatService : IRagChatService
             @"(?im)^\s*No\s*Credit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
             @"(?im)^\s*NoCredit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
             @"(?im)^\s*(?:Credits?|Credit)\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*(?:So|S[oá»‘])\s*t[iÃ­]n\s*ch[iá»‰]\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*(?<value>\d+(?:[.,]\d+)?)\s*(?:t[iÃ­]n\s*ch[iá»‰]|credits?)\b.*$"
+            @"(?im)^\s*(?:So|S[oố])\s*t[ií]n\s*ch[iỉ]\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
+            @"(?im)^\s*(?<value>\d+(?:[.,]\d+)?)\s*(?:t[ií]n\s*ch[iỉ]|credits?)\b.*$"
         };
 
         foreach (var pattern in patterns)
@@ -1364,7 +1364,7 @@ public sealed class RagChatService : IRagChatService
             return lines;
         }
 
-        var inlineQuestions = Regex.Matches(input, @"[^?ï¼Ÿï¼]+[?ï¼Ÿï¼]")
+        var inlineQuestions = Regex.Matches(input, @"[^?？！]+[?？！]")
             .Select(match => CleanQuestionLine(match.Value))
             .Where(IsLikelyQuestion)
             .ToList();
@@ -1374,7 +1374,7 @@ public sealed class RagChatService : IRagChatService
 
     private static string CleanQuestionLine(string line)
     {
-        var cleaned = Regex.Replace(line.Trim(), @"^\s*(?:[-*â€¢]|\d+[\).\:-])\s*", string.Empty);
+        var cleaned = Regex.Replace(line.Trim(), @"^\s*(?:[-*•]|\d+[\).\:-])\s*", string.Empty);
         var pipeIndex = cleaned.IndexOf('|', StringComparison.Ordinal);
         if (pipeIndex > 0)
         {
@@ -1414,7 +1414,7 @@ public sealed class RagChatService : IRagChatService
     {
         var builder = new StringBuilder();
         builder.AppendLine(language == "vi"
-            ? $"MÃ¬nh nháº­n {answers.Count} cÃ¢u há»i. Tráº£ lá»i láº§n lÆ°á»£t:"
+            ? $"Mình nhận {answers.Count} câu hỏi. Trả lời lần lượt:"
             : $"I received {answers.Count} questions. Here are the answers in order:");
         builder.AppendLine();
 
@@ -1429,7 +1429,7 @@ public sealed class RagChatService : IRagChatService
         if (skippedQuestionCount > 0)
         {
             builder.AppendLine(language == "vi"
-                ? $"MÃ¬nh chá»‰ xá»­ lÃ½ tá»‘i Ä‘a {MaxBatchQuestions} cÃ¢u má»—i láº§n, cÃ²n {skippedQuestionCount} cÃ¢u chÆ°a xá»­ lÃ½. HÃ£y gá»­i tiáº¿p pháº§n cÃ²n láº¡i á»Ÿ tin nháº¯n sau."
+                ? $"Mình chỉ xử lý tối đa {MaxBatchQuestions} câu mỗi lần, còn {skippedQuestionCount} câu chưa xử lý. Hãy gửi tiếp phần còn lại ở tin nhắn sau."
                 : $"I only process up to {MaxBatchQuestions} questions per message. {skippedQuestionCount} questions were not processed; send them in the next message.");
         }
 
@@ -1702,14 +1702,14 @@ public sealed class RagChatService : IRagChatService
     private static string BuildOutOfScopeAnswer(string language)
     {
         return language == "vi"
-            ? "MÃ¬nh khÃ´ng Ä‘á»§ dá»¯ liá»‡u trong tÃ i liá»‡u Ä‘á»ƒ tráº£ lá»i cÃ¢u há»i nÃ y."
+            ? "Mình không đủ dữ liệu trong tài liệu để trả lời câu hỏi này."
             : "I do not have enough data in the documents to answer this question.";
     }
 
     private static string BuildExternalScopeAnswer(string language)
     {
         return language == "vi"
-            ? "MÃ¬nh chá»‰ há»— trá»£ há»i Ä‘Ã¡p dá»±a trÃªn tÃ i liá»‡u Ä‘Ã£ index. CÃ¢u nÃ y náº±m ngoÃ i pháº¡m vi tÃ i liá»‡u, nÃªn mÃ¬nh khÃ´ng truy xuáº¥t nguá»“n Ä‘á»ƒ tráº£ lá»i."
+            ? "Mình chỉ hỗ trợ hỏi đáp dựa trên tài liệu đã index. Câu này nằm ngoài phạm vi tài liệu, nên mình không truy xuất nguồn để trả lời."
             : "I only answer from indexed documents. This question is outside the document scope, so I will not retrieve sources for it.";
     }
 
@@ -1720,18 +1720,18 @@ public sealed class RagChatService : IRagChatService
             return "I am an AI assistant specialized in searching and explaining content from your learning document repository. Ask a question, and I will look through the documents, summarize the relevant parts clearly, and include sources when there is enough data.";
         }
 
-        return "MÃ¬nh lÃ  AI chuyÃªn há»— trá»£ tra cá»©u vÃ  giáº£i thÃ­ch ná»™i dung trong kho tÃ i liá»‡u há»c táº­p. NÃ³i Ä‘Æ¡n giáº£n: báº¡n há»i, mÃ¬nh tÃ¬m trong tÃ i liá»‡u, tÃ³m gá»n láº¡i cho dá»… hiá»ƒu, rá»“i kÃ¨m nguá»“n khi cÃ³ dá»¯ liá»‡u.";
+        return "Mình là AI chuyên hỗ trợ tra cứu và giải thích nội dung trong kho tài liệu học tập. Nói đơn giản: bạn hỏi, mình tìm trong tài liệu, tóm gọn lại cho dễ hiểu, rồi kèm nguồn khi có dữ liệu.";
     }
 
     private static string BuildUserIdentityAnswer(string? userDisplayName, string language)
     {
-        var name = string.IsNullOrWhiteSpace(userDisplayName) ? (language == "vi" ? "báº¡n" : "you") : userDisplayName.Trim();
+        var name = string.IsNullOrWhiteSpace(userDisplayName) ? (language == "vi" ? "bạn" : "you") : userDisplayName.Trim();
         if (language == "en")
         {
             return $"You are {name}. In this app, you are the owner of this document workspace and the person I am helping.";
         }
 
-        return $"Báº¡n lÃ  {name}. Trong á»©ng dá»¥ng nÃ y, báº¡n lÃ  chá»§ kho tÃ i liá»‡u vÃ  lÃ  ngÆ°á»i mÃ¬nh Ä‘ang há»— trá»£.";
+        return $"Bạn là {name}. Trong ứng dụng này, bạn là chủ kho tài liệu và là người mình đang hỗ trợ.";
     }
 
     private static string BuildCasualChatAnswer(string question, string language)
@@ -1743,7 +1743,7 @@ public sealed class RagChatService : IRagChatService
         {
             if (language == "vi")
             {
-                return "KhÃ´ng cÃ³ gÃ¬. Cáº§n tra pháº§n nÃ o trong tÃ i liá»‡u thÃ¬ nÃ©m cÃ¢u há»i qua, mÃ¬nh xem tiáº¿p.";
+                return "Không có gì. Cần tra phần nào trong tài liệu thì ném câu hỏi qua, mình xem tiếp.";
             }
 
             return "You're welcome. Send the next document question over and I will check it.";
@@ -1754,7 +1754,7 @@ public sealed class RagChatService : IRagChatService
         {
             if (language == "vi")
             {
-                return "Táº¡m biá»‡t nhÃ©. Khi cáº§n tra tÃ i liá»‡u thÃ¬ quay láº¡i, mÃ¬nh váº«n á»Ÿ Ä‘Ã¢y.";
+                return "Tạm biệt nhé. Khi cần tra tài liệu thì quay lại, mình vẫn ở đây.";
             }
 
             return "Goodbye. Come back when you need to check the documents again.";
@@ -1765,7 +1765,7 @@ public sealed class RagChatService : IRagChatService
         {
             if (language == "vi")
             {
-                return "MÃ¬nh khÃ´ng Äƒn cÆ¡m Ä‘Æ°á»£c, nhÆ°ng Ä‘ang trá»±c kho tÃ i liá»‡u Ä‘Ã¢y. Báº¡n muá»‘n mÃ¬nh xem mÃ´n hay pháº§n nÃ o?";
+                return "Mình không ăn cơm được, nhưng đang trực kho tài liệu đây. Bạn muốn mình xem môn hay phần nào?";
             }
 
             return "I do not eat, but I am on document duty. What course or section should I check?";
@@ -1776,7 +1776,7 @@ public sealed class RagChatService : IRagChatService
         {
             if (language == "vi")
             {
-                return "MÃ¬nh á»•n, Ä‘ang sáºµn sÃ ng tra tÃ i liá»‡u. Báº¡n Ä‘ang cáº§n xem cÃ¢u nÃ o?";
+                return "Mình ổn, đang sẵn sàng tra tài liệu. Bạn đang cần xem câu nào?";
             }
 
             return "I am good and ready to search the documents. What do you want to check?";
@@ -1784,7 +1784,7 @@ public sealed class RagChatService : IRagChatService
 
         if (language == "vi")
         {
-            return "ChÃ o báº¡n, mÃ¬nh Ä‘Ã¢y. Há»i tháº³ng mÃ´n, CLO, Ä‘Ã¡nh giÃ¡ hoáº·c pháº§n nÃ o trong tÃ i liá»‡u, mÃ¬nh tra cho.";
+            return "Chào bạn, mình đây. Hỏi thẳng môn, CLO, đánh giá hoặc phần nào trong tài liệu, mình tra cho.";
         }
 
         return "Hi, I am here. Ask about a course, CLO, assessment, or document section and I will look it up.";
@@ -1792,13 +1792,13 @@ public sealed class RagChatService : IRagChatService
 
     private static string BuildBotIdentityAnswer()
     {
-        return "MÃ¬nh lÃ  AI chuyÃªn há»— trá»£ tra cá»©u vÃ  giáº£i thÃ­ch ná»™i dung trong kho tÃ i liá»‡u há»c táº­p. NÃ³i Ä‘Æ¡n giáº£n: báº¡n há»i, mÃ¬nh tÃ¬m trong tÃ i liá»‡u, tÃ³m gá»n láº¡i cho dá»… hiá»ƒu, rá»“i kÃ¨m nguá»“n khi cÃ³ dá»¯ liá»‡u.";
+        return "Mình là AI chuyên hỗ trợ tra cứu và giải thích nội dung trong kho tài liệu học tập. Nói đơn giản: bạn hỏi, mình tìm trong tài liệu, tóm gọn lại cho dễ hiểu, rồi kèm nguồn khi có dữ liệu.";
     }
 
     private static string BuildUserIdentityAnswer(string? userDisplayName)
     {
-        var name = string.IsNullOrWhiteSpace(userDisplayName) ? "báº¡n" : userDisplayName.Trim();
-        return $"Báº¡n lÃ  {name}. Trong á»©ng dá»¥ng nÃ y, báº¡n lÃ  chá»§ kho tÃ i liá»‡u vÃ  lÃ  ngÆ°á»i mÃ¬nh Ä‘ang há»— trá»£.";
+        var name = string.IsNullOrWhiteSpace(userDisplayName) ? "bạn" : userDisplayName.Trim();
+        return $"Bạn là {name}. Trong ứng dụng này, bạn là chủ kho tài liệu và là người mình đang hỗ trợ.";
     }
 
     private static string BuildCasualChatAnswer(string question)
@@ -1808,28 +1808,28 @@ public sealed class RagChatService : IRagChatService
             || normalized.Contains("thanks", StringComparison.Ordinal)
             || normalized.Contains("thank you", StringComparison.Ordinal))
         {
-            return "KhÃ´ng cÃ³ gÃ¬. Cáº§n tra pháº§n nÃ o trong tÃ i liá»‡u thÃ¬ nÃ©m cÃ¢u há»i qua, mÃ¬nh xem tiáº¿p.";
+            return "Không có gì. Cần tra phần nào trong tài liệu thì ném câu hỏi qua, mình xem tiếp.";
         }
 
         if (normalized.Contains("tam biet", StringComparison.Ordinal)
             || normalized.Contains("bye", StringComparison.Ordinal))
         {
-            return "Táº¡m biá»‡t nhÃ©. Khi cáº§n tra tÃ i liá»‡u thÃ¬ quay láº¡i, mÃ¬nh váº«n á»Ÿ Ä‘Ã¢y.";
+            return "Tạm biệt nhé. Khi cần tra tài liệu thì quay lại, mình vẫn ở đây.";
         }
 
         if (normalized.Contains("an com", StringComparison.Ordinal)
             || normalized.Contains("com chua", StringComparison.Ordinal))
         {
-            return "MÃ¬nh khÃ´ng Äƒn cÆ¡m Ä‘Æ°á»£c, nhÆ°ng Ä‘ang trá»±c kho tÃ i liá»‡u Ä‘Ã¢y. Báº¡n muá»‘n mÃ¬nh xem mÃ´n hay pháº§n nÃ o?";
+            return "Mình không ăn cơm được, nhưng đang trực kho tài liệu đây. Bạn muốn mình xem môn hay phần nào?";
         }
 
         if (normalized.Contains("khoe khong", StringComparison.Ordinal)
             || normalized.Contains("on khong", StringComparison.Ordinal))
         {
-            return "MÃ¬nh á»•n, Ä‘ang sáºµn sÃ ng tra tÃ i liá»‡u. Báº¡n Ä‘ang cáº§n xem cÃ¢u nÃ o?";
+            return "Mình ổn, đang sẵn sàng tra tài liệu. Bạn đang cần xem câu nào?";
         }
 
-        return "ChÃ o báº¡n, mÃ¬nh Ä‘Ã¢y. Há»i tháº³ng mÃ´n, CLO, Ä‘Ã¡nh giÃ¡ hoáº·c pháº§n nÃ o trong tÃ i liá»‡u, mÃ¬nh tra cho.";
+        return "Chào bạn, mình đây. Hỏi thẳng môn, CLO, đánh giá hoặc phần nào trong tài liệu, mình tra cho.";
     }
 
     private static string BuildRetrievalQuestion(string originalQuestion, string rewrittenQuestion)
@@ -1931,9 +1931,9 @@ public sealed class RagChatService : IRagChatService
 
         if (language == "vi")
         {
-            return "MÃ¬nh cÃ³ tháº¥y vÃ i Ã½ liÃªn quan trong tÃ i liá»‡u. TÃ³m gá»n láº¡i nhÃ©:\n\n" +
+            return "Mình có thấy vài ý liên quan trong tài liệu. Tóm gọn lại nhé:\n\n" +
                    string.Join("\n", selectedSentences.Select(sentence => $"- {sentence}")) +
-                   "\n\nNguá»“n mÃ¬nh Ä‘á»ƒ ngay bÃªn dÆ°á»›i Ä‘á»ƒ báº¡n kiá»ƒm tra láº¡i.";
+                   "\n\nNguồn mình để ngay bên dưới để bạn kiểm tra lại.";
         }
 
         return "I found a few relevant points in the documents. Quick summary:\n\n" +
@@ -1962,9 +1962,9 @@ public sealed class RagChatService : IRagChatService
             return OutOfScopeAnswer;
         }
 
-        return "MÃ¬nh cÃ³ tháº¥y vÃ i Ã½ liÃªn quan trong tÃ i liá»‡u. TÃ³m gá»n láº¡i nhÃ©:\n\n" +
+        return "Mình có thấy vài ý liên quan trong tài liệu. Tóm gọn lại nhé:\n\n" +
                string.Join("\n", selectedSentences.Select(sentence => $"- {sentence}")) +
-               "\n\nNguá»“n mÃ¬nh Ä‘á»ƒ ngay bÃªn dÆ°á»›i Ä‘á»ƒ báº¡n kiá»ƒm tra láº¡i.";
+               "\n\nNguồn mình để ngay bên dưới để bạn kiểm tra lại.";
     }
 
     private static string ResolveSubject(IReadOnlyList<DocumentChunk> chunks)
@@ -1975,7 +1975,7 @@ public sealed class RagChatService : IRagChatService
 
         if (string.IsNullOrWhiteSpace(subject))
         {
-            return "mÃ´n há»c";
+            return "môn học";
         }
 
         return subject;

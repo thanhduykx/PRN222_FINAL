@@ -62,7 +62,7 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
         using var message = new MailMessage
         {
             From = new MailAddress(_options.FromEmail, _options.FromName, Encoding.UTF8),
-            Subject = "ChÃ o má»«ng báº¡n tá»›i á»¨ng dá»¥ng Chat Bot - Quáº£n LÃ½ TÃ i Liá»‡u",
+            Subject = "Chào mừng bạn tới Ứng dụng Chat Bot - Quản Lý Tài Liệu",
             SubjectEncoding = Encoding.UTF8,
             BodyEncoding = Encoding.UTF8
         };
@@ -105,7 +105,7 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
         using var message = new MailMessage
         {
             From = new MailAddress(_options.FromEmail, _options.FromName, Encoding.UTF8),
-            Subject = "Äáº·t láº¡i máº­t kháº©u Course Assistant",
+            Subject = "Đặt lại mật khẩu Course Assistant",
             SubjectEncoding = Encoding.UTF8,
             BodyEncoding = Encoding.UTF8
         };
@@ -167,31 +167,31 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
         IReadOnlyList<string>? subjectLabels)
     {
         var loginLine = string.IsNullOrWhiteSpace(loginUrl)
-            ? "ÄÄƒng nháº­p táº¡i Ä‘á»‹a chá»‰ á»©ng dá»¥ng Ä‘Æ°á»£c nhÃ  trÆ°á»ng cung cáº¥p."
-            : $"ÄÄƒng nháº­p: {loginUrl}";
+            ? "Đăng nhập tại địa chỉ ứng dụng được nhà trường cung cấp."
+            : $"Đăng nhập: {loginUrl}";
         var accessSummary = BuildAccessSummary(account, subjectLabels);
 
         return $"""
-            ChÃ o má»«ng báº¡n tá»›i á»¨ng dá»¥ng Chat Bot - Quáº£n LÃ½ TÃ i Liá»‡u
+            Chào mừng bạn tới Ứng dụng Chat Bot - Quản Lý Tài Liệu
 
-            Xin chÃ o {account.FullName},
+            Xin chào {account.FullName},
 
-            TÃ i khoáº£n cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c táº¡o thÃ nh cÃ´ng.
+            Tài khoản của bạn đã được tạo thành công.
 
-            Email Ä‘Äƒng nháº­p: {account.Email}
-            Vai trÃ²: {account.Role}
-            MÃ´n / quyá»n truy cáº­p: {accessSummary}
-            Máº­t kháº©u táº¡m thá»i: {temporaryPassword}
+            Email đăng nhập: {account.Email}
+            Vai trò: {account.Role}
+            Môn / quyền truy cập: {accessSummary}
+            Mật khẩu tạm thời: {temporaryPassword}
 
             {loginLine}
 
-            LÆ°u Ã½ báº£o máº­t tÃ i khoáº£n:
-            - KhÃ´ng chia sáº» máº­t kháº©u cho báº¥t ká»³ ai.
-            - KhÃ´ng chuyá»ƒn tiáº¿p email nÃ y cho ngÆ°á»i khÃ¡c.
-            - Náº¿u nghi ngá» tÃ i khoáº£n bá»‹ lá»™, liÃªn há»‡ admin/bá»™ pháº­n phá»¥ trÃ¡ch Ä‘á»ƒ Ä‘á»•i hoáº·c khÃ³a tÃ i khoáº£n.
-            - ÄÄƒng xuáº¥t khá»i thiáº¿t bá»‹ dÃ¹ng chung sau khi sá»­ dá»¥ng.
+            Lưu ý bảo mật tài khoản:
+            - Không chia sẻ mật khẩu cho bất kỳ ai.
+            - Không chuyển tiếp email này cho người khác.
+            - Nếu nghi ngờ tài khoản bị lộ, liên hệ admin/bộ phận phụ trách để đổi hoặc khóa tài khoản.
+            - Đăng xuất khỏi thiết bị dùng chung sau khi sử dụng.
 
-            TrÃ¢n trá»ng,
+            Trân trọng,
             CPMS
             """;
     }
@@ -200,18 +200,18 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
     {
         var expiryText = expiresAt.ToLocalTime().ToString("HH:mm dd/MM/yyyy");
         return $"""
-            Äáº·t láº¡i máº­t kháº©u Course Assistant
+            Đặt lại mật khẩu Course Assistant
 
-            Xin chÃ o {account.FullName},
+            Xin chào {account.FullName},
 
-            Há»‡ thá»‘ng nháº­n Ä‘Æ°á»£c yÃªu cáº§u Ä‘áº·t láº¡i máº­t kháº©u cho tÃ i khoáº£n {account.Email}.
+            Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản {account.Email}.
 
-            Link Ä‘áº·t láº¡i máº­t kháº©u:
+            Link đặt lại mật khẩu:
             {resetUrl}
 
-            Link nÃ y háº¿t háº¡n lÃºc {expiryText}. Náº¿u báº¡n khÃ´ng yÃªu cáº§u thao tÃ¡c nÃ y, hÃ£y bá» qua email.
+            Link này hết hạn lúc {expiryText}. Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.
 
-            TrÃ¢n trá»ng,
+            Trân trọng,
             CPMS
             """;
     }
@@ -233,14 +233,14 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #dbe4ef;border-radius:12px;overflow:hidden;">
                       <tr>
                         <td style="padding:28px;">
-                          <h1 style="margin:0 0 14px;color:#0f4c81;font-size:24px;line-height:1.3;">Äáº·t láº¡i máº­t kháº©u</h1>
-                          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Xin chÃ o <strong>{{fullName}}</strong>,</p>
-                          <p style="font-size:15px;line-height:1.6;margin:0 0 18px;">Há»‡ thá»‘ng nháº­n Ä‘Æ°á»£c yÃªu cáº§u Ä‘áº·t láº¡i máº­t kháº©u cho tÃ i khoáº£n <strong>{{email}}</strong>.</p>
+                          <h1 style="margin:0 0 14px;color:#0f4c81;font-size:24px;line-height:1.3;">Đặt lại mật khẩu</h1>
+                          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Xin chào <strong>{{fullName}}</strong>,</p>
+                          <p style="font-size:15px;line-height:1.6;margin:0 0 18px;">Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>{{email}}</strong>.</p>
                           <p style="margin:22px 0;">
-                            <a href="{{resetLink}}" style="display:inline-block;background:#0f4c81;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Äáº·t láº¡i máº­t kháº©u</a>
+                            <a href="{{resetLink}}" style="display:inline-block;background:#0f4c81;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Đặt lại mật khẩu</a>
                           </p>
-                          <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 12px;">Link háº¿t háº¡n lÃºc <strong>{{expiryText}}</strong>.</p>
-                          <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0;">Náº¿u báº¡n khÃ´ng yÃªu cáº§u thao tÃ¡c nÃ y, hÃ£y bá» qua email.</p>
+                          <p style="font-size:14px;color:#64748b;line-height:1.6;margin:0 0 12px;">Link hết hạn lúc <strong>{{expiryText}}</strong>.</p>
+                          <p style="font-size:13px;color:#64748b;line-height:1.6;margin:0;">Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p>
                         </td>
                       </tr>
                     </table>
@@ -264,9 +264,9 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
         var accessSummary = WebUtility.HtmlEncode(BuildAccessSummary(account, subjectLabels));
         var password = WebUtility.HtmlEncode(temporaryPassword);
         var loginLink = string.IsNullOrWhiteSpace(loginUrl)
-            ? "<p style=\"margin:0;color:#475569;\">ÄÄƒng nháº­p táº¡i Ä‘á»‹a chá»‰ á»©ng dá»¥ng Ä‘Æ°á»£c nhÃ  trÆ°á»ng cung cáº¥p.</p>"
+            ? "<p style=\"margin:0;color:#475569;\">Đăng nhập tại địa chỉ ứng dụng được nhà trường cung cấp.</p>"
             : $"""
-              <a href="{WebUtility.HtmlEncode(loginUrl)}" style="display:inline-block;background:#0f4c81;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">ÄÄƒng nháº­p á»©ng dá»¥ng</a>
+              <a href="{WebUtility.HtmlEncode(loginUrl)}" style="display:inline-block;background:#0f4c81;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Đăng nhập ứng dụng</a>
               """;
 
         return $$"""
@@ -280,29 +280,29 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
                       <tr>
                         <td style="padding:24px 28px 12px;text-align:center;">
                           <img src="cid:{{LogoContentId}}" alt="FPT Education" style="max-width:360px;width:80%;height:auto;margin:0 auto 18px;display:block;" />
-                          <h1 style="margin:0;color:#0f4c81;font-size:24px;line-height:1.3;">ChÃ o má»«ng báº¡n tá»›i á»¨ng dá»¥ng Chat Bot - Quáº£n LÃ½ TÃ i Liá»‡u</h1>
+                          <h1 style="margin:0;color:#0f4c81;font-size:24px;line-height:1.3;">Chào mừng bạn tới Ứng dụng Chat Bot - Quản Lý Tài Liệu</h1>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding:10px 28px 28px;">
-                          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Xin chÃ o <strong>{{fullName}}</strong>,</p>
-                          <p style="font-size:15px;line-height:1.6;margin:0 0 18px;">TÃ i khoáº£n cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c táº¡o thÃ nh cÃ´ng. Vui lÃ²ng sá»­ dá»¥ng thÃ´ng tin bÃªn dÆ°á»›i Ä‘á»ƒ Ä‘Äƒng nháº­p há»‡ thá»‘ng.</p>
+                          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Xin chào <strong>{{fullName}}</strong>,</p>
+                          <p style="font-size:15px;line-height:1.6;margin:0 0 18px;">Tài khoản của bạn đã được tạo thành công. Vui lòng sử dụng thông tin bên dưới để đăng nhập hệ thống.</p>
 
                           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:18px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
                             <tr>
-                              <td style="padding:12px 14px;color:#64748b;width:38%;font-size:14px;">Email Ä‘Äƒng nháº­p</td>
+                              <td style="padding:12px 14px;color:#64748b;width:38%;font-size:14px;">Email đăng nhập</td>
                               <td style="padding:12px 14px;font-weight:700;font-size:14px;">{{email}}</td>
                             </tr>
                             <tr>
-                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">Vai trÃ²</td>
+                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">Vai trò</td>
                               <td style="padding:12px 14px;font-weight:700;font-size:14px;">{{role}}</td>
                             </tr>
                             <tr>
-                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">MÃ´n / quyá»n truy cáº­p</td>
+                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">Môn / quyền truy cập</td>
                               <td style="padding:12px 14px;font-weight:700;font-size:14px;">{{accessSummary}}</td>
                             </tr>
                             <tr>
-                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">Máº­t kháº©u táº¡m thá»i</td>
+                              <td style="padding:12px 14px;color:#64748b;font-size:14px;">Mật khẩu tạm thời</td>
                               <td style="padding:12px 14px;font-weight:800;font-size:14px;color:#b42318;">{{password}}</td>
                             </tr>
                           </table>
@@ -310,16 +310,16 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
                           <div style="margin:20px 0;">{{loginLink}}</div>
 
                           <div style="border-left:4px solid #f97316;background:#fff7ed;padding:14px 16px;border-radius:8px;margin-top:22px;">
-                            <h2 style="margin:0 0 8px;font-size:16px;color:#9a3412;">Nháº¯c nhá»Ÿ báº£o máº­t tÃ i khoáº£n</h2>
+                            <h2 style="margin:0 0 8px;font-size:16px;color:#9a3412;">Nhắc nhở bảo mật tài khoản</h2>
                             <ul style="margin:0;padding-left:18px;color:#7c2d12;font-size:14px;line-height:1.6;">
-                              <li>KhÃ´ng chia sáº» máº­t kháº©u cho báº¥t ká»³ ai.</li>
-                              <li>KhÃ´ng chuyá»ƒn tiáº¿p email nÃ y cho ngÆ°á»i khÃ¡c.</li>
-                              <li>Náº¿u nghi ngá» tÃ i khoáº£n bá»‹ lá»™, liÃªn há»‡ admin/bá»™ pháº­n phá»¥ trÃ¡ch Ä‘á»ƒ Ä‘á»•i hoáº·c khÃ³a tÃ i khoáº£n.</li>
-                              <li>ÄÄƒng xuáº¥t khá»i thiáº¿t bá»‹ dÃ¹ng chung sau khi sá»­ dá»¥ng.</li>
+                              <li>Không chia sẻ mật khẩu cho bất kỳ ai.</li>
+                              <li>Không chuyển tiếp email này cho người khác.</li>
+                              <li>Nếu nghi ngờ tài khoản bị lộ, liên hệ admin/bộ phận phụ trách để đổi hoặc khóa tài khoản.</li>
+                              <li>Đăng xuất khỏi thiết bị dùng chung sau khi sử dụng.</li>
                             </ul>
                           </div>
 
-                          <p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.5;">Email nÃ y Ä‘Æ°á»£c gá»­i tá»« há»‡ thá»‘ng CPMS. Vui lÃ²ng khÃ´ng tráº£ lá»i trá»±c tiáº¿p email nÃ y.</p>
+                          <p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.5;">Email này được gửi từ hệ thống CPMS. Vui lòng không trả lời trực tiếp email này.</p>
                         </td>
                       </tr>
                     </table>
@@ -335,7 +335,7 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
     {
         if (account.Role == AppRoles.Admin)
         {
-            return "Admin - toÃ n quyá»n há»‡ thá»‘ng";
+            return "Admin - toàn quyền hệ thống";
         }
 
         if (account.Role == AppRoles.Lecturer)
@@ -346,11 +346,11 @@ public sealed class SmtpAccountEmailSender : IAccountEmailSender
                 .ToList() ?? new List<string>();
 
             return subjects.Count == 0
-                ? "Lecturer - chÆ°a Ä‘Æ°á»£c gÃ¡n mÃ´n"
+                ? "Lecturer - chưa được gán môn"
                 : string.Join(", ", subjects);
         }
 
-        return "Student - táº¥t cáº£ tÃ i liá»‡u Ä‘Ã£ index";
+        return "Student - tất cả tài liệu đã index";
     }
 }
 
