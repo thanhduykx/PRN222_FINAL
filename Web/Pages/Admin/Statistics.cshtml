@@ -408,10 +408,9 @@
 
         @if (Model.Tab == "users")
         {
-            <div class="ops-stat-three-column">
+            <div class="ops-stat-user-summary">
                 <section class="ops-panel"><div class="ops-panel-head"><div><h2>Sinh viên</h2><p class="ops-muted mb-0">Mức độ sử dụng chatbot.</p></div></div><div class="ops-metric-list"><div><span>Tổng sinh viên</span><strong>@Model.StudentUsers.ToString("N0")</strong></div><div><span>Hoạt động trong @Model.Days ngày</span><strong>@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong></div><div><span>Hỏi nhiều nhất</span><strong>@(Model.Dashboard.TopChatUsers.FirstOrDefault()?.UserName ?? "-")</strong></div></div></section>
                 <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giảng viên</h2><p class="ops-muted mb-0">Theo quyền upload và tài liệu.</p></div></div><div class="ops-metric-list"><div><span>Tổng giảng viên</span><strong>@Model.LecturerUsers.ToString("N0")</strong></div><div><span>Quyền upload đang hoạt động</span><strong>@uploadPermissionCount.ToString("N0")</strong></div><div><span>TB tài liệu/môn</span><strong>@(Model.Dashboard.TotalSubjects == 0 ? "0" : (Model.Dashboard.TotalDocuments / Math.Max(1, Model.Dashboard.TotalSubjects)).ToString("N0"))</strong></div></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Trưởng bộ môn</h2><p class="ops-muted mb-0">Môn học có người phụ trách.</p></div></div><div class="ops-metric-list"><div><span>Đã gán phụ trách</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong></div><div><span>Chưa có phụ trách</span><strong>@subjectsWithoutOwner</strong></div><div><span>Môn chưa có tài liệu</span><strong>@subjectsWithoutDocuments</strong></div></div></section>
             </div>
 
             <section class="ops-panel">
@@ -433,14 +432,14 @@
         @if (Model.Tab == "permissions")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Số trưởng bộ môn</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Môn đã có người phụ trách</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Giảng viên phụ trách</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Môn đã có người phụ trách</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">upload</span><div class="ops-kpi-content"><span>Quyền upload</span><strong>@uploadPermissionCount</strong><small>Đang gán theo môn</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn chưa phụ trách</span><strong>@subjectsWithoutOwner</strong><small>Cần gán trưởng bộ môn</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn chưa phụ trách</span><strong>@subjectsWithoutOwner</strong><small>Cần gán giảng viên phụ trách</small></div></article>
             </section>
             <section class="ops-panel">
                 <div class="ops-panel-head">
                     <div><h2>Báo cáo phân quyền</h2><p class="ops-muted mb-0">Theo dõi người phụ trách môn và quyền upload tài liệu.</p></div>
-                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán trưởng bộ môn</a>
+                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán giảng viên phụ trách</a>
                 </div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
@@ -449,7 +448,7 @@
                             @foreach (var subject in Model.Dashboard.SubjectUsage)
                             {
                                 var owner = string.IsNullOrWhiteSpace(subject.OwnerName) ? subject.OwnerEmail : subject.OwnerName;
-                                <tr><td data-label="Người dùng"><strong>@(string.IsNullOrWhiteSpace(owner) ? "Chưa phân công" : owner)</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò">Trưởng bộ môn</td><td data-label="Môn phụ trách">@subject.SubjectCode</td><td data-label="Quyền upload">@(subject.LecturerCount > 0 ? "Có" : "Chưa có")</td><td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
+                                <tr><td data-label="Người dùng"><strong>@(string.IsNullOrWhiteSpace(owner) ? "Chưa phân công" : owner)</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò">Giảng viên phụ trách</td><td data-label="Môn phụ trách">@subject.SubjectCode</td><td data-label="Quyền upload">@(subject.LecturerCount > 0 ? "Có" : "Chưa có")</td><td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
                             }
                         </tbody>
                     </table>
