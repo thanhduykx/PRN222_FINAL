@@ -12,4 +12,5 @@ public sealed class UserAccountData
     public string Provider { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastActiveAt { get; set; }
 }

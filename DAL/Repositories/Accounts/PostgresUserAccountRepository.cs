@@ -18,12 +18,12 @@ public sealed class PostgresUserAccountRepository : IUserAccountRepository
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT "Id", "Email", "FullName", "PasswordHash", "PasswordResetTokenHash",
-                   "PasswordResetTokenExpiresAt", "PasswordChangedAt", "Provider", "Role", "CreatedAt"
+                   "PasswordResetTokenExpiresAt", "PasswordChangedAt", "Provider", "Role", "CreatedAt", "LastActiveAt"
             FROM app_users ORDER BY "Email"
             """;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
-            users.Add(new UserAccountData { Id=reader.GetGuid(0),Email=reader.GetString(1),FullName=reader.GetString(2),PasswordHash=reader.GetString(3),PasswordResetTokenHash=reader.IsDBNull(4)?null:reader.GetString(4),PasswordResetTokenExpiresAt=reader.IsDBNull(5)?null:reader.GetFieldValue<DateTimeOffset>(5),PasswordChangedAt=reader.IsDBNull(6)?null:reader.GetFieldValue<DateTimeOffset>(6),Provider=reader.GetString(7),Role=reader.GetString(8),CreatedAt=reader.GetFieldValue<DateTimeOffset>(9) });
+            users.Add(new UserAccountData { Id=reader.GetGuid(0),Email=reader.GetString(1),FullName=reader.GetString(2),PasswordHash=reader.GetString(3),PasswordResetTokenHash=reader.IsDBNull(4)?null:reader.GetString(4),PasswordResetTokenExpiresAt=reader.IsDBNull(5)?null:reader.GetFieldValue<DateTimeOffset>(5),PasswordChangedAt=reader.IsDBNull(6)?null:reader.GetFieldValue<DateTimeOffset>(6),Provider=reader.GetString(7),Role=reader.GetString(8),CreatedAt=reader.GetFieldValue<DateTimeOffset>(9),LastActiveAt=reader.IsDBNull(10)?null:reader.GetFieldValue<DateTimeOffset>(10) });
         return users;
     }
 
@@ -39,12 +39,25 @@ public sealed class PostgresUserAccountRepository : IUserAccountRepository
             foreach (var user in users)
             {
                 await using var command=connection.CreateCommand(); command.Transaction=transaction;
-                command.CommandText="""INSERT INTO app_users ("Id","Email","FullName","PasswordHash","PasswordResetTokenHash","PasswordResetTokenExpiresAt","PasswordChangedAt","Provider","Role","CreatedAt") VALUES (@Id,@Email,@FullName,@PasswordHash,@PasswordResetTokenHash,@PasswordResetTokenExpiresAt,@PasswordChangedAt,@Provider,@Role,@CreatedAt)""";
+                command.CommandText="""INSERT INTO app_users ("Id","Email","FullName","PasswordHash","PasswordResetTokenHash","PasswordResetTokenExpiresAt","PasswordChangedAt","Provider","Role","CreatedAt","LastActiveAt") VALUES (@Id,@Email,@FullName,@PasswordHash,@PasswordResetTokenHash,@PasswordResetTokenExpiresAt,@PasswordChangedAt,@Provider,@Role,@CreatedAt,@LastActiveAt)""";
                 AddParameters(command,user); await command.ExecuteNonQueryAsync(cancellationToken);
             }
             await transaction.CommitAsync(cancellationToken);
         }
         catch { await transaction.RollbackAsync(cancellationToken); throw; }
+    }
+
+    public async Task UpdateLastActiveAsync(Guid userId, DateTimeOffset activeAt, CancellationToken cancellationToken = default)
+    {
+        await EnsureCreatedAsync(cancellationToken);
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE app_users SET \"LastActiveAt\" = @LastActiveAt WHERE \"Id\" = @Id";
+        command.Parameters.AddWithValue("@Id", userId);
+        command.Parameters.AddWithValue("@LastActiveAt", activeAt);
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)
+            throw new InvalidOperationException("User not found.");
     }
 
     private async Task EnsureCreatedAsync(CancellationToken cancellationToken)
@@ -55,10 +68,11 @@ public sealed class PostgresUserAccountRepository : IUserAccountRepository
             ALTER TABLE app_users ADD COLUMN IF NOT EXISTS "PasswordResetTokenHash" VARCHAR(128) NULL;
             ALTER TABLE app_users ADD COLUMN IF NOT EXISTS "PasswordResetTokenExpiresAt" TIMESTAMPTZ NULL;
             ALTER TABLE app_users ADD COLUMN IF NOT EXISTS "PasswordChangedAt" TIMESTAMPTZ NULL;
+            ALTER TABLE app_users ADD COLUMN IF NOT EXISTS "LastActiveAt" TIMESTAMPTZ NULL;
             CREATE UNIQUE INDEX IF NOT EXISTS "UX_app_users_Email" ON app_users ("Email"); CREATE INDEX IF NOT EXISTS "IX_app_users_Role" ON app_users ("Role");
             """; await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static void AddParameters(NpgsqlCommand c, UserAccountData u)
-    { c.Parameters.AddWithValue("@Id",u.Id);c.Parameters.AddWithValue("@Email",u.Email);c.Parameters.AddWithValue("@FullName",u.FullName);c.Parameters.AddWithValue("@PasswordHash",u.PasswordHash);c.Parameters.AddWithValue("@PasswordResetTokenHash",(object?)u.PasswordResetTokenHash??DBNull.Value);c.Parameters.AddWithValue("@PasswordResetTokenExpiresAt",(object?)u.PasswordResetTokenExpiresAt??DBNull.Value);c.Parameters.AddWithValue("@PasswordChangedAt",(object?)u.PasswordChangedAt??DBNull.Value);c.Parameters.AddWithValue("@Provider",u.Provider);c.Parameters.AddWithValue("@Role",u.Role);c.Parameters.AddWithValue("@CreatedAt",u.CreatedAt); }
+    { c.Parameters.AddWithValue("@Id",u.Id);c.Parameters.AddWithValue("@Email",u.Email);c.Parameters.AddWithValue("@FullName",u.FullName);c.Parameters.AddWithValue("@PasswordHash",u.PasswordHash);c.Parameters.AddWithValue("@PasswordResetTokenHash",(object?)u.PasswordResetTokenHash??DBNull.Value);c.Parameters.AddWithValue("@PasswordResetTokenExpiresAt",(object?)u.PasswordResetTokenExpiresAt??DBNull.Value);c.Parameters.AddWithValue("@PasswordChangedAt",(object?)u.PasswordChangedAt??DBNull.Value);c.Parameters.AddWithValue("@Provider",u.Provider);c.Parameters.AddWithValue("@Role",u.Role);c.Parameters.AddWithValue("@CreatedAt",u.CreatedAt);c.Parameters.AddWithValue("@LastActiveAt",(object?)u.LastActiveAt??DBNull.Value); }
 }

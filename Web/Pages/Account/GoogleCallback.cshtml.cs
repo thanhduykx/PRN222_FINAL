@@ -47,6 +47,8 @@ public sealed class GoogleCallbackModel : PageModel
             return RedirectToPage("/Account/Login", new { returnUrl });
         }
 
+        await _users.MarkActiveAsync(user.Id);
+        user.LastActiveAt = DateTimeOffset.UtcNow;
         await SignInAsync(user);
         await HttpContext.SignOutAsync("External");
         return RedirectAfterSignIn(user, returnUrl);

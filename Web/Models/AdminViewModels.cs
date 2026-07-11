@@ -22,6 +22,9 @@ public sealed class AdminUserRowViewModel
     public string Provider { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastActiveAt { get; set; }
+    public bool MeetsInactivePeriod { get; set; }
+    public bool HasAssignedSubjects { get; set; }
     public bool IsLastAdmin { get; set; }
     public bool IsCurrentUser { get; set; }
     public IReadOnlyList<string> AssignedSubjects { get; set; } = Array.Empty<string>();

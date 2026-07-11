@@ -47,6 +47,7 @@ public static class BusinessServiceCollectionExtensions
         var seedAdmin = configuration.GetSection("SeedAdmin");
         services.AddSingleton<IUserAccountService>(provider => new UserAccountService(
             provider.GetRequiredService<IUserAccountRepository>(),
+            provider.GetRequiredService<IKnowledgeRepository>(),
             new SeedAdminOptions(
                 !bool.TryParse(seedAdmin["Enabled"], out var enabled) || enabled,
                 seedAdmin["FullName"] ?? "System Admin",

@@ -17,6 +17,7 @@ public interface IUserAccountService
     Task<UserAccount> GetOrCreateExternalAsync(string fullName, string email, string provider, CancellationToken cancellationToken = default);
     Task<UserAccount> UpdateFullNameAsync(Guid userId, string fullName, CancellationToken cancellationToken = default);
     Task<UserAccount> UpdateRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
+    Task MarkActiveAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<UserAccount> DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<(UserAccount Account, string Token, DateTimeOffset ExpiresAt)?> CreatePasswordResetTokenAsync(
         string email,
@@ -52,11 +53,16 @@ public sealed class UserAccountService : IUserAccountService
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly PRN222_FINAL.DAL.Repositories.Accounts.IUserAccountRepository _repository;
+    private readonly PRN222_FINAL.DAL.Repositories.IKnowledgeRepository _knowledgeRepository;
     private readonly SeedAdminOptions _seedAdmin;
 
-    public UserAccountService(PRN222_FINAL.DAL.Repositories.Accounts.IUserAccountRepository repository, SeedAdminOptions? seedAdmin = null)
+    public UserAccountService(
+        PRN222_FINAL.DAL.Repositories.Accounts.IUserAccountRepository repository,
+        PRN222_FINAL.DAL.Repositories.IKnowledgeRepository knowledgeRepository,
+        SeedAdminOptions? seedAdmin = null)
     {
         _repository = repository;
+        _knowledgeRepository = knowledgeRepository;
         _seedAdmin = NormalizeSeedAdminOptions(seedAdmin);
     }
 
@@ -334,6 +340,27 @@ public sealed class UserAccountService : IUserAccountService
                 throw new InvalidOperationException("Cannot delete the seed admin.");
             }
 
+            var lastActivity = user.LastActiveAt ?? user.CreatedAt;
+            if (lastActivity >= DateTimeOffset.UtcNow.AddMonths(-3))
+            {
+                throw new InvalidOperationException("User must be inactive for more than 3 months before deletion.");
+            }
+
+            var subjects = await _knowledgeRepository.GetCourseCatalogAsync(cancellationToken);
+            if (subjects.Any(subject => subject.OwnerUserId == userId))
+            {
+                throw new InvalidOperationException("User cannot be deleted while responsible for a subject.");
+            }
+
+            foreach (var subject in subjects)
+            {
+                var lecturerIds = await _knowledgeRepository.GetSubjectLecturerIdsAsync(subject.Id, cancellationToken);
+                if (lecturerIds.Contains(userId))
+                {
+                    throw new InvalidOperationException("User cannot be deleted while assigned to a subject.");
+                }
+            }
+
             users.Remove(user);
             await SaveAsync(users, cancellationToken);
             return user;
@@ -342,6 +369,12 @@ public sealed class UserAccountService : IUserAccountService
         {
             _gate.Release();
         }
+    }
+
+    public async Task MarkActiveAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty) throw new InvalidOperationException("User is required.");
+        await _repository.UpdateLastActiveAsync(userId, DateTimeOffset.UtcNow, cancellationToken);
     }
 
     public async Task<(UserAccount Account, string Token, DateTimeOffset ExpiresAt)?> CreatePasswordResetTokenAsync(
@@ -554,14 +587,14 @@ public sealed class UserAccountService : IUserAccountService
     {
         Id=user.Id,Email=user.Email,FullName=user.FullName,PasswordHash=user.PasswordHash,
         PasswordResetTokenHash=user.PasswordResetTokenHash,PasswordResetTokenExpiresAt=user.PasswordResetTokenExpiresAt,
-        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt
+        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt
     };
 
     private static UserAccount ToModel(PRN222_FINAL.DAL.Models.Accounts.UserAccountData user) => new()
     {
         Id=user.Id,Email=user.Email,FullName=user.FullName,PasswordHash=user.PasswordHash,
         PasswordResetTokenHash=user.PasswordResetTokenHash,PasswordResetTokenExpiresAt=user.PasswordResetTokenExpiresAt,
-        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt
+        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt
     };
     private static string NormalizeEmail(string email)
     {
