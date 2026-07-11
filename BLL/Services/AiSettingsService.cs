@@ -9,11 +9,27 @@ public sealed record AiSettings(string ChatModel, string EmbeddingModel, int Emb
 public interface IAiSettingsService
 {
     AiSettings Current { get; }
+    IReadOnlyList<string> SupportedChatModels { get; }
+    IReadOnlyList<string> SupportedEmbeddingModels { get; }
     Task SaveAsync(AiSettings settings, CancellationToken cancellationToken = default);
 }
 
 public sealed class AiSettingsService : IAiSettingsService
 {
+    private static readonly string[] ChatModels =
+    [
+        "gemini-3.5-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+    ];
+
+    private static readonly string[] EmbeddingModels =
+    [
+        "gemini-embedding-2",
+        "gemini-embedding-001",
+        "text-embedding-004"
+    ];
+
     private readonly string _settingsPath;
     private readonly GeminiOptions _gemini;
     private readonly FlmSyllabusAwareTextChunker _chunker;
@@ -33,6 +49,8 @@ public sealed class AiSettingsService : IAiSettingsService
 
     public AiSettings Current => new(_gemini.ChatModel, _gemini.EmbeddingModel,
         _gemini.EmbeddingDimensions, _chunker.ChunkSize, _chunker.Overlap);
+    public IReadOnlyList<string> SupportedChatModels => ChatModels;
+    public IReadOnlyList<string> SupportedEmbeddingModels => EmbeddingModels;
 
     public async Task SaveAsync(AiSettings settings, CancellationToken cancellationToken = default)
     {
@@ -76,8 +94,10 @@ public sealed class AiSettingsService : IAiSettingsService
     {
         var chatModel = (settings.ChatModel ?? string.Empty).Trim();
         var embeddingModel = (settings.EmbeddingModel ?? string.Empty).Trim();
-        if (chatModel.Length is < 3 or > 120 || embeddingModel.Length is < 3 or > 120)
-            throw new ArgumentException("Tên mô hình phải có từ 3 đến 120 ký tự.");
+        if (!ChatModels.Contains(chatModel, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException("Model trả lời không nằm trong danh sách được hỗ trợ.");
+        if (!EmbeddingModels.Contains(embeddingModel, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException("Model đọc tài liệu không nằm trong danh sách được hỗ trợ.");
         if (settings.EmbeddingDimensions is < 128 or > 4096)
             throw new ArgumentOutOfRangeException(nameof(settings.EmbeddingDimensions), "Độ chi tiết dữ liệu phải từ 128 đến 4.096.");
         if (settings.ChunkSize is < 300 or > 4000)

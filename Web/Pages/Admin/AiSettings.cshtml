@@ -3,8 +3,7 @@
 @{
     ViewData["Title"] = "Thiết lập trợ lý học tập";
     ViewData["UseRblShell"] = true;
-    ViewData["ActiveNav"] = "admin";
-    ViewData["AdminSection"] = "ai-settings";
+    ViewData["ActiveNav"] = "assistant-settings";
     ViewData["ShellTitle"] = "Thiết lập trợ lý học tập";
 }
 
@@ -272,7 +271,12 @@
             </div>
             <label class="ops-field">
                 <span>Model trả lời (Chat Model)</span>
-                <input asp-for="Input.AnswerModel" class="modern-input" autocomplete="off" placeholder="VD: gemini-3.5-flash" />
+                <select asp-for="Input.AnswerModel" class="modern-input">
+                    @foreach (var modelName in Model.AnswerModelOptions)
+                    {
+                        <option value="@modelName">@modelName</option>
+                    }
+                </select>
                 <small>Khuyến nghị dùng gemini-3.5-flash cho tốc độ nhanh nhất.</small>
                 <span asp-validation-for="Input.AnswerModel" class="text-danger"></span>
             </label>
@@ -285,7 +289,12 @@
             </div>
             <label class="ops-field">
                 <span>Model đọc tài liệu (Embedding Model)</span>
-                <input asp-for="Input.ReadingModel" class="modern-input" autocomplete="off" placeholder="VD: text-embedding-004" />
+                <select asp-for="Input.ReadingModel" class="modern-input">
+                    @foreach (var modelName in Model.ReadingModelOptions)
+                    {
+                        <option value="@modelName">@modelName</option>
+                    }
+                </select>
                 <span asp-validation-for="Input.ReadingModel" class="text-danger"></span>
             </label>
 

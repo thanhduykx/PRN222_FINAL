@@ -15,6 +15,8 @@ public sealed class AiSettingsModel : PageModel
     public AiSettingsModel(IAiSettingsService settings) => _settings = settings;
 
     [BindProperty] public InputModel Input { get; set; } = new();
+    public IReadOnlyList<string> AnswerModelOptions => _settings.SupportedChatModels;
+    public IReadOnlyList<string> ReadingModelOptions => _settings.SupportedEmbeddingModels;
 
     public void OnGet() => MapFromCurrent();
 
