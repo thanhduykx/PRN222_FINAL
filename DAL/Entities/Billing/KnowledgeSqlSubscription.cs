@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using PRN222_FINAL.Models;
+using PRN222_FINAL.DAL.Enums;
 
 namespace PRN222_FINAL.DAL.Entities.Billing;
 

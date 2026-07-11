@@ -1,5 +1,5 @@
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Documents;
+﻿using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Documents;
 
 namespace PRN222_FINAL.BLL;
 

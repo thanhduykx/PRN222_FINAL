@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using PRN222_FINAL.DAL.Mapping;
-using PRN222_FINAL.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using PRN222_FINAL.DAL.Entities.Billing;
+using PRN222_FINAL.DAL.Enums;
 
 namespace PRN222_FINAL.DAL.Repositories.Billing;
 
@@ -10,14 +10,14 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
     {
     }
 
-    public async Task AddAsync(Subscription subscription, CancellationToken cancellationToken = default)
+    public async Task AddAsync(KnowledgeSqlSubscription subscription, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
-        context.Subscriptions.Add(BillingSqlMapper.ToEntity(subscription));
+        context.Subscriptions.Add(subscription);
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Subscription?> GetByPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
+    public async Task<KnowledgeSqlSubscription?> GetByPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         var entity = await context.Subscriptions
@@ -25,10 +25,10 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             .Include(subscription => subscription.Package)
             .FirstOrDefaultAsync(subscription => subscription.PaymentId == paymentId, cancellationToken);
 
-        return entity is null ? null : BillingSqlMapper.ToModel(entity);
+        return entity;
     }
 
-    public async Task<Subscription?> GetCurrentActiveAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<KnowledgeSqlSubscription?> GetCurrentActiveAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
         await using var context = CreateContext();
@@ -42,10 +42,10 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             .OrderByDescending(subscription => subscription.EndsAt)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return entity is null ? null : BillingSqlMapper.ToModel(entity);
+        return entity;
     }
 
-    public async Task<IReadOnlyList<Subscription>> GetActiveByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<KnowledgeSqlSubscription>> GetActiveByUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
         await using var context = CreateContext();
@@ -56,11 +56,10 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
                 && subscription.Status == SubscriptionStatus.Active
                 && subscription.EndsAt > now)
             .OrderBy(subscription => subscription.StartsAt)
-            .Select(subscription => BillingSqlMapper.ToModel(subscription))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Subscription subscription, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(KnowledgeSqlSubscription subscription, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         var entity = await context.Subscriptions.FirstOrDefaultAsync(item => item.Id == subscription.Id, cancellationToken)

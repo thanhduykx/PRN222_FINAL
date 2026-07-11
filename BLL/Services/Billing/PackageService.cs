@@ -1,7 +1,7 @@
-using PRN222_FINAL.BLL.Mapping;
+﻿using PRN222_FINAL.BLL.Mapping;
 using PRN222_FINAL.DAL.Repositories.Billing;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
 
 namespace PRN222_FINAL.BLL.Services.Billing;
 
@@ -18,7 +18,7 @@ public sealed class PackageService : IPackageService
     {
         await EnsureDefaultPackagesAsync(cancellationToken);
         var packages = await _packages.GetActiveAsync(cancellationToken);
-        return packages.Select(BillingDtoMapper.ToDto).ToList();
+        return packages.Select(BillingDtoMapper.ToModel).Select(BillingDtoMapper.ToDto).ToList();
     }
 
     public async Task<PackageDto?> GetPackageAsync(Guid packageId, CancellationToken cancellationToken = default)
@@ -30,13 +30,14 @@ public sealed class PackageService : IPackageService
 
         await EnsureDefaultPackagesAsync(cancellationToken);
         var package = await _packages.GetByIdAsync(packageId, cancellationToken);
-        return package is null ? null : BillingDtoMapper.ToDto(package);
+        return package is null ? null : BillingDtoMapper.ToDto(BillingDtoMapper.ToModel(package));
     }
 
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
-        var existingPackages = await _packages.GetAllAsync(cancellationToken);
+        var existingPackages = (await _packages.GetAllAsync(cancellationToken))
+            .Select(BillingDtoMapper.ToModel).ToList();
         var defaults = new[]
         {
             new Package
@@ -126,7 +127,7 @@ public sealed class PackageService : IPackageService
             var existing = existingPackages.FirstOrDefault(item => item.Code.Equals(package.Code, StringComparison.OrdinalIgnoreCase));
             if (existing is null || DefaultPackageNeedsUpdate(existing, package))
             {
-                await _packages.UpsertAsync(package, cancellationToken);
+                await _packages.UpsertAsync(BillingDtoMapper.ToEntity(package), cancellationToken);
             }
         }
     }

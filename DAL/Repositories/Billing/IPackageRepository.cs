@@ -1,11 +1,11 @@
-using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.DAL.Entities.Billing;
 
 namespace PRN222_FINAL.DAL.Repositories.Billing;
 
 public interface IPackageRepository
 {
-    Task<IReadOnlyList<Package>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<Package>> GetActiveAsync(CancellationToken cancellationToken = default);
-    Task<Package?> GetByIdAsync(Guid packageId, CancellationToken cancellationToken = default);
-    Task UpsertAsync(Package package, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<KnowledgeSqlPackage>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<KnowledgeSqlPackage>> GetActiveAsync(CancellationToken cancellationToken = default);
+    Task<KnowledgeSqlPackage?> GetByIdAsync(Guid packageId, CancellationToken cancellationToken = default);
+    Task UpsertAsync(KnowledgeSqlPackage package, CancellationToken cancellationToken = default);
 }

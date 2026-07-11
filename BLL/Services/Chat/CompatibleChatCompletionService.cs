@@ -3,7 +3,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PRN222_FINAL.Models;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.DAL.Models.Http;
+using PRN222_FINAL.DAL.Repositories.Http;
 
 namespace PRN222_FINAL.BLL;
 
@@ -14,12 +16,12 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly HttpClient _httpClient;
+    private readonly IHttpRepository _http;
     private readonly CompatibleChatOptions _options;
 
-    public CompatibleChatCompletionService(HttpClient httpClient, CompatibleChatOptions options)
+    public CompatibleChatCompletionService(IHttpRepository http, CompatibleChatOptions options)
     {
-        _httpClient = httpClient;
+        _http = http;
         _options = options;
     }
 
@@ -231,26 +233,23 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, ResolveChatUrl());
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
-            request.Content = JsonContent.Create(
-                new CompatibleChatRequest(
+            var body = JsonSerializer.Serialize(new CompatibleChatRequest(
                     ModelName,
                     [
                         new CompatibleChatMessage("system", system),
                         new CompatibleChatMessage("user", prompt)
                     ],
                     temperature,
-                    maxTokens),
-                options: JsonOptions);
-
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
+                    maxTokens), JsonOptions);
+            var request = new HttpRequestData("POST", ResolveChatUrl(), body, Headers:
+                new Dictionary<string,string> { ["Authorization"] = $"Bearer {_options.ApiKey}" });
+            var response = await _http.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 return null;
             }
 
-            var payload = await response.Content.ReadFromJsonAsync<CompatibleChatResponse>(JsonOptions, cancellationToken);
+            var payload = JsonSerializer.Deserialize<CompatibleChatResponse>(response.Body, JsonOptions);
             var content = payload?.Choices?
                 .FirstOrDefault()?
                 .Message?

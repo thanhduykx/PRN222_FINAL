@@ -576,7 +576,7 @@
                                         <span class="ops-role-badge">@user.Role</span>
                                     </td>
                                     <td data-label="Subjects">
-                                        @if (user.Role == PRN222_FINAL.Web.Security.AppRoles.Lecturer)
+                                        @if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Lecturer)
                                         {
                                             <div class="ops-subject-cell">
                                                 <div class="ops-chip-list">
@@ -596,7 +596,7 @@
                                                 </div>
                                             </div>
                                         }
-                                        else if (user.Role == PRN222_FINAL.Web.Security.AppRoles.Student)
+                                        else if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Student)
                                         {
                                             <span class="ops-chip" data-i18n="admin.allIndexedDocs">All indexed documents</span>
                                         }
@@ -609,7 +609,7 @@
                                         @{
                                             var deleteDisabled = user.IsLastAdmin
                                             || user.IsCurrentUser
-                                            || (user.Role != PRN222_FINAL.Web.Security.AppRoles.Student && user.Role != PRN222_FINAL.Web.Security.AppRoles.Lecturer);
+                                            || (user.Role != PRN222_FINAL.BLL.Security.AppRoles.Student && user.Role != PRN222_FINAL.BLL.Security.AppRoles.Lecturer);
                                             var deleteTitle = user.IsCurrentUser
                                             ? "Cannot delete your own active account"
                                             : user.IsLastAdmin
@@ -665,7 +665,7 @@
                     <select name="Role" data-admin-role-select>
                         @foreach (var role in Model.Roles)
                         {
-                            if (role.Equals(PRN222_FINAL.Web.Security.AppRoles.Student, StringComparison.OrdinalIgnoreCase))
+                            if (role.Equals(PRN222_FINAL.BLL.Security.AppRoles.Student, StringComparison.OrdinalIgnoreCase))
                             {
                                 <option value="@role" data-i18n="admin.role@(role)" selected>@role</option>
                             }
@@ -716,7 +716,7 @@
             </div>
             <form asp-page-handler="ImportUsers" method="post" enctype="multipart/form-data" class="ops-stacked-form" data-admin-user-role-subject-form data-confirm-en="Create these users in bulk and send welcome emails?" data-confirm-vi="Tạo người dùng hàng loạt và gửi email chào mừng?">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="Role" value="@PRN222_FINAL.Web.Security.AppRoles.Student" />
+                <input type="hidden" name="Role" value="@PRN222_FINAL.BLL.Security.AppRoles.Student" />
                 <label class="ops-field">
                     <span data-i18n="admin.excelFile">Excel file</span>
                     <input name="ExcelFile" type="file" accept=".xlsx" required style="padding: 0.5rem;" />
@@ -745,7 +745,7 @@
             </div>
 
             @{
-                var lecturers = users.Where(u => u.Role == PRN222_FINAL.Web.Security.AppRoles.Lecturer).ToList();
+                var lecturers = users.Where(u => u.Role == PRN222_FINAL.BLL.Security.AppRoles.Lecturer).ToList();
             }
             @if (lecturers.Count == 0)
             {
@@ -853,7 +853,7 @@
             </div>
 
             @{
-                var students = users.Where(u => u.Role == PRN222_FINAL.Web.Security.AppRoles.Student).ToList();
+                var students = users.Where(u => u.Role == PRN222_FINAL.BLL.Security.AppRoles.Student).ToList();
             }
             @if (students.Count == 0)
             {

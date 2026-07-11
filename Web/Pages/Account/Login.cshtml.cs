@@ -1,4 +1,7 @@
-﻿using System.Security.Claims;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using PRN222_FINAL.BLL.Models;
+using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Net.Sockets;
@@ -19,10 +22,10 @@ public sealed class LoginModel : PageModel
 {
     private const string AccountProvisioningMessage = "Tài khoản được cấp bởi Nhà trường. Vui lòng liên hệ Nhà trường để xin cấp tài khoản.";
 
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
     private readonly IAuthenticationSchemeProvider _schemes;
 
-    public LoginModel(IUserAccountStore users, IAuthenticationSchemeProvider schemes)
+    public LoginModel(IUserAccountService users, IAuthenticationSchemeProvider schemes)
     {
         _users = users;
         _schemes = schemes;

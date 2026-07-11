@@ -1,4 +1,7 @@
-﻿using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.BLL.Services.Chat;
+using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authorization;
 using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
@@ -16,7 +19,7 @@ public sealed class ChatModel : HomePageModelBase
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
         IChatUsageService chatUsage)

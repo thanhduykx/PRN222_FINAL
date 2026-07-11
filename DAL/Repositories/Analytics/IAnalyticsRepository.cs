@@ -1,9 +1,9 @@
-using PRN222_FINAL.Models.DTOs.Analytics;
+﻿using PRN222_FINAL.DAL.Models.Analytics;
 
 namespace PRN222_FINAL.DAL.Repositories.Analytics;
 
 public interface IAnalyticsRepository
 {
-    Task AddCourseAccessAsync(CourseAccessLogRequestDto request, CancellationToken cancellationToken = default);
-    Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default);
+    Task AddCourseAccessAsync(CourseAccessLogRequestData request, CancellationToken cancellationToken = default);
+    Task<AdminAnalyticsDashboardData> GetAdminDashboardAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default);
 }

@@ -1,9 +1,9 @@
-﻿using PRN222_FINAL.DAL;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using PRN222_FINAL.Models;
+using PRN222_FINAL.BLL.Models;
 using PRN222_FINAL.DAL.Repositories;
+using PRN222_FINAL.BLL.Mapping;
 
 namespace PRN222_FINAL.BLL;
 
@@ -196,14 +196,14 @@ public sealed class RagChatService : IRagChatService
             throw new InvalidOperationException("Question cannot be empty.");
         }
 
-        var session = await _repository.GetOrCreateSessionAsync(sessionId, cancellationToken, ownerInfo);
+        var session = KnowledgeModelMapper.ToModel(await _repository.GetOrCreateSessionAsync(sessionId, cancellationToken, KnowledgeModelMapper.ToData(ownerInfo)));
         var historyBeforeQuestion = session.Messages.ToList();
 
-        await _repository.AddMessageAsync(sessionId, new ChatMessage
+        await _repository.AddMessageAsync(sessionId, KnowledgeModelMapper.ToData(new ChatMessage
         {
             Role = "user",
             Content = trimmedQuestion
-        }, cancellationToken, ownerInfo);
+        }), cancellationToken, KnowledgeModelMapper.ToData(ownerInfo));
 
         if (LooksLikePromptInjection(trimmedQuestion))
         {
@@ -493,12 +493,12 @@ public sealed class RagChatService : IRagChatService
 
         if (accessScope is not null)
         {
-            return await _repository.GetChunksAsync(accessScope, normalizedAllowedSubjects, cancellationToken);
+            return (await _repository.GetChunksAsync(KnowledgeModelMapper.ToData(accessScope), normalizedAllowedSubjects, cancellationToken)).Select(KnowledgeModelMapper.ToModel).ToList();
         }
 
         var chunks = await _repository.GetChunksAsync(cancellationToken);
 
-        return chunks
+        return chunks.Select(KnowledgeModelMapper.ToModel)
             .Where(chunk => normalizedAllowedSubjects.Any(subject => SubjectMatches(chunk.Subject, subject)))
             .ToList();
     }
@@ -1509,14 +1509,14 @@ public sealed class RagChatService : IRagChatService
         bool hasDirectCitation = true,
         string? fallbackModel = null)
     {
-        await _repository.AddMessageAsync(sessionId, new ChatMessage
+        await _repository.AddMessageAsync(sessionId, KnowledgeModelMapper.ToData(new ChatMessage
         {
             Role = "assistant",
             Content = answer,
             Citations = citations.ToList()
-        }, cancellationToken, ownerInfo);
+        }), cancellationToken, KnowledgeModelMapper.ToData(ownerInfo));
 
-        var session = await _repository.GetOrCreateSessionAsync(sessionId, cancellationToken, ownerInfo);
+        var session = KnowledgeModelMapper.ToModel(await _repository.GetOrCreateSessionAsync(sessionId, cancellationToken, KnowledgeModelMapper.ToData(ownerInfo)));
         return new ChatAnswer(
             answer,
             citations,

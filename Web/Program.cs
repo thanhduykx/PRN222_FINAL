@@ -1,3 +1,7 @@
+﻿using PRN222_FINAL.BLL.Services.Chat;
+using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
@@ -69,8 +73,8 @@ namespace PRN222_FINAL.Web
                             return;
                         }
 
-                        var users = context.HttpContext.RequestServices.GetRequiredService<PRN222_FINAL.Web.Services.IUserAccountStore>();
-                        PRN222_FINAL.Web.Models.UserAccount? user;
+                        var users = context.HttpContext.RequestServices.GetRequiredService<PRN222_FINAL.BLL.Services.Accounts.IUserAccountService>();
+                        PRN222_FINAL.BLL.Models.UserAccount? user;
                         try
                         {
                             using var validationTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -169,82 +173,25 @@ namespace PRN222_FINAL.Web
                 geminiSection["ChatBaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                 geminiSection["EmbeddingBaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta");
 
-            var smtpSection = builder.Configuration.GetSection("Smtp");
-            var smtpOptions = new PRN222_FINAL.Web.Services.SmtpOptions(
-                smtpSection["Host"] ?? string.Empty,
-                int.TryParse(smtpSection["Port"], out var smtpPort) ? smtpPort : 587,
-                !bool.TryParse(smtpSection["EnableSsl"], out var smtpEnableSsl) || smtpEnableSsl,
-                smtpSection["FromEmail"] ?? string.Empty,
-                smtpSection["FromName"] ?? "CPMS",
-                smtpSection["UserName"] ?? string.Empty,
-                smtpSection["Password"] ?? string.Empty);
-
             builder.Services.AddSingleton(geminiOptions);
-            builder.Services.AddSingleton(smtpOptions);
 
-            builder.Services.AddKnowledgeBusinessServices(builder.Configuration);
-            builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IUserAccountStore>(_ =>
-            {
-                var seedAdminSection = builder.Configuration.GetSection("SeedAdmin");
-                var seedAdminEnabled = !bool.TryParse(seedAdminSection["Enabled"], out var parsedSeedAdminEnabled)
-                    || parsedSeedAdminEnabled;
-
-                return new PRN222_FINAL.Web.Services.UserAccountStore(
-                    builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
-                    new PRN222_FINAL.Web.Services.SeedAdminOptions(
-                        seedAdminEnabled,
-                        seedAdminSection["FullName"] ?? "System Admin",
-                        seedAdminSection["Email"] ?? "admin@eduvietrag.local",
-                        seedAdminSection["Password"] ?? "Admin@12345"));
-            });
-            builder.Services.AddSingleton<PRN222_FINAL.BLL.IEmbeddingService>(_ =>
-            {
-                var embeddingProvider = builder.Configuration["Embedding:Provider"] ?? "Hashing";
-                if (embeddingProvider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
-                {
-                    return new PRN222_FINAL.BLL.GeminiEmbeddingService(
-                        new HttpClient
-                        {
-                            Timeout = TimeSpan.FromSeconds(Math.Max(5, geminiOptions.TimeoutSeconds))
-                        },
-                        geminiOptions);
-                }
-
-                return new PRN222_FINAL.BLL.HashingEmbeddingService();
-            });
-            builder.Services.AddSingleton<PRN222_FINAL.BLL.ILocalChatCompletionService>(_ =>
-            {
-                var httpClient = new HttpClient
-                {
-                    Timeout = TimeSpan.FromSeconds(Math.Max(5, geminiOptions.TimeoutSeconds))
-                };
-
-                return new PRN222_FINAL.BLL.GeminiChatCompletionService(httpClient, geminiOptions);
-            });
+            builder.Services.AddKnowledgeBusinessServices(builder.Configuration, builder.Environment.ContentRootPath);
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IDocumentTextExtractor, PRN222_FINAL.BLL.DocumentTextExtractor>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.FlmSyllabusAwareTextChunker>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.ITextChunker>(provider =>
                 provider.GetRequiredService<PRN222_FINAL.BLL.FlmSyllabusAwareTextChunker>());
-            builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IAiSettingsService, PRN222_FINAL.Web.Services.AiSettingsService>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IChunkRetrievalEnrichmentService, PRN222_FINAL.BLL.AiChunkRetrievalEnrichmentService>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IDocumentIndexJobQueue, PRN222_FINAL.BLL.DocumentIndexJobQueue>();
-            builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IAccountEmailSender, PRN222_FINAL.Web.Services.SmtpAccountEmailSender>();
             builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IDocumentStatusNotifier, PRN222_FINAL.Web.Services.SignalRDocumentStatusNotifier>();
             builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IOnlineUserPresenceTracker, PRN222_FINAL.Web.Services.InMemoryOnlineUserPresenceTracker>();
-            builder.Services.AddSingleton<PRN222_FINAL.BLL.IWebPageTextExtractor>(_ =>
-                new PRN222_FINAL.BLL.WebPageTextExtractor(new HttpClient
-                {
-                    Timeout = TimeSpan.FromSeconds(35)
-                }));
             builder.Services.AddScoped<PRN222_FINAL.BLL.IDocumentIndexingService, PRN222_FINAL.BLL.DocumentIndexingService>();
             builder.Services.AddScoped<PRN222_FINAL.BLL.IRagChatService, PRN222_FINAL.BLL.RagChatService>();
-            builder.Services.AddScoped<PRN222_FINAL.Web.Services.IChatUsageService, PRN222_FINAL.Web.Services.ChatUsageService>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.DocumentIndexWorker>();
 
             var app = builder.Build();
-            _ = app.Services.GetRequiredService<PRN222_FINAL.Web.Services.IAiSettingsService>();
+            _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.Services.IAiSettingsService>();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.IKnowledgeService>();
-            _ = app.Services.GetRequiredService<PRN222_FINAL.Web.Services.IUserAccountStore>()
+            _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.Services.Accounts.IUserAccountService>()
                 .HasAnyUsersAsync()
                 .GetAwaiter()
                 .GetResult();

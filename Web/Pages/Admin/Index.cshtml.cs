@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using PRN222_FINAL.BLL.Services.Email;
+using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using PRN222_FINAL.Models;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -20,15 +23,15 @@ namespace PRN222_FINAL.Web.Pages.Admin;
 [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public sealed class IndexModel : PageModel
 {
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
     private readonly IKnowledgeService _knowledge;
-    private readonly IAccountEmailSender _emailSender;
+    private readonly IAccountEmailService _emailSender;
     private readonly ILogger<IndexModel> _logger;
 
     public IndexModel(
-        IUserAccountStore users,
+        IUserAccountService users,
         IKnowledgeService knowledge,
-        IAccountEmailSender emailSender,
+        IAccountEmailService emailSender,
         ILogger<IndexModel> logger)
     {
         _users = users;

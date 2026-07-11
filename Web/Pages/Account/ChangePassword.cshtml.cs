@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -10,9 +11,9 @@ namespace PRN222_FINAL.Web.Pages.Account;
 [Authorize]
 public sealed class ChangePasswordModel : PageModel
 {
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
 
-    public ChangePasswordModel(IUserAccountStore users)
+    public ChangePasswordModel(IUserAccountService users)
     {
         _users = users;
     }

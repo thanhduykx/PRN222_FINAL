@@ -1,4 +1,4 @@
-namespace PRN222_FINAL.Web.ViewModels.Billing;
+﻿namespace PRN222_FINAL.Web.ViewModels.Billing;
 
 public sealed class PackageViewModel
 {

@@ -1,9 +1,11 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
+using PRN222_FINAL.BLL.Mapping;
 using PRN222_FINAL.BLL.Options;
 using PRN222_FINAL.BLL.Services.Billing.Gateways;
 using PRN222_FINAL.DAL.Repositories.Billing;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
+using DalPaymentProvider = PRN222_FINAL.DAL.Enums.PaymentProvider;
 
 namespace PRN222_FINAL.BLL.Services.Billing;
 
@@ -35,8 +37,9 @@ public sealed class PaymentService : IPaymentService
     public async Task<PaymentCheckoutResultDto> CreateCheckoutAsync(CreatePaymentRequestDto request, CancellationToken cancellationToken = default)
     {
         ValidateCreateRequest(request);
-        var package = await _packages.GetByIdAsync(request.PackageId, cancellationToken)
+        var packageEntity = await _packages.GetByIdAsync(request.PackageId, cancellationToken)
             ?? throw new InvalidOperationException("Package not found.");
+        var package = BillingDtoMapper.ToModel(packageEntity);
         if (!package.IsActive)
         {
             throw new InvalidOperationException("Package is not active.");
@@ -63,14 +66,14 @@ public sealed class PaymentService : IPaymentService
             CreatedAt = now
         };
 
-        await _payments.AddAsync(payment, cancellationToken);
+        await _payments.AddAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
 
         if (package.PriceVnd <= 0)
         {
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = now;
             payment.CheckoutUrl = request.ReturnUrl;
-            await _payments.UpdateAsync(payment, cancellationToken);
+            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
             await ActivateSubscriptionAsync(payment, package, false, cancellationToken);
             return ToCheckoutResult(payment, "Free package activated.");
         }
@@ -100,7 +103,7 @@ public sealed class PaymentService : IPaymentService
         payment.QrCode = gatewayResult.QrCode;
         payment.RawRequest = gatewayResult.RawRequest;
         payment.RawResponse = gatewayResult.RawResponse;
-        await _payments.UpdateAsync(payment, cancellationToken);
+        await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
 
         return ToCheckoutResult(payment, "Checkout created.");
     }
@@ -124,10 +127,12 @@ public sealed class PaymentService : IPaymentService
             throw new InvalidOperationException("Payment order code is required.");
         }
 
-        var payment = await _payments.GetByOrderCodeAsync(webhook.Provider, result.OrderCode, cancellationToken)
+        var paymentEntity = await _payments.GetByOrderCodeAsync((DalPaymentProvider)webhook.Provider, result.OrderCode, cancellationToken)
             ?? throw new InvalidOperationException("Payment not found.");
-        var package = await _packages.GetByIdAsync(payment.PackageId, cancellationToken)
+        var payment = BillingDtoMapper.ToModel(paymentEntity);
+        var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken)
             ?? throw new InvalidOperationException("Package not found.");
+        var package = BillingDtoMapper.ToModel(packageEntity);
 
         if (result.AmountVnd.HasValue && result.AmountVnd.Value != payment.AmountVnd)
         {
@@ -156,7 +161,7 @@ public sealed class PaymentService : IPaymentService
         {
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = DateTimeOffset.UtcNow;
-            await _payments.UpdateAsync(payment, cancellationToken);
+            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
             await ActivateSubscriptionAsync(payment, package, true, cancellationToken);
         }
         else
@@ -164,7 +169,7 @@ public sealed class PaymentService : IPaymentService
             payment.Status = result.Status == PaymentStatus.Canceled ? PaymentStatus.Canceled : PaymentStatus.Failed;
             payment.FailedAt = DateTimeOffset.UtcNow;
             payment.FailureReason = Normalize(result.Message, 1000);
-            await _payments.UpdateAsync(payment, cancellationToken);
+            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
         }
 
         return new PaymentWebhookResultDto
@@ -184,7 +189,8 @@ public sealed class PaymentService : IPaymentService
             return null;
         }
 
-        var payment = await _payments.GetByOrderCodeAsync(provider, orderCode, cancellationToken);
+        var paymentEntity = await _payments.GetByOrderCodeAsync((DalPaymentProvider)provider, orderCode, cancellationToken);
+        var payment = paymentEntity is null ? null : BillingDtoMapper.ToModel(paymentEntity);
         return payment is null
             ? null
             : new PaymentReturnDto
@@ -210,7 +216,8 @@ public sealed class PaymentService : IPaymentService
             throw new InvalidOperationException("User is required.");
         }
 
-        var payments = await _payments.GetByUserAsync(userId, Math.Clamp(limit, 1, 100), cancellationToken);
+        var payments = (await _payments.GetByUserAsync(userId, Math.Clamp(limit, 1, 100), cancellationToken))
+            .Select(BillingDtoMapper.ToModel).ToList();
         return payments.Select(payment => new PaymentHistoryItemDto
         {
             PaymentId = payment.Id,
@@ -235,7 +242,8 @@ public sealed class PaymentService : IPaymentService
             return;
         }
 
-        var current = await _subscriptions.GetCurrentActiveAsync(payment.UserId, cancellationToken);
+        var currentEntity = await _subscriptions.GetCurrentActiveAsync(payment.UserId, cancellationToken);
+        var current = currentEntity is null ? null : BillingDtoMapper.ToModel(currentEntity);
         var now = DateTimeOffset.UtcNow;
         var startsAt = current is not null && current.EndsAt > now ? current.EndsAt : now;
         var endsAt = package.IsLifetime
@@ -255,7 +263,7 @@ public sealed class PaymentService : IPaymentService
             CreatedAt = now
         };
 
-        await _subscriptions.AddAsync(subscription, cancellationToken);
+        await _subscriptions.AddAsync(BillingDtoMapper.ToEntity(subscription), cancellationToken);
     }
 
     private string BuildWebhookUrl(PaymentProvider provider)

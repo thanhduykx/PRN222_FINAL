@@ -1,4 +1,4 @@
-namespace PRN222_FINAL.Web.ViewModels.Analytics;
+﻿namespace PRN222_FINAL.Web.ViewModels.Analytics;
 
 public sealed class AdminStatisticsViewModel
 {

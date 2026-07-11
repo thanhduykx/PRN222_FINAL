@@ -1,9 +1,9 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.Web.Security;
-using PRN222_FINAL.Web.Services;
+using PRN222_FINAL.BLL.Services;
 
 namespace PRN222_FINAL.Web.Pages.Admin;
 

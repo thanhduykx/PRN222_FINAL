@@ -1,5 +1,6 @@
-﻿using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Documents;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRN222_FINAL.Web.Models;
@@ -23,7 +24,7 @@ public sealed class IndexModel : HomePageModelBase
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
         IEmbeddingService embeddingService,
@@ -340,8 +341,7 @@ public sealed class IndexModel : HomePageModelBase
             return Forbid();
         }
 
-        await _knowledge.DeleteDocumentAsync(id, cancellationToken);
-        TryDeleteStoredFile(document);
+        await _knowledge.DeleteDocumentAsync(id, GetUploadsRoot(), cancellationToken);
         TempData["Success"] = $"Đã xóa tài liệu {document.FileName}.";
         return RedirectToPage("/Home/Index");
     }

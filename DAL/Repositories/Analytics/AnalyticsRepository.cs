@@ -1,8 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PRN222_FINAL.DAL.Entities;
+using PRN222_FINAL.DAL.Repositories.Analytics;
 using PRN222_FINAL.DAL.Repositories.Billing;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Analytics;
+using PRN222_FINAL.DAL.Enums;
+using PRN222_FINAL.DAL.Models;
+using PRN222_FINAL.DAL.Models.Analytics;
 
 namespace PRN222_FINAL.DAL.Repositories.Analytics;
 
@@ -12,7 +14,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
     {
     }
 
-    public async Task AddCourseAccessAsync(CourseAccessLogRequestDto request, CancellationToken cancellationToken = default)
+    public async Task AddCourseAccessAsync(CourseAccessLogRequestData request, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         context.CourseAccessLogs.Add(new KnowledgeSqlCourseAccessLog
@@ -32,7 +34,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(
+    public async Task<AdminAnalyticsDashboardData> GetAdminDashboardAsync(
         DateTimeOffset fromUtc,
         DateTimeOffset toUtc,
         CancellationToken cancellationToken = default)
@@ -160,7 +162,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .Select(package => new PackageRow(package.Id, package.Code, package.Name))
             .ToListAsync(cancellationToken);
 
-        return new AdminAnalyticsDashboardDto
+        return new AdminAnalyticsDashboardData
         {
             GeneratedAt = DateTimeOffset.UtcNow,
             FromUtc = fromUtc,
@@ -194,7 +196,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             RecentPayments = payments
                 .OrderByDescending(payment => payment.CreatedAt)
                 .Take(10)
-                .Select(payment => new RecentPaymentDto
+                .Select(payment => new RecentPaymentData
                 {
                     PaymentId = payment.Id,
                     UserName = payment.UserName,
@@ -210,7 +212,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         };
     }
 
-    private static IReadOnlyList<SubjectUsageDto> BuildSubjectUsage(
+    private static IReadOnlyList<SubjectUsageData> BuildSubjectUsage(
         IReadOnlyList<SubjectRow> subjects,
         IReadOnlyList<DocumentRow> documents,
         IReadOnlyList<CitationRow> citations,
@@ -231,7 +233,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                     .Where(access => access.SubjectId == subject.Id)
                     .ToList();
 
-                return new SubjectUsageDto
+                return new SubjectUsageData
                 {
                     SubjectId = subject.Id,
                     SubjectCode = subject.Code,
@@ -255,7 +257,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
-    private static IReadOnlyList<PackagePurchaseStatsDto> BuildPackagePurchases(
+    private static IReadOnlyList<PackagePurchaseStatsData> BuildPackagePurchases(
         IReadOnlyList<PackageRow> packages,
         IReadOnlyList<PaymentRow> payments,
         IReadOnlyDictionary<Guid, int> activeSubscriptionCounts)
@@ -264,7 +266,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .Select(package =>
             {
                 var packagePayments = payments.Where(payment => payment.PackageId == package.Id).ToList();
-                return new PackagePurchaseStatsDto
+                return new PackagePurchaseStatsData
                 {
                     PackageId = package.Id,
                     PackageCode = package.Code,
@@ -281,12 +283,12 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
-    private static IReadOnlyList<DailyChatUsageDto> BuildDailyChatUsage(IReadOnlyList<ChatQuestionRow> questionRows)
+    private static IReadOnlyList<DailyChatUsageData> BuildDailyChatUsage(IReadOnlyList<ChatQuestionRow> questionRows)
     {
         return questionRows
             .GroupBy(row => DateOnly.FromDateTime(row.CreatedAt.LocalDateTime.Date))
             .OrderBy(group => group.Key)
-            .Select(group => new DailyChatUsageDto
+            .Select(group => new DailyChatUsageData
             {
                 Date = group.Key,
                 QuestionCount = group.Count(),
@@ -296,14 +298,14 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
-    private static IReadOnlyList<UserChatUsageDto> BuildTopChatUsers(IReadOnlyList<ChatQuestionRow> questionRows)
+    private static IReadOnlyList<UserChatUsageData> BuildTopChatUsers(IReadOnlyList<ChatQuestionRow> questionRows)
     {
         return questionRows
             .GroupBy(row => row.OwnerUserId)
             .Select(group =>
             {
                 var first = group.OrderByDescending(row => row.CreatedAt).First();
-                return new UserChatUsageDto
+                return new UserChatUsageData
                 {
                     UserId = group.Key,
                     UserName = first.OwnerName,
@@ -319,7 +321,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ToList();
     }
 
-    private static IReadOnlyList<DailySubscriptionUsageDto> BuildDailySubscriptionUsage(
+    private static IReadOnlyList<DailySubscriptionUsageData> BuildDailySubscriptionUsage(
         IReadOnlyList<SubscriptionRow> subscriptions,
         IReadOnlyList<PaymentRow> payments,
         DateTimeOffset fromUtc,
@@ -327,11 +329,11 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
     {
         var startDate = DateOnly.FromDateTime(fromUtc.LocalDateTime.Date);
         var endDate = DateOnly.FromDateTime(toUtc.LocalDateTime.Date);
-        var results = new List<DailySubscriptionUsageDto>();
+        var results = new List<DailySubscriptionUsageData>();
 
         for (var date = startDate; date <= endDate; date = date.AddDays(1))
         {
-            results.Add(new DailySubscriptionUsageDto
+            results.Add(new DailySubscriptionUsageData
             {
                 Date = date,
                 NewSubscriptionCount = subscriptions.Count(subscription =>
@@ -345,14 +347,14 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         return results;
     }
 
-    private static IReadOnlyList<DocumentAnalyticsDto> BuildRecentDocuments(
+    private static IReadOnlyList<DocumentAnalyticsData> BuildRecentDocuments(
         IReadOnlyList<DocumentRow> documents,
         IReadOnlyList<CitationRow> citations)
     {
         return documents
             .OrderByDescending(document => document.UploadedAt)
             .Take(10)
-            .Select(document => new DocumentAnalyticsDto
+            .Select(document => new DocumentAnalyticsData
             {
                 FileName = document.FileName,
                 Subject = document.Subject,

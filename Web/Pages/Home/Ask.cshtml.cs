@@ -1,5 +1,8 @@
-﻿using System.Security.Claims;
-using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.BLL.Services.Chat;
+using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using System.Security.Claims;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -19,7 +22,7 @@ public sealed class AskModel : HomePageModelBase
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
         IChatUsageService chatUsage)

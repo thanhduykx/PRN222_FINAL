@@ -2,6 +2,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using PRN222_FINAL.DAL.Models.Http;
+using PRN222_FINAL.DAL.Repositories.Http;
 
 namespace PRN222_FINAL.BLL;
 
@@ -12,12 +14,12 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly HttpClient _httpClient;
+    private readonly IHttpRepository _http;
     private readonly GeminiOptions _options;
 
-    public GeminiEmbeddingService(HttpClient httpClient, GeminiOptions options)
+    public GeminiEmbeddingService(IHttpRepository http, GeminiOptions options)
     {
-        _httpClient = httpClient;
+        _http = http;
         _options = options;
     }
 
@@ -44,13 +46,13 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         {
             try
             {
-                using var request = CreateEmbeddingRequest(text);
-                using var response = await _httpClient.SendAsync(request, cancellationToken);
+                var request = CreateEmbeddingRequest(text);
+                var response = await _http.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorBody = await ReadErrorBodyAsync(response, cancellationToken);
+                    var errorBody = ReadErrorBody(response.Body);
                     var detail = string.IsNullOrWhiteSpace(errorBody) ? response.ReasonPhrase : errorBody;
-                    if (IsTransientStatusCode(response.StatusCode) && attempt < maxAttempts)
+                    if (IsTransientStatusCode((HttpStatusCode)response.StatusCode) && attempt < maxAttempts)
                     {
                         await DelayBeforeRetryAsync(attempt, cancellationToken);
                         continue;
@@ -59,8 +61,7 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
                     throw new InvalidOperationException($"Gemini embedding request failed with HTTP {(int)response.StatusCode}. {detail}");
                 }
 
-                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var payload = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                using var payload = JsonDocument.Parse(response.Body);
                 var values = ExtractEmbeddingVector(payload.RootElement);
                 if (values.Count == 0)
                 {
@@ -113,22 +114,13 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         return $"{baseUrl}/models/{model}:embedContent";
     }
 
-    private HttpRequestMessage CreateEmbeddingRequest(string text)
+    private HttpRequestData CreateEmbeddingRequest(string text)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, ResolveEmbeddingUrl())
-        {
-            Version = HttpVersion.Version11,
-            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
-            Content = JsonContent.Create(
-                new GeminiEmbeddingRequest(
-                    $"models/{ModelName.Trim().TrimStart('/')}",
-                    new GeminiContent([new GeminiPart(PrepareRetrievalText(text))]),
-                    Dimensions),
-                options: JsonOptions)
-        };
-        request.Headers.TryAddWithoutValidation("x-goog-api-key", _options.ApiKey.Trim());
-        request.Headers.ConnectionClose = true;
-        return request;
+        var body = JsonSerializer.Serialize(new GeminiEmbeddingRequest(
+            $"models/{ModelName.Trim().TrimStart('/')}",
+            new GeminiContent([new GeminiPart(PrepareRetrievalText(text))]), Dimensions), JsonOptions);
+        return new HttpRequestData("POST", ResolveEmbeddingUrl(), body,
+            Headers: new Dictionary<string,string> { ["x-goog-api-key"] = _options.ApiKey.Trim() });
     }
 
     private static Task DelayBeforeRetryAsync(int attempt, CancellationToken cancellationToken)
@@ -146,9 +138,8 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
             or HttpStatusCode.GatewayTimeout;
     }
 
-    private static async Task<string> ReadErrorBodyAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    private static string ReadErrorBody(string body)
     {
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(body))
         {
             return string.Empty;

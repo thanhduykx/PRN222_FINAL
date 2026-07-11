@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models.csproj", "{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL", "DAL\DAL.csproj", "{9E103D98-FF36-4ED5-91E4-C7228D98B135}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BLL", "BLL\BLL.csproj", "{6FDC81B1-3DE4-4875-AEC3-36B7D54F869E}"
@@ -21,18 +19,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|x64.Build.0 = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Debug|x86.Build.0 = Debug|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|x64.ActiveCfg = Release|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|x64.Build.0 = Release|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|x86.ActiveCfg = Release|Any CPU
-		{4FE24E85-FCA3-4116-9F51-94E199DBF3DC}.Release|x86.Build.0 = Release|Any CPU
 		{9E103D98-FF36-4ED5-91E4-C7228D98B135}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E103D98-FF36-4ED5-91E4-C7228D98B135}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E103D98-FF36-4ED5-91E4-C7228D98B135}.Debug|x64.ActiveCfg = Debug|Any CPU
