@@ -82,6 +82,8 @@ public sealed class LoginModel : PageModel
             return Page();
         }
 
+        await _users.MarkActiveAsync(user.Id);
+        user.LastActiveAt = DateTimeOffset.UtcNow;
         await SignInAsync(user);
         return RedirectAfterSignIn(user, ReturnUrl);
     }

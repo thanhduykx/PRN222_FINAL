@@ -650,12 +650,8 @@ public sealed class IndexModel : PageModel
                 throw new InvalidOperationException("Set role to Student or Lecturer before deleting this user.");
             }
 
-            var unassignedSubjectCount = await UnassignSubjectsOwnedByAsync(model.UserId, cancellationToken);
             var deletedUser = await _users.DeleteAsync(model.UserId, cancellationToken);
-            var subjectSummary = unassignedSubjectCount > 0
-                ? $" Unassigned {unassignedSubjectCount} subject(s)."
-                : string.Empty;
-            TempData["Success"] = $"Deleted {deletedUser.Email}.{subjectSummary}";
+            TempData["Success"] = $"Deleted {deletedUser.Email}.";
         }
         catch (Exception ex) when (ex is InvalidOperationException)
         {
@@ -863,26 +859,6 @@ public sealed class IndexModel : PageModel
         return RedirectToPage("/Admin/Index", new { section = "student-table" });
     }
 
-    private async Task<int> UnassignSubjectsOwnedByAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var subjectsToUnassign = (await _knowledge.GetCourseCatalogAsync(cancellationToken))
-            .Where(subject => subject.OwnerUserId == userId)
-            .ToList();
-
-        foreach (var subject in subjectsToUnassign)
-        {
-            await _knowledge.UpsertSubjectAsync(
-                subject.Id,
-                subject.Code,
-                subject.Name,
-                subject.Description,
-                cancellationToken,
-                new SubjectOwnerInfo(null, string.Empty, string.Empty));
-        }
-
-        return subjectsToUnassign.Count;
-    }
-
     private async Task LoadAsync(string? q, string? roleFilter, CancellationToken cancellationToken)
     {
         var users = await _users.GetAllAsync(cancellationToken);
@@ -949,7 +925,12 @@ public sealed class IndexModel : PageModel
             })
             .ToList();
 
-        var userRows = users.Select(user => new AdminUserRowViewModel
+        var inactiveCutoff = DateTimeOffset.UtcNow.AddMonths(-3);
+        var userRows = users.Select(user =>
+        {
+            var assignedDetails = ResolveAssignedSubjectDetails(user, assignedSubjectsByUser);
+            var lastActivity = user.LastActiveAt ?? user.CreatedAt;
+            return new AdminUserRowViewModel
             {
                 Id = user.Id,
                 Email = user.Email,
@@ -957,11 +938,15 @@ public sealed class IndexModel : PageModel
                 Provider = user.Provider,
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,
+                LastActiveAt = user.LastActiveAt,
+                MeetsInactivePeriod = lastActivity < inactiveCutoff,
+                HasAssignedSubjects = user.Role == AppRoles.Lecturer && assignedDetails.Count > 0,
                 IsLastAdmin = user.Role == AppRoles.Admin && adminCount <= 1,
                 IsCurrentUser = IsCurrentUser(user.Id),
-                AssignedSubjectDetails = ResolveAssignedSubjectDetails(user, assignedSubjectsByUser),
+                AssignedSubjectDetails = assignedDetails,
                 AssignedSubjects = ResolveAssignedSubjectLabels(user, assignedSubjectsByUser)
-            })
+            };
+        })
             .ToList();
 
         Query = normalizedQuery;
@@ -1120,6 +1105,17 @@ public sealed class IndexModel : PageModel
         if (message.Contains("Cannot delete the seed admin", StringComparison.OrdinalIgnoreCase))
         {
             return "Cannot delete the seed admin.";
+        }
+
+        if (message.Contains("inactive for more than 3 months", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Chỉ được xóa khi người dùng đã không hoạt động trên 3 tháng.";
+        }
+
+        if (message.Contains("responsible for a subject", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("assigned to a subject", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Phải gỡ toàn bộ môn người dùng đang đảm nhận trước khi xóa.";
         }
 
         if (message.Contains("last admin", StringComparison.OrdinalIgnoreCase))

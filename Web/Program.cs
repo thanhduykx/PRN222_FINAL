@@ -96,6 +96,22 @@ namespace PRN222_FINAL.Web
                             return;
                         }
 
+                        if (user.LastActiveAt is null || user.LastActiveAt < DateTimeOffset.UtcNow.AddMinutes(-15))
+                        {
+                            try
+                            {
+                                await users.MarkActiveAsync(user.Id, context.HttpContext.RequestAborted);
+                                user.LastActiveAt = DateTimeOffset.UtcNow;
+                            }
+                            catch (Exception exception) when (exception is not OperationCanceledException)
+                            {
+                                var logger = context.HttpContext.RequestServices
+                                    .GetRequiredService<ILoggerFactory>()
+                                    .CreateLogger("UserActivity");
+                                logger.LogWarning(exception, "Could not update last activity for user {UserId}", user.Id);
+                            }
+                        }
+
                         var normalizedRole = AppRoles.Normalize(user.Role);
                         if (context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == user.Id.ToString()
                             && context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value == user.FullName

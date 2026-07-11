@@ -12,5 +12,6 @@ public sealed class UserAccount
     public string Provider { get; set; } = "Local";
     public string Role { get; set; } = "Student";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? LastActiveAt { get; set; }
 }
 

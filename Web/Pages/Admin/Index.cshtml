@@ -569,8 +569,10 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td data-label="Created">
-                                        <span style="color: var(--admin-text-muted); font-size: 0.875rem;">@user.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</span>
+                                    <td data-label="Last active">
+                                        <span style="color: var(--admin-text-muted); font-size: 0.875rem;" title='Ngày tạo: @user.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")'>
+                                            @((user.LastActiveAt ?? user.CreatedAt).LocalDateTime.ToString("yyyy-MM-dd HH:mm"))
+                                        </span>
                                     </td>
                                     <td data-label="Role / Vai trò">
                                         <span class="ops-role-badge">@user.Role</span>
@@ -609,11 +611,17 @@
                                         @{
                                             var deleteDisabled = user.IsLastAdmin
                                             || user.IsCurrentUser
+                                            || user.HasAssignedSubjects
+                                            || !user.MeetsInactivePeriod
                                             || (user.Role != PRN222_FINAL.BLL.Security.AppRoles.Student && user.Role != PRN222_FINAL.BLL.Security.AppRoles.Lecturer);
                                             var deleteTitle = user.IsCurrentUser
                                             ? "Cannot delete your own active account"
                                             : user.IsLastAdmin
                                             ? "Cannot delete the last admin"
+                                            : user.HasAssignedSubjects
+                                            ? "Phải gỡ toàn bộ môn đang đảm nhận trước khi xóa"
+                                            : !user.MeetsInactivePeriod
+                                            ? "Chỉ được xóa khi người dùng đã không hoạt động trên 3 tháng"
                                             : "Delete user";
                                         }
                                         <form asp-page-handler="DeleteUser" method="post" class="ops-danger-form" data-confirm="Xóa người dùng này? Thao tác này không thể hoàn tác." style="display: inline-block;">
