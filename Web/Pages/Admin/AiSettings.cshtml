@@ -8,49 +8,418 @@
     ViewData["ShellTitle"] = "Thiết lập trợ lý học tập";
 }
 
+<style>
+    /* 1. BIẾN MÀU SẮC & UI (Modern Theme) */
+    :root {
+        --primary: #4F46E5;
+        --primary-hover: #4338ca;
+        --surface: #ffffff;
+        --bg-color: #f9fafb;
+        --text-main: #111827;
+        --text-muted: #6b7280;
+        --border: #e5e7eb;
+        --radius-lg: 12px;
+        --radius-md: 8px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .ai-settings-page {
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: var(--bg-color);
+        padding: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        border-radius: var(--radius-lg);
+    }
+
+    /* 2. TYPOGRAPHY & HEADER */
+    .ops-page-heading {
+        margin-bottom: 2rem;
+    }
+
+    .ops-eyebrow {
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .ops-page-heading h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0.5rem 0;
+    }
+
+    .ops-page-heading p {
+        color: var(--text-muted);
+        font-size: 1rem;
+    }
+
+    /* 3. LAYOUT DẠNG GRID & CARD */
+    .ai-settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .ai-settings-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 0.2s;
+    }
+
+        .ai-settings-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+    .ai-settings-card--wide {
+        grid-column: 1 / -1;
+    }
+    /* Chiếm trọn 2 cột */
+
+    .ops-panel-head h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.25rem;
+    }
+
+    .ops-panel-head p {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* 4. FORM CONTROLS (Input, Slider) */
+    .ops-field {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1.25rem;
+    }
+
+        .ops-field > span:first-child {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+    .modern-input {
+        padding: 0.625rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .modern-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+    small {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        margin-top: 0.375rem;
+    }
+
+    .text-danger {
+        color: #dc2626;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* UI Thanh trượt (Range + Number sync) */
+    .range-group {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+        .range-group input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--primary);
+        }
+
+        .range-group input[type="number"] {
+            width: 80px;
+            text-align: center;
+        }
+
+    /* 5. VISUALIZER (Biểu đồ chia đoạn) */
+    .chunk-visualizer {
+        background: #f3f4f6;
+        border: 1px dashed #d1d5db;
+        border-radius: var(--radius-md);
+        height: 80px;
+        margin: 1.5rem 0;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: 0 1rem;
+    }
+
+    .chunk-box {
+        position: absolute;
+        height: 40px;
+        background-color: rgba(79, 70, 229, 0.2);
+        border: 2px solid var(--primary);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: var(--primary);
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .chunk-overlap {
+        position: absolute;
+        height: 40px;
+        background: repeating-linear-gradient(45deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.3) 5px, transparent 5px, transparent 10px);
+        transition: all 0.3s ease;
+    }
+
+    /* 6. ALERTS & BUTTONS */
+    .rbl-alert {
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .is-success {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .is-info {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .is-error {
+        background-color: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .ai-settings-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+
+    .ops-button--primary {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .ops-button--primary:hover {
+            background-color: var(--primary-hover);
+        }
+</style>
+
 <section class="ops-page ai-settings-page">
     <header class="ops-page-heading">
         <div>
             <span class="ops-eyebrow">Cách trợ lý đọc và trả lời</span>
-            <h1>Thiết lập trợ lý học tập</h1>
-            <p>Điều chỉnh chất lượng trả lời và cách chia tài liệu thành các phần dễ tìm kiếm.</p>
+            <h1>Thiết lập AI</h1>
+            <p>Tối ưu hóa chất lượng trả lời và cách AI xử lý tài liệu môn học của bạn.</p>
         </div>
     </header>
 
     @if (TempData["Success"] is string success)
     {
-        <div class="rbl-alert is-success" role="status">@success</div>
+        <div class="rbl-alert is-success" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+            @success
+        </div>
     }
     <div asp-validation-summary="ModelOnly" class="rbl-alert is-error" role="alert"></div>
 
     <form method="post" class="ai-settings-grid">
+
         <section class="ops-panel ai-settings-card">
-            <div class="ops-panel-head"><div><h2>Cách tạo câu trả lời</h2><p>Chọn bộ máy dùng để hiểu câu hỏi và viết câu trả lời.</p></div></div>
+            <div class="ops-panel-head">
+                <h2>Sinh văn bản (Generation)</h2>
+                <p>Chọn bộ máy AI dùng để hiểu câu hỏi và viết câu trả lời cuối cùng.</p>
+            </div>
             <label class="ops-field">
-                <span>Bộ máy trả lời</span>
-                <input asp-for="Input.AnswerModel" autocomplete="off" aria-describedby="answer-help" />
-                <small id="answer-help">Ví dụ: gemini-3.5-flash. Chỉ thay đổi khi nhà cung cấp xác nhận tên mới.</small>
-                <span asp-validation-for="Input.AnswerModel"></span>
+                <span>Model trả lời (Chat Model)</span>
+                <input asp-for="Input.AnswerModel" class="modern-input" autocomplete="off" placeholder="VD: gemini-3.5-flash" />
+                <small>Khuyến nghị dùng gemini-3.5-flash cho tốc độ nhanh nhất.</small>
+                <span asp-validation-for="Input.AnswerModel" class="text-danger"></span>
             </label>
         </section>
 
         <section class="ops-panel ai-settings-card">
-            <div class="ops-panel-head"><div><h2>Cách đọc tài liệu</h2><p>Thiết lập này ảnh hưởng đến khả năng tìm đúng nội dung trong tài liệu.</p></div></div>
-            <label class="ops-field"><span>Bộ máy đọc tài liệu</span><input asp-for="Input.ReadingModel" autocomplete="off" /><span asp-validation-for="Input.ReadingModel"></span></label>
-            <label class="ops-field"><span>Mức chi tiết khi ghi nhớ</span><input asp-for="Input.ReadingDetail" type="number" min="128" max="4096" /><small>768 phù hợp với hầu hết tài liệu môn học.</small><span asp-validation-for="Input.ReadingDetail"></span></label>
+            <div class="ops-panel-head">
+                <h2>Vector hóa (Embedding)</h2>
+                <p>Thiết lập cách AI "đọc" và chuyển đổi tài liệu thành vector toán học.</p>
+            </div>
+            <label class="ops-field">
+                <span>Model đọc tài liệu (Embedding Model)</span>
+                <input asp-for="Input.ReadingModel" class="modern-input" autocomplete="off" placeholder="VD: text-embedding-004" />
+                <span asp-validation-for="Input.ReadingModel" class="text-danger"></span>
+            </label>
+
+            <label class="ops-field">
+                <span>Số chiều dữ liệu (Output Dimensionality)</span>
+                <div class="range-group">
+                    <input type="range" id="detailSlider" min="128" max="4096" step="1" value="768" />
+                    <input asp-for="Input.ReadingDetail" id="detailNumber" class="modern-input" type="number" min="128" max="4096" />
+                </div>
+                <small>Mặc định 768. Số càng cao lưu càng nhiều chi tiết nhưng truy xuất sẽ chậm hơn.</small>
+                <span asp-validation-for="Input.ReadingDetail" class="text-danger"></span>
+            </label>
         </section>
 
         <section class="ops-panel ai-settings-card ai-settings-card--wide">
-            <div class="ops-panel-head"><div><h2>Cách chia nội dung</h2><p>Đoạn ngắn tìm nhanh hơn; đoạn dài giữ được nhiều ngữ cảnh hơn.</p></div></div>
-            <div class="ai-settings-fields">
-                <label class="ops-field"><span>Độ dài mỗi đoạn</span><input asp-for="Input.SectionLength" type="number" min="300" max="4000" /><small>Khuyến nghị: 800–1.200 ký tự.</small><span asp-validation-for="Input.SectionLength"></span></label>
-                <label class="ops-field"><span>Phần nối giữa hai đoạn</span><input asp-for="Input.SectionConnection" type="number" min="0" max="500" /><small>Khuyến nghị: 50–150 ký tự để không mất ý.</small><span asp-validation-for="Input.SectionConnection"></span></label>
+            <div class="ops-panel-head">
+                <h2>Kỹ thuật chia tài liệu (Text Chunking)</h2>
+                <p>Khi upload file lớn, hệ thống sẽ cắt nhỏ file ra thành nhiều đoạn. Đoạn ngắn giúp tìm kiếm chính xác, đoạn dài giữ được nhiều ngữ cảnh.</p>
             </div>
-            <div class="rbl-alert is-info"><strong>Lưu ý:</strong> tài liệu đã xử lý trước đây cần được xử lý lại để dùng thiết lập mới.</div>
+
+            <div class="ai-settings-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <label class="ops-field">
+                    <span>Độ dài tối đa mỗi đoạn (Ký tự)</span>
+                    <div class="range-group">
+                        <input type="range" id="lenSlider" min="300" max="4000" step="50" value="1000" />
+                        <input asp-for="Input.SectionLength" id="lenNumber" class="modern-input" type="number" min="300" max="4000" />
+                    </div>
+                    <small>Khuyến nghị: 800–1.200 ký tự.</small>
+                    <span asp-validation-for="Input.SectionLength" class="text-danger"></span>
+                </label>
+
+                <label class="ops-field">
+                    <span>Độ dài phần nối (Overlap)</span>
+                    <div class="range-group">
+                        <input type="range" id="overlapSlider" min="0" max="500" step="10" value="100" />
+                        <input asp-for="Input.SectionConnection" id="overlapNumber" class="modern-input" type="number" min="0" max="500" />
+                    </div>
+                    <small>Giúp AI không bị "mất dấu" ở giữa các câu. Khuyến nghị: 10% độ dài đoạn.</small>
+                    <span asp-validation-for="Input.SectionConnection" class="text-danger"></span>
+                </label>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <span style="color: #6b7280; font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mô phỏng tài liệu...</span>
+                <div class="chunk-visualizer" aria-hidden="true" style="margin-top: 0; margin-bottom: 1.5rem;">
+                    <div id="vis-chunk1" class="chunk-box">Đoạn 1</div>
+                    <div id="vis-overlap" class="chunk-overlap" title="Phần giao nhau (Overlap)"></div>
+                    <div id="vis-chunk2" class="chunk-box">Đoạn 2</div>
+                </div>
+            </div>
+
+            <div class="rbl-alert is-info">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <strong>Lưu ý:</strong> Khi bạn thay đổi thông số cắt tài liệu, các tài liệu đã được tải lên trước đây sẽ cần phải được xử lý (Embedding) lại để có tác dụng.
+            </div>
         </section>
 
-        <div class="ai-settings-actions"><button type="submit" class="ops-button ops-button--primary"><span class="material-symbols-outlined" aria-hidden="true">save</span>Lưu thiết lập</button></div>
+        <div class="ai-settings-actions">
+            <button type="submit" class="ops-button ops-button--primary">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">save</span>
+                Lưu cấu hình hệ thống
+            </button>
+        </div>
     </form>
 </section>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Hàm đồng bộ thanh trượt (Range) và ô nhập số (Number)
+            function syncInputs(sliderId, numberInputId) {
+                const slider = document.getElementById(sliderId);
+                const num = document.getElementById(numberInputId);
+
+                if(!slider || !num) return;
+
+                // Nếu backend trả về value, gán vào slider lúc load trang
+                if (num.value) slider.value = num.value;
+
+                slider.addEventListener('input', (e) => {
+                    num.value = e.target.value;
+                    updateVisualizer();
+                });
+
+                num.addEventListener('input', (e) => {
+                    slider.value = e.target.value;
+                    updateVisualizer();
+                });
+            }
+
+            syncInputs('detailSlider', 'detailNumber');
+            syncInputs('lenSlider', 'lenNumber');
+            syncInputs('overlapSlider', 'overlapNumber');
+
+            // Logic cập nhật biểu đồ trực quan
+            function updateVisualizer() {
+                const lenInput = document.getElementById('lenNumber');
+                const overlapInput = document.getElementById('overlapNumber');
+
+                if(!lenInput || !overlapInput) return;
+
+                let len = parseInt(lenInput.value) || 1000;
+                let overlap = parseInt(overlapInput.value) || 100;
+
+                // Chuẩn hóa tỷ lệ để hiển thị trên div 800px
+                const containerWidth = 800; // Chiều rộng giả định của thanh
+                const maxLen = 4000;
+
+                // Tính toán chiều rộng % (cho minh họa)
+                let widthPercent = (len / maxLen) * 60; // Tối đa chiếm 60% màn hình
+                widthPercent = Math.max(15, widthPercent); // Tối thiểu 15%
+
+                let overlapPercent = (overlap / len) * widthPercent;
+                overlapPercent = Math.min(overlapPercent, widthPercent / 2); // Đè tối đa nửa cục
+
+                const c1 = document.getElementById('vis-chunk1');
+                const c2 = document.getElementById('vis-chunk2');
+                const ov = document.getElementById('vis-overlap');
+
+                // Apply CSS
+                c1.style.width = widthPercent + '%';
+                c1.style.left = '5%';
+
+                ov.style.width = overlapPercent + '%';
+                ov.style.left = (5 + widthPercent - overlapPercent) + '%';
+
+                c2.style.width = widthPercent + '%';
+                c2.style.left = (5 + widthPercent - overlapPercent) + '%';
+            }
+
+            // Gọi lần đầu lúc load
+            updateVisualizer();
+        });
+    </script>
+}
