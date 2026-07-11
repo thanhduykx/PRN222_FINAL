@@ -45,7 +45,7 @@
         .OrderByDescending(package => package.ActiveSubscriptionCount)
         .ThenByDescending(package => package.PaidCount)
         .FirstOrDefault();
-    var packageColors = new[] { "#1f7af2", "#48c987", "#7b5fe3", "#ffa447", "#21b6c7", "#ef5c5c" };
+    var packageColors = new[] { "#4f46e5", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4", "#ef4444" };
     var donutCursor = 0d;
     var donutStops = new List<string>();
     for (var packageIndex = 0; packageIndex < Model.Dashboard.PackagePurchases.Count; packageIndex++)
@@ -89,11 +89,13 @@
     string StatusClass(string status) => status switch
     {
         "Indexed" => "is-success",
-        "Processing" => "is-running",
+        "Processing" => "is-warning",
         "Paid" => "is-success",
-        "Pending" => "is-running",
+        "Pending" => "is-warning",
         "Active" => "is-success",
-        _ => "is-error"
+        "Failed" => "is-error",
+        "Canceled" => "is-error",
+        _ => "is-default"
     };
     string StatusLabel(string status) => status switch
     {
@@ -107,29 +109,186 @@
     };
 }
 
+<style>
+    /* ==========================================================================
+       MODERN DASHBOARD STYLESHEET
+       ========================================================================== */
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --surface: #ffffff;
+        --bg-main: #f9fafb;
+        --text-dark: #111827;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --radius-lg: 16px;
+        --radius-md: 10px;
+        --radius-sm: 6px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .ops-statistics-page {
+        font-family: 'Inter', system-ui, sans-serif;
+        color: var(--text-dark);
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    /* --- HEADER & TOOLBAR --- */
+    .ops-stat-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1.5rem; }
+    .ops-stat-header h1 { font-size: 1.875rem; font-weight: 700; margin: 0 0 0.5rem 0; letter-spacing: -0.025em; }
+    .ops-stat-header p { color: var(--text-muted); margin: 0; font-size: 0.9375rem; }
+    
+    .ops-stat-toolbar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .ops-inline-field { display: flex; align-items: center; gap: 0.75rem; background: var(--surface); padding: 0.375rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+    .ops-inline-field span { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); }
+    .ops-inline-field select { border: none; outline: none; font-weight: 600; color: var(--text-dark); background: transparent; cursor: pointer; font-size: 0.875rem; padding-right: 0.5rem; }
+
+    /* --- TABS --- */
+    .ops-tabs { display: flex; gap: 2rem; border-bottom: 1px solid var(--border-color); margin-bottom: 2rem; overflow-x: auto; scrollbar-width: none; }
+    .ops-tabs::-webkit-scrollbar { display: none; }
+    .ops-tab { padding: 0.875rem 0; color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 0.9375rem; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+    .ops-tab:hover { color: var(--text-dark); }
+    .ops-tab.is-active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* --- KPI CARDS --- */
+    .ops-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .ops-kpi { background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; align-items: flex-start; gap: 1rem; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
+    .ops-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    
+    .ops-kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .is-blue { background: #eff6ff; color: #3b82f6; }
+    .is-indigo { background: #e0e7ff; color: #6366f1; }
+    .is-green { background: #dcfce7; color: #10b981; }
+    .is-orange { background: #ffedd5; color: #f59e0b; }
+    .is-red { background: #fee2e2; color: #ef4444; }
+    .is-purple { background: #f3e8ff; color: #8b5cf6; }
+
+    .ops-kpi-content { display: flex; flex-direction: column; }
+    .ops-kpi-content span { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .ops-kpi-content strong { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); line-height: 1.2; margin-bottom: 0.375rem; }
+    .ops-kpi-content small { font-size: 0.75rem; color: #9ca3af; }
+
+    /* --- ALERT STRIP --- */
+    .ops-stat-alert-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .ops-stat-alert-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-sm); border-left: 4px solid var(--border-color); }
+    .ops-stat-alert-card:has(.is-orange) { border-left-color: #f59e0b; }
+    .ops-stat-alert-card:has(.is-red) { border-left-color: #ef4444; }
+    .ops-stat-alert-card .ops-kpi-icon { width: 40px; height: 40px; font-size: 20px; }
+
+    /* --- PANELS & TABLES --- */
+    .ops-stat-two-column { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .ops-panel { background: var(--surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); }
+    .ops-panel-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+    .ops-panel-head h2 { font-size: 1.125rem; font-weight: 600; margin: 0 0 0.25rem 0; color: var(--text-dark); }
+    .ops-muted { color: var(--text-muted); font-size: 0.875rem; }
+    .ops-panel-note { font-size: 0.875rem; font-weight: 500; color: var(--primary); text-decoration: none; }
+    .ops-panel-note[href]:hover { text-decoration: underline; }
+
+    .ops-table-wrap { overflow-x: auto; }
+    .ops-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .ops-table th { padding: 0.875rem 1rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); background: #f9fafb; white-space: nowrap; }
+    .ops-table td { padding: 1rem; border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
+    .ops-table tbody tr:last-child td { border-bottom: none; }
+    .ops-table tbody tr:hover { background-color: #f9fafb; }
+
+    /* --- SPECIFIC UI ELEMENTS --- */
+    .ops-progress { height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin-bottom: 0.25rem; width: 100%; max-width: 120px; }
+    .ops-progress span { display: block; height: 100%; background: var(--primary); border-radius: 99px; }
+    
+    .rbl-status { display: inline-flex; align-items: center; padding: 0.25rem 0.625rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .rbl-status.is-success { background: #dcfce7; color: #166534; }
+    .rbl-status.is-warning { background: #fef3c7; color: #92400e; }
+    .rbl-status.is-error { background: #fee2e2; color: #991b1b; }
+    .rbl-status.is-default { background: #f3f4f6; color: #4b5563; }
+
+    .ops-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #818cf8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; flex-shrink: 0; }
+    
+    .ops-user-identity strong { display: block; color: var(--text-dark); font-weight: 600; }
+    .ops-user-identity small { color: var(--text-muted); font-size: 0.75rem; }
+
+    .ops-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; outline: none; }
+    .ops-button--primary { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+    .ops-button--primary:hover { background: var(--primary-hover); }
+    .ops-button--secondary { background: white; color: var(--text-dark); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+    .ops-button--secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+
+    /* --- CHARTS (Line & Donut) --- */
+    .ops-line-chart { position: relative; height: 280px; width: 100%; margin-top: 1rem; }
+    .ops-line-chart__svg { width: 100%; height: 100%; overflow: visible; }
+    .ops-line-chart__area { fill: url(#chatUsageFill); }
+    .ops-line-chart__line { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .ops-line-chart__marker { position: absolute; width: 10px; height: 10px; background: white; border: 2.5px solid var(--primary); border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .ops-line-chart__marker:hover { transform: translate(-50%, -50%) scale(1.5); }
+    .ops-line-chart__labels small { position: absolute; bottom: -25px; transform: translateX(-50%); font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+    .ops-subscription-donut-layout { display: flex; align-items: center; gap: 2rem; justify-content: center; flex-wrap: wrap; }
+    .ops-subscription-donut { width: 180px; height: 180px; border-radius: 50%; background: conic-gradient(var(--subscription-donut)); position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; flex-shrink: 0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    .ops-subscription-donut::before { content: ""; position: absolute; width: 130px; height: 130px; background: var(--surface); border-radius: 50%; }
+    .ops-subscription-donut > * { z-index: 1; }
+    .ops-subscription-donut span { font-size: 0.875rem; color: var(--text-muted); }
+    .ops-subscription-donut strong { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); }
+    
+    .ops-subscription-mix-table { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 0.5rem; }
+    .ops-subscription-mix-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; }
+    .ops-subscription-mix-row.is-head { font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border-color); text-transform: uppercase; font-size: 0.75rem; }
+    .ops-subscription-mix-row span:first-child { display: flex; align-items: center; gap: 0.5rem; flex: 2; font-weight: 500; }
+    .ops-subscription-mix-row span:nth-child(2) { flex: 1; text-align: center; }
+    .ops-subscription-mix-row span:last-child { flex: 1; text-align: right; color: var(--text-muted); }
+    .ops-subscription-mix-row i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+    /* --- FILTER BAR --- */
+    .ops-filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; background: #f9fafb; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
+    .ops-field { display: flex; flex-direction: column; gap: 0.375rem; flex: 1; min-width: 180px; }
+    .ops-field span { font-size: 0.875rem; font-weight: 600; color: var(--text-dark); }
+    .ops-field input, .ops-field select { padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: var(--radius-sm); font-size: 0.875rem; outline: none; transition: border 0.2s; background: white; }
+    .ops-field input:focus, .ops-field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+    /* --- MISC --- */
+    .ops-action-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .ops-action-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9375rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #f9fafb; border: 1px solid var(--border-color); }
+    .ops-action-item strong { color: var(--text-dark); }
+    
+    .ops-ranked-list { display: flex; flex-direction: column; gap: 1rem; }
+    .ops-ranked-item { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f3f4f6; }
+    .ops-ranked-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .ops-rank { font-size: 1.25rem; font-weight: 700; color: #d1d5db; width: 24px; text-align: center; }
+    .ops-ranked-item strong:last-child { margin-left: auto; color: var(--primary); background: #e0e7ff; padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.875rem; }
+
+    .ops-insight-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; background: transparent; border: none; box-shadow: none; padding: 0; margin-top: 1rem; }
+    .ops-insight-item { display: flex; align-items: flex-start; gap: 0.75rem; background: var(--surface); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.875rem; color: var(--text-muted); line-height: 1.4; box-shadow: var(--shadow-sm); }
+    .ops-insight-item strong { color: var(--text-dark); display: block; margin-bottom: 0.25rem; }
+
+    .ops-empty { text-align: center; padding: 3rem 1rem; background: #f9fafb; border-radius: var(--radius-md); border: 1px dashed #d1d5db; }
+    .ops-empty strong { display: block; font-size: 1.125rem; color: var(--text-dark); margin-bottom: 0.5rem; }
+</style>
+
 <section class="ops-page ops-statistics-page">
     <div class="ops-stat-header">
         <div>
             <h1>Báo cáo &amp; Thống kê</h1>
-            <p>Phân tích hoạt động chatbot, tài liệu, người dùng và phân quyền trong hệ thống.</p>
+            <p>Phân tích toàn diện hoạt động chatbot, học liệu và doanh thu hệ thống.</p>
         </div>
         <form method="get" class="ops-stat-toolbar">
             <input type="hidden" name="tab" value="@Model.Tab" />
             <label class="ops-inline-field">
-                <span>Khoảng ngày</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;">calendar_month</span>
+                <span>Khoảng thời gian:</span>
                 <select asp-for="Days" onchange="this.form.submit()">
-                    <option value="7">7 ngày</option>
-                    <option value="30">30 ngày</option>
-                    <option value="90">90 ngày</option>
-                    <option value="180">Tùy chỉnh</option>
+                    <option value="7">7 ngày qua</option>
+                    <option value="30">30 ngày qua</option>
+                    <option value="90">90 ngày qua</option>
+                    <option value="180">Nửa năm</option>
                 </select>
             </label>
             <a class="ops-button ops-button--secondary" asp-page="/Account/ChangePassword">
-                <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">lock_reset</span>
                 Đổi mật khẩu
             </a>
             <a class="ops-button ops-button--primary" href="@TabUrl("export")">
-                <span class="material-symbols-outlined" aria-hidden="true">download</span>
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">download</span>
                 Xuất báo cáo
             </a>
         </form>
@@ -137,7 +296,9 @@
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
+        <div class="rbl-alert is-error" style="padding: 1rem; background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; border-radius: 8px; margin-bottom: 1.5rem;">
+            <strong>Lỗi hệ thống:</strong> @Model.ErrorMessage
+        </div>
     }
     else
     {
@@ -156,7 +317,7 @@
                     <div class="ops-kpi-content">
                         <span>Câu hỏi chat</span>
                         <strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong>
-                        <small>@Model.Days ngày gần nhất</small>
+                        <small>Trong @Model.Days ngày qua</small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
@@ -168,35 +329,35 @@
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
-                    <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">person</span>
+                    <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">group</span>
                     <div class="ops-kpi-content">
                         <span>Sinh viên hoạt động</span>
                         <strong>@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong>
-                        <small>@Model.StudentUsers.ToString("N0") sinh viên trong hệ thống</small>
+                        <small>Trên tổng @Model.StudentUsers.ToString("N0") SV</small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span>
                     <div class="ops-kpi-content">
-                        <span>Tài liệu</span>
+                        <span>Tài liệu toàn hệ thống</span>
                         <strong>@Model.Dashboard.TotalDocuments.ToString("N0")</strong>
-                        <small>Tổng tài liệu trong kho</small>
+                        <small>File đã được upload</small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span>
                     <div class="ops-kpi-content">
-                        <span>Đã index</span>
+                        <span>Tài liệu đã Index</span>
                         <strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong>
-                        <small>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments) tổng tài liệu</small>
+                        <small>Chiếm @PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments) tổng số</small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">check_circle</span>
                     <div class="ops-kpi-content">
-                        <span>Tỷ lệ trả lời được</span>
+                        <span>Tỷ lệ phản hồi thành công</span>
                         <strong>@answerRate%</strong>
-                        <small>Dựa trên câu trả lời assistant</small>
+                        <small>Chatbot tìm được đáp án</small>
                     </div>
                 </article>
             </section>
@@ -205,35 +366,35 @@
                 <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span>
                     <div class="ops-kpi-content">
-                        <span>Chưa trả lời</span>
-                        <strong>@unansweredQuestions.ToString("N0")</strong>
-                        <small>Cần bổ sung nguồn học liệu</small>
+                        <span>Chưa trả lời được</span>
+                        <strong>@unansweredQuestions.ToString("N0") câu hỏi</strong>
+                        <small>Chatbot thiếu học liệu để trả lời</small>
                     </div>
                 </article>
                 <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">warning</span>
                     <div class="ops-kpi-content">
-                        <span>Lỗi tài liệu</span>
-                        <strong>@documentIssueCount.ToString("N0")</strong>
-                        <small>Index thất bại</small>
+                        <span>Lỗi xử lý tài liệu</span>
+                        <strong>@documentIssueCount.ToString("N0") file bị lỗi</strong>
+                        <small>Cần kiểm tra lại định dạng file</small>
                     </div>
                 </article>
             </section>
 
             <div class="ops-stat-two-column">
-                <section class="ops-panel ops-stat-chart-panel">
+                <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Sử dụng chat theo ngày</h2>
-                            <p class="ops-muted mb-0">Admin theo dõi ngày nào sinh viên hỏi nhiều để kịp bổ sung tài liệu.</p>
+                            <h2>Biểu đồ sử dụng chat</h2>
+                            <p class="ops-muted mb-0">Theo dõi lượng câu hỏi theo ngày để nắm bắt xu hướng.</p>
                         </div>
-                        <span class="ops-panel-note">Câu hỏi chat</span>
                     </div>
                     @if (Model.Dashboard.DailyChatUsage.Count == 0)
                     {
-                        <div class="ops-empty ops-stat-empty">
+                        <div class="ops-empty">
+                            <span class="material-symbols-outlined" style="font-size: 48px; color: #9ca3af; margin-bottom: 1rem;">insights</span>
                             <strong>Chưa có dữ liệu chat</strong>
-                            <p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này. Thử đổi bộ lọc ngày hoặc kiểm tra dữ liệu chat.</p>
+                            <p>Không có hoạt động nào trong khoảng thời gian này.</p>
                         </div>
                     }
                     else
@@ -242,8 +403,8 @@
                             <svg class="ops-line-chart__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                                 <defs>
                                     <linearGradient id="chatUsageFill" x1="0" x2="0" y1="0" y2="1">
-                                        <stop offset="0%" stop-color="#0a7cf5" stop-opacity=".22" />
-                                        <stop offset="100%" stop-color="#0a7cf5" stop-opacity="0" />
+                                        <stop offset="0%" stop-color="#4f46e5" stop-opacity=".2" />
+                                        <stop offset="100%" stop-color="#4f46e5" stop-opacity="0" />
                                     </linearGradient>
                                 </defs>
                                 <polyline class="ops-line-chart__area" points="5,92 @dailyChartPath 95,92" />
@@ -253,35 +414,46 @@
                                 @foreach (var point in dailyChartPoints)
                                 {
                                     <span class="ops-line-chart__marker" style="left:@FormattableString.Invariant($"{point.X:0.##}")%; top:@FormattableString.Invariant($"{point.Y:0.##}")%;" title="@point.Day.QuestionCount.ToString("N0") câu hỏi"></span>
-                                }
-                            </div>
-                            <div class="ops-line-chart__labels">
-                                @foreach (var point in dailyChartPoints)
-                                {
-                                    <small>@point.Day.DateLabel</small>
+                                    <div class="ops-line-chart__labels">
+                                        <small style="left:@FormattableString.Invariant($"{point.X:0.##}")%;">@point.Day.DateLabel</small>
+                                    </div>
                                 }
                             </div>
                         </div>
                     }
                 </section>
 
-                <section class="ops-panel ops-action-panel">
+                <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Cần xử lý</h2>
-                            <p class="ops-muted mb-0">Các tín hiệu cần admin kiểm tra trước.</p>
+                            <h2>Hành động ưu tiên</h2>
+                            <p class="ops-muted mb-0">Các vấn đề hệ thống cần Admin can thiệp sớm.</p>
                         </div>
                     </div>
                     <div class="ops-action-list">
-                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">help</span><strong>@unansweredQuestions</strong> câu hỏi chưa được chatbot trả lời</div>
-                        <div class="ops-action-item is-red"><span class="material-symbols-outlined" aria-hidden="true">error</span><strong>@Model.Dashboard.FailedDocuments</strong> tài liệu index thất bại</div>
-                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">folder_off</span><strong>@subjectsWithoutDocuments</strong> môn học chưa có tài liệu</div>
-                        <div class="ops-action-item is-blue"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><strong>@subjectsWithoutOwner</strong> môn học chưa có người phụ trách</div>
+                        <div class="ops-action-item" style="border-left: 4px solid #f59e0b;">
+                            <span class="material-symbols-outlined is-orange" aria-hidden="true">help</span>
+                            <div><strong>@unansweredQuestions câu hỏi</strong> bị bỏ lỡ do thiếu nguồn.</div>
+                        </div>
+                        <div class="ops-action-item" style="border-left: 4px solid #ef4444;">
+                            <span class="material-symbols-outlined is-red" aria-hidden="true">error</span>
+                            <div><strong>@Model.Dashboard.FailedDocuments tài liệu</strong> index thất bại.</div>
+                        </div>
+                        <div class="ops-action-item" style="border-left: 4px solid #6b7280;">
+                            <span class="material-symbols-outlined" style="color: #6b7280;" aria-hidden="true">folder_off</span>
+                            <div><strong>@subjectsWithoutDocuments môn học</strong> hoàn toàn trống tài liệu.</div>
+                        </div>
+                        <div class="ops-action-item" style="border-left: 4px solid #3b82f6;">
+                            <span class="material-symbols-outlined is-blue" aria-hidden="true">manage_accounts</span>
+                            <div><strong>@subjectsWithoutOwner môn học</strong> chưa có giảng viên phụ trách.</div>
+                        </div>
                     </div>
-                    <a class="ops-button ops-button--secondary ms-auto" href="@TabUrl("documents")">
-                        Xem chi tiết
-                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-                    </a>
+                    <div style="text-align: right; margin-top: 1rem;">
+                        <a class="ops-button ops-button--secondary" href="@TabUrl("documents")">
+                            Xem chi tiết
+                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">arrow_forward</span>
+                        </a>
+                    </div>
                 </section>
             </div>
 
@@ -289,13 +461,13 @@
                 <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Top môn học được hỏi nhiều</h2>
-                            <p class="ops-muted mb-0">Ưu tiên môn cần bổ sung học liệu hoặc người phụ trách.</p>
+                            <h2>Top môn học được quan tâm</h2>
+                            <p class="ops-muted mb-0">Dựa trên số lượng citation được AI trích xuất.</p>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("documents")">Xem tất cả</a>
                     </div>
                     <div class="ops-table-wrap">
-                        <table class="ops-table ops-compact-table">
+                        <table class="ops-table">
                             <thead>
                                 <tr>
                                     <th>Môn học</th>
@@ -309,10 +481,9 @@
                                 {
                                     <tr>
                                         <td colspan="4">
-                                            <div class="ops-empty ops-stat-empty ops-stat-empty--compact">
+                                            <div class="ops-empty" style="padding: 1.5rem;">
                                                 <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
                                                 <strong>Chưa có dữ liệu</strong>
-                                                <p>Không có môn học nào được hỏi trong khoảng thời gian này.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -321,14 +492,19 @@
                                 {
                                     var readiness = subject.DocumentCount == 0 ? 0 : Math.Min(100, (int)Math.Round(subject.IndexedDocumentCount * 100d / subject.DocumentCount));
                                     <tr>
-                                        <td data-label="Môn học"><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></td>
+                                        <td data-label="Môn học">
+                                            <div class="ops-user-identity">
+                                                <strong>@subject.SubjectCode</strong>
+                                                <small>@subject.SubjectName</small>
+                                            </div>
+                                        </td>
                                         <td data-label="Câu hỏi">@subject.ChatCitationCount.ToString("N0")</td>
                                         <td data-label="Tài liệu">@subject.DocumentCount.ToString("N0")</td>
                                         <td data-label="Tỷ lệ sẵn sàng">
                                             <div class="ops-progress">
                                                 <span style="width:@readiness%"></span>
                                             </div>
-                                            <small>@readiness%</small>
+                                            <small style="color: var(--text-muted); font-weight: 500;">@readiness%</small>
                                         </td>
                                     </tr>
                                 }
@@ -340,12 +516,18 @@
                 <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Người dùng chat nhiều nhất</h2>
-                            <p class="ops-muted mb-0">Theo số câu hỏi trong khoảng lọc.</p>
+                            <h2>Thành viên Chat tích cực</h2>
+                            <p class="ops-muted mb-0">Sinh viên tương tác nhiều nhất hệ thống.</p>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("users")">Xem tất cả</a>
                     </div>
                     <div class="ops-ranked-list">
+                        @if (Model.Dashboard.TopChatUsers.Count == 0)
+                        {
+                            <div class="ops-empty" style="padding: 1.5rem;">
+                                <strong>Chưa có dữ liệu</strong>
+                            </div>
+                        }
                         @foreach (var user in Model.Dashboard.TopChatUsers.Take(5).Select((item, index) => new { item, index }))
                         {
                             <div class="ops-ranked-item">
@@ -355,32 +537,34 @@
                                     <strong>@user.item.UserName</strong>
                                     <small>@ShortEmail(user.item.UserEmail)</small>
                                 </div>
-                                <strong>@user.item.QuestionCount.ToString("N0") câu hỏi</strong>
-                            </div>
-                        }
-                        @if (Model.Dashboard.TopChatUsers.Count == 0)
-                        {
-                            <div class="ops-empty ops-stat-empty">
-                                <strong>Chưa có dữ liệu chat</strong>
-                                <p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này.</p>
+                                <strong>@user.item.QuestionCount.ToString("N0") câu</strong>
                             </div>
                         }
                     </div>
                 </section>
             </div>
 
-            <section class="ops-panel ops-insight-strip">
+            <section class="ops-insight-strip">
                 <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-blue" aria-hidden="true">trending_up</span>
-                    <strong>@(topSubjects.FirstOrDefault()?.SubjectCode ?? "Môn học")</strong> đang có nhiều citation chat nhất trong khoảng lọc.
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><span class="material-symbols-outlined is-blue" style="font-size: 18px;">trending_up</span></div>
+                    <div>
+                        <strong>Môn học Hot nhất</strong>
+                        @(topSubjects.FirstOrDefault()?.SubjectCode ?? "Chưa rõ") đang có lượng truy vấn cao nhất từ sinh viên.
+                    </div>
                 </div>
                 <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-orange" aria-hidden="true">priority_high</span>
-                    Có @unansweredQuestions.ToString("N0") câu hỏi cần kiểm tra nguồn trả lời.
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #ffedd5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><span class="material-symbols-outlined is-orange" style="font-size: 18px;">priority_high</span></div>
+                    <div>
+                        <strong>Lỗ hổng kiến thức</strong>
+                        Có @unansweredQuestions.ToString("N0") câu hỏi hệ thống đành "bó tay" vì thiếu nguồn tài liệu.
+                    </div>
                 </div>
                 <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-green" aria-hidden="true">article</span>
-                    @Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu đã sẵn sàng cho chatbot.
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #dcfce7; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><span class="material-symbols-outlined is-green" style="font-size: 18px;">article</span></div>
+                    <div>
+                        <strong>Tình trạng Index</strong>
+                        @Model.Dashboard.IndexedDocuments.ToString("N0") / @Model.Dashboard.TotalDocuments.ToString("N0") tài liệu đã sẵn sàng cho AI.
+                    </div>
                 </div>
             </section>
         }
@@ -388,51 +572,68 @@
         @if (Model.Tab == "chatbot")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat</span><div class="ops-kpi-content"><span>Tổng câu hỏi</span><strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong><small>@Model.Days ngày gần nhất</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span><div class="ops-kpi-content"><span>Tổng phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") user hoạt động</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">task_alt</span><div class="ops-kpi-content"><span>Tỷ lệ trả lời được</span><strong>@answerRate%</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") phản hồi assistant</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span><div class="ops-kpi-content"><span>Câu hỏi chưa trả lời</span><strong>@unansweredQuestions.ToString("N0")</strong><small>Cần bổ sung dữ liệu</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">thumb_down</span><div class="ops-kpi-content"><span>Feedback thấp</span><strong>-</strong><small>Chưa có dữ liệu đánh giá sao</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">speed</span><div class="ops-kpi-content"><span>Thời gian phản hồi</span><strong>-</strong><small>Chưa lưu latency</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat</span><div class="ops-kpi-content"><span>Tổng câu hỏi</span><strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong><small>@Model.Days ngày qua</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span><div class="ops-kpi-content"><span>Tổng phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") user tương tác</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">task_alt</span><div class="ops-kpi-content"><span>Tỷ lệ trả lời thành công</span><strong>@answerRate%</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") phản hồi có nguồn</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span><div class="ops-kpi-content"><span>Câu hỏi bị bỏ lỡ</span><strong>@unansweredQuestions.ToString("N0")</strong><small>Cần nạp thêm file</small></div></article>
+            </section>
+
+            <section class="ops-panel" style="margin-bottom: 2rem;">
+                <div class="ops-panel-head">
+                    <div>
+                        <h2>Công cụ lọc Chatbot</h2>
+                        <p class="ops-muted mb-0">Tra cứu nhanh lịch sử theo môn học và đánh giá.</p>
+                    </div>
+                </div>
+                <div class="ops-filter-bar">
+                    <label class="ops-field">
+                        <span>Môn học</span>
+                        <select><option>Tất cả môn học</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select>
+                    </label>
+                    <label class="ops-field">
+                        <span>Trạng thái</span>
+                        <select><option>Tất cả</option><option>Đã trả lời</option><option>Bó tay</option></select>
+                    </label>
+                    <label class="ops-field">
+                        <span>Đánh giá sao</span>
+                        <select><option>Tất cả feedback</option><option>1 sao (Tệ)</option><option>5 sao (Tốt)</option></select>
+                    </label>
+                    <label class="ops-field" style="flex: 2;">
+                        <span>Tìm kiếm nội dung</span>
+                        <input placeholder="Nhập từ khóa câu hỏi..." />
+                    </label>
+                    <button type="button" class="ops-button ops-button--secondary" style="height: 42px;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">search</span> Tìm
+                    </button>
+                </div>
             </section>
 
             <section class="ops-panel">
                 <div class="ops-panel-head">
                     <div>
-                        <h2>Bộ lọc chatbot</h2>
-                        <p class="ops-muted mb-0">Chuẩn bị UI lọc theo ngày, môn học, trạng thái và feedback.</p>
+                        <h2>Chi tiết sử dụng theo ngày</h2>
                     </div>
-                </div>
-                <div class="ops-filter-bar ops-stat-filter">
-                    <label class="ops-field"><span>Môn học</span><select><option>Tất cả môn học</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select></label>
-                    <label class="ops-field"><span>Trạng thái</span><select><option>Tất cả</option><option>Đã trả lời</option><option>Chưa trả lời</option></select></label>
-                    <label class="ops-field"><span>Feedback</span><select><option>Tất cả</option><option>1 sao</option><option>2 sao</option><option>3 sao</option><option>4 sao</option><option>5 sao</option></select></label>
-                    <label class="ops-field ops-field--search"><span>Từ khóa câu hỏi</span><input placeholder="Nhập nội dung câu hỏi..." /></label>
-                    <button type="button" class="ops-button ops-button--secondary">Lọc</button>
-                </div>
-            </section>
-
-            <section class="ops-panel">
-                <div class="ops-panel-head">
-                    <div>
-                        <h2>Sử dụng chat theo ngày</h2>
-                        <p class="ops-muted mb-0">Bảng gọn thay cho nhiều bảng dàn trải trên cùng một màn hình.</p>
-                    </div>
-                    <button type="button" class="ops-button ops-button--secondary">Xuất câu hỏi chưa trả lời</button>
+                    <button type="button" class="ops-button ops-button--secondary">Xuất file CSV báo cáo</button>
                 </div>
                 @if (!hasChatData)
                 {
-                    <div class="ops-empty ops-stat-empty"><strong>Chưa có dữ liệu chat</strong><p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này. Thử đổi bộ lọc ngày hoặc kiểm tra dữ liệu chat.</p></div>
+                    <div class="ops-empty"><strong>Chưa có dữ liệu chat</strong><p>Hệ thống ghi nhận 0 tương tác trong khoảng thời gian này.</p></div>
                 }
                 else
                 {
                     <div class="ops-table-wrap">
-                        <table class="ops-table ops-compact-table">
+                        <table class="ops-table">
                             <thead><tr><th>Ngày</th><th>Câu hỏi</th><th>Phiên chat</th><th>User hoạt động</th><th>Tỷ lệ trả lời</th></tr></thead>
                             <tbody>
                                 @foreach (var day in Model.Dashboard.DailyChatUsage)
                                 {
-                                    <tr><td data-label="Ngày">@day.DateLabel</td><td data-label="Câu hỏi">@day.QuestionCount.ToString("N0")</td><td data-label="Phiên chat">@day.SessionCount.ToString("N0")</td><td data-label="User hoạt động">@day.ActiveUserCount.ToString("N0")</td><td data-label="Tỷ lệ trả lời"><span class="rbl-status is-success">@answerRate%</span></td></tr>
+                                    <tr>
+                                        <td data-label="Ngày"><strong>@day.DateLabel</strong></td>
+                                        <td data-label="Câu hỏi">@day.QuestionCount.ToString("N0")</td>
+                                        <td data-label="Phiên chat">@day.SessionCount.ToString("N0")</td>
+                                        <td data-label="User hoạt động">@day.ActiveUserCount.ToString("N0")</td>
+                                        <td data-label="Tỷ lệ trả lời"><span class="rbl-status is-success">@answerRate%</span></td>
+                                    </tr>
                                 }
                             </tbody>
                         </table>
@@ -444,30 +645,39 @@
         @if (Model.Tab == "documents")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span><div class="ops-kpi-content"><span>Tổng tài liệu</span><strong>@Model.Dashboard.TotalDocuments.ToString("N0")</strong><small>Trong toàn hệ thống</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span><div class="ops-kpi-content"><span>Đã index</span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong><small>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments)</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">pending</span><div class="ops-kpi-content"><span>Đang xử lý</span><strong>@Model.Dashboard.ProcessingDocuments.ToString("N0")</strong><small>Đang chunk/index</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">error</span><div class="ops-kpi-content"><span>Index thất bại</span><strong>@Model.Dashboard.FailedDocuments.ToString("N0")</strong><small>Cần kiểm tra file</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">folder_off</span><div class="ops-kpi-content"><span>Môn chưa có tài liệu</span><strong>@subjectsWithoutDocuments.ToString("N0")</strong><small>Cần bổ sung học liệu</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span><div class="ops-kpi-content"><span>Tổng kho tài liệu</span><strong>@Model.Dashboard.TotalDocuments.ToString("N0")</strong><small>Toàn hệ thống</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span><div class="ops-kpi-content"><span>Hoàn tất Index</span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong><small>Chiếm @PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments)</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">pending</span><div class="ops-kpi-content"><span>Đang xử lý</span><strong>@Model.Dashboard.ProcessingDocuments.ToString("N0")</strong><small>Đang nhúng Vector</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">error</span><div class="ops-kpi-content"><span>Index thất bại</span><strong>@Model.Dashboard.FailedDocuments.ToString("N0")</strong><small>File lỗi/quá nặng</small></div></article>
             </section>
 
             <section class="ops-panel">
                 <div class="ops-panel-head">
-                    <div><h2>Báo cáo tài liệu</h2><p class="ops-muted mb-0">Theo dõi tài liệu mới upload, trạng thái index và số lần được citation.</p></div>
+                    <div><h2>Tài liệu mới cập nhật</h2><p class="ops-muted mb-0">Quản lý các file vừa được đưa lên hệ thống.</p></div>
                 </div>
                 <div class="ops-table-wrap">
-                    <table class="ops-table ops-compact-table">
-                        <thead><tr><th>Tài liệu</th><th>Môn học</th><th>Người upload</th><th>Trạng thái</th><th>Citation</th><th>Ngày upload</th></tr></thead>
+                    <table class="ops-table">
+                        <thead><tr><th>Tên file (Tài liệu)</th><th>Môn học</th><th>Người tải lên</th><th>Trạng thái</th><th>Trích dẫn (Citation)</th><th>Ngày Upload</th></tr></thead>
                         <tbody>
                             @foreach (var document in Model.Dashboard.RecentDocuments)
                             {
                                 <tr>
-                                    <td data-label="Tài liệu"><strong>@document.FileName</strong></td>
+                                    <td data-label="Tài liệu">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span class="material-symbols-outlined" style="color: #9ca3af;">draft</span>
+                                            <strong>@document.FileName</strong>
+                                        </div>
+                                    </td>
                                     <td data-label="Môn học">@document.Subject</td>
-                                    <td data-label="Người upload"><strong>@(string.IsNullOrWhiteSpace(document.UploadedByName) ? "Chưa rõ" : document.UploadedByName)</strong><small>@ShortEmail(document.UploadedByEmail)</small></td>
+                                    <td data-label="Người tải lên">
+                                        <div class="ops-user-identity">
+                                            <strong>@(string.IsNullOrWhiteSpace(document.UploadedByName) ? "System" : document.UploadedByName)</strong>
+                                            <small>@ShortEmail(document.UploadedByEmail)</small>
+                                        </div>
+                                    </td>
                                     <td data-label="Trạng thái"><span class="rbl-status @StatusClass(document.Status)">@StatusLabel(document.Status)</span></td>
-                                    <td data-label="Citation">@document.CitationCount.ToString("N0")</td>
-                                    <td data-label="Ngày upload">@document.UploadedAt.LocalDateTime.ToString("dd/MM/yyyy")</td>
+                                    <td data-label="Citation"><strong>@document.CitationCount.ToString("N0")</strong> lần</td>
+                                    <td data-label="Ngày Upload">@document.UploadedAt.LocalDateTime.ToString("dd/MM/yyyy")</td>
                                 </tr>
                             }
                         </tbody>
@@ -478,20 +688,56 @@
 
         @if (Model.Tab == "users")
         {
-            <div class="ops-stat-user-summary">
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Sinh viên</h2><p class="ops-muted mb-0">Mức độ sử dụng chatbot.</p></div></div><div class="ops-metric-list"><div><span>Tổng sinh viên</span><strong>@Model.StudentUsers.ToString("N0")</strong></div><div><span>Hoạt động trong @Model.Days ngày</span><strong>@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong></div><div><span>Hỏi nhiều nhất</span><strong>@(Model.Dashboard.TopChatUsers.FirstOrDefault()?.UserName ?? "-")</strong></div></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giảng viên</h2><p class="ops-muted mb-0">Theo quyền upload và tài liệu.</p></div></div><div class="ops-metric-list"><div><span>Tổng giảng viên</span><strong>@Model.LecturerUsers.ToString("N0")</strong></div><div><span>Quyền upload đang hoạt động</span><strong>@uploadPermissionCount.ToString("N0")</strong></div><div><span>TB tài liệu/môn</span><strong>@(Model.Dashboard.TotalSubjects == 0 ? "0" : (Model.Dashboard.TotalDocuments / Math.Max(1, Model.Dashboard.TotalSubjects)).ToString("N0"))</strong></div></div></section>
+            <div class="ops-stat-two-column">
+                <section class="ops-panel">
+                    <div class="ops-panel-head">
+                        <div>
+                            <h2>Khối Sinh viên</h2>
+                        </div>
+                    </div>
+                    <div class="ops-action-list">
+                        <div class="ops-action-item"><span>Tổng tài khoản SV:</span> <strong style="margin-left: auto;">@Model.StudentUsers.ToString("N0")</strong></div>
+                        <div class="ops-action-item"><span>SV hoạt động (Chat):</span> <strong style="margin-left: auto;">@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong></div>
+                        <div class="ops-action-item"><span>SV Top 1:</span> <strong style="margin-left: auto; color: var(--primary);">@(Model.Dashboard.TopChatUsers.FirstOrDefault()?.UserName ?? "-")</strong></div>
+                    </div>
+                </section>
+                <section class="ops-panel">
+                    <div class="ops-panel-head">
+                        <div>
+                            <h2>Khối Giảng viên</h2>
+                        </div>
+                    </div>
+                    <div class="ops-action-list">
+                        <div class="ops-action-item"><span>Tổng Giảng viên:</span> <strong style="margin-left: auto;">@Model.LecturerUsers.ToString("N0")</strong></div>
+                        <div class="ops-action-item"><span>GV được cấp quyền Upload:</span> <strong style="margin-left: auto;">@uploadPermissionCount.ToString("N0")</strong></div>
+                        <div class="ops-action-item"><span>TB Tài liệu / Môn học:</span> <strong style="margin-left: auto; color: var(--primary);">@(Model.Dashboard.TotalSubjects == 0 ? "0" : (Model.Dashboard.TotalDocuments / Math.Max(1, Model.Dashboard.TotalSubjects)).ToString("N0"))</strong></div>
+                    </div>
+                </section>
             </div>
 
             <section class="ops-panel">
-                <div class="ops-panel-head"><div><h2>Người dùng chat nhiều nhất</h2><p class="ops-muted mb-0">Admin biết nhóm sinh viên đang dùng chatbot tích cực.</p></div></div>
+                <div class="ops-panel-head"><div><h2>Top Tương tác (Leaderboard)</h2></div></div>
                 <div class="ops-table-wrap">
-                    <table class="ops-table ops-compact-table">
-                        <thead><tr><th>Người dùng</th><th>Email</th><th>Câu hỏi</th><th>Phiên chat</th><th>Lần hỏi gần nhất</th></tr></thead>
+                    <table class="ops-table">
+                        <thead><tr><th>Hạng</th><th>Tài khoản</th><th>Câu hỏi đã đặt</th><th>Số phiên Chat</th><th>Online gần nhất</th></tr></thead>
                         <tbody>
-                            @foreach (var user in Model.Dashboard.TopChatUsers)
+                            @foreach (var user in Model.Dashboard.TopChatUsers.Select((u, i) => new { u, i }))
                             {
-                                <tr><td data-label="Người dùng"><strong>@user.UserName</strong></td><td data-label="Email">@ShortEmail(user.UserEmail)</td><td data-label="Câu hỏi">@user.QuestionCount.ToString("N0")</td><td data-label="Phiên chat">@user.SessionCount.ToString("N0")</td><td data-label="Lần hỏi gần nhất">@(user.LastQuestionAt?.LocalDateTime.ToString("dd/MM HH:mm") ?? "-")</td></tr>
+                                <tr>
+                                    <td><span class="ops-rank" style="width: auto;">#@(user.i + 1)</span></td>
+                                    <td>
+                                        <div class="ops-user-cell">
+                                            <span class="ops-avatar">@UserInitial(user.u.UserName)</span>
+                                            <div class="ops-user-identity">
+                                                <strong>@user.u.UserName</strong>
+                                                <small>@ShortEmail(user.u.UserEmail)</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><strong>@user.u.QuestionCount.ToString("N0")</strong></td>
+                                    <td>@user.u.SessionCount.ToString("N0")</td>
+                                    <td>@(user.u.LastQuestionAt?.LocalDateTime.ToString("dd/MM HH:mm") ?? "-")</td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -502,23 +748,37 @@
         @if (Model.Tab == "permissions")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Giảng viên phụ trách</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Môn đã có người phụ trách</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">upload</span><div class="ops-kpi-content"><span>Quyền upload</span><strong>@uploadPermissionCount</strong><small>Đang gán theo môn</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn chưa phụ trách</span><strong>@subjectsWithoutOwner</strong><small>Cần gán giảng viên phụ trách</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">supervisor_account</span><div class="ops-kpi-content"><span>Môn đã có GV quản lý</span><strong>@(Model.Dashboard.TotalSubjects - subjectsWithoutOwner)</strong><small>Hoạt động ổn định</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">upload</span><div class="ops-kpi-content"><span>Slot quyền Upload</span><strong>@uploadPermissionCount</strong><small>Đang được gán</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">person_off</span><div class="ops-kpi-content"><span>Môn mồ côi (Trống GV)</span><strong>@subjectsWithoutOwner</strong><small>Cần phân công ngay</small></div></article>
             </section>
+
             <section class="ops-panel">
                 <div class="ops-panel-head">
-                    <div><h2>Báo cáo phân quyền</h2><p class="ops-muted mb-0">Theo dõi người phụ trách môn và quyền upload tài liệu.</p></div>
-                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán giảng viên phụ trách</a>
+                    <div><h2>Ma trận phân quyền môn học</h2></div>
+                    <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán quyền cho GV</a>
                 </div>
                 <div class="ops-table-wrap">
-                    <table class="ops-table ops-compact-table">
-                        <thead><tr><th>Người dùng</th><th>Vai trò</th><th>Môn phụ trách</th><th>Quyền upload</th><th>Trạng thái</th></tr></thead>
+                    <table class="ops-table">
+                        <thead><tr><th>Giảng viên phụ trách</th><th>Vai trò</th><th>Môn học (Bộ môn)</th><th>Quyền Upload</th><th>Trạng thái môn</th></tr></thead>
                         <tbody>
                             @foreach (var subject in Model.Dashboard.SubjectUsage)
                             {
                                 var owner = string.IsNullOrWhiteSpace(subject.OwnerName) ? subject.OwnerEmail : subject.OwnerName;
-                                <tr><td data-label="Người dùng"><strong>@(string.IsNullOrWhiteSpace(owner) ? "Chưa phân công" : owner)</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò">Giảng viên phụ trách</td><td data-label="Môn phụ trách">@subject.SubjectCode</td><td data-label="Quyền upload">@(subject.LecturerCount > 0 ? "Có" : "Chưa có")</td><td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
+                                <tr>
+                                    <td data-label="Người dùng">
+                                        <div class="ops-user-identity">
+                                            <strong>@(string.IsNullOrWhiteSpace(owner) ? "--- Trống ---" : owner)</strong>
+                                            @if (!string.IsNullOrWhiteSpace(owner)) { <small>@ShortEmail(subject.OwnerEmail)</small> }
+                                        </div>
+                                    </td>
+                                    <td data-label="Vai trò">@(!string.IsNullOrWhiteSpace(owner) ? "Trưởng bộ môn" : "-")</td>
+                                    <td data-label="Môn"><strong>@subject.SubjectCode</strong></td>
+                                    <td data-label="Quyền upload">
+                                        @if(subject.LecturerCount > 0){ <span class="rbl-status is-default">Có quyền</span> } else { <span class="ops-muted">Không</span> }
+                                    </td>
+                                    <td data-label="Trạng thái"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-warning" : "is-success")">@(string.IsNullOrWhiteSpace(owner) ? "Cần phân công" : "Active")</span></td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -528,240 +788,144 @@
 
         @if (Model.Tab == "subscription")
         {
-            <section class="ops-subscription-page">
-                <section class="ops-kpi-grid ops-subscription-kpis" aria-label="Chỉ số gói đăng ký">
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">business_center</span>
-                        <div class="ops-kpi-content">
-                            <span>Tổng đăng ký</span>
-                            <strong>@Model.Dashboard.TotalSubscriptionCount.ToString("N0")</strong>
-                            <small>@Model.Days ngày gần nhất</small>
-                        </div>
-                    </article>
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">groups</span>
-                        <div class="ops-kpi-content">
-                            <span>Đang hoạt động</span>
-                            <strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong>
-                            <small>Subscription active</small>
-                        </div>
-                    </article>
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">person_add</span>
-                        <div class="ops-kpi-content">
-                            <span>Đăng ký mới</span>
-                            <strong>@Model.Dashboard.NewSubscriptionCount.ToString("N0")</strong>
-                            <small>Trong khoảng lọc</small>
-                        </div>
-                    </article>
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">sync</span>
-                        <div class="ops-kpi-content">
-                            <span>Giao dịch thành công</span>
-                            <strong>@Model.Dashboard.PaidPaymentCount.ToString("N0")</strong>
-                            <small>Payment paid</small>
-                        </div>
-                    </article>
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">cancel</span>
-                        <div class="ops-kpi-content">
-                            <span>Tỷ lệ hủy</span>
-                            <strong>@subscriptionCancelRate.ToString("0.#")%</strong>
-                            <small>@Model.Dashboard.CanceledSubscriptionCount.ToString("N0") gói đã hủy</small>
-                        </div>
-                    </article>
-                    <article class="ops-kpi ops-stat-kpi">
-                        <span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">account_balance_wallet</span>
-                        <div class="ops-kpi-content">
-                            <span>Doanh thu</span>
-                            <strong>@MoneyVnd(Model.Dashboard.PaidRevenueVnd)</strong>
-                            <small>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid</small>
-                        </div>
-                    </article>
-                </section>
+            <section class="ops-kpi-grid ops-stat-kpis">
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">sell</span><div class="ops-kpi-content"><span>Lượt đăng ký</span><strong>@Model.Dashboard.TotalSubscriptionCount.ToString("N0")</strong></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">check_circle</span><div class="ops-kpi-content"><span>Đang hoạt động</span><strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">payments</span><div class="ops-kpi-content"><span>Giao dịch Paid</span><strong>@Model.Dashboard.PaidPaymentCount.ToString("N0")</strong></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">cancel</span><div class="ops-kpi-content"><span>Tỷ lệ hủy gói</span><strong>@subscriptionCancelRate.ToString("0.#")%</strong></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">account_balance_wallet</span><div class="ops-kpi-content"><span>Tổng doanh thu</span><strong>@MoneyVnd(Model.Dashboard.PaidRevenueVnd)</strong></div></article>
+            </section>
 
-                <div class="ops-subscription-grid">
-                    <section class="ops-panel ops-subscription-trend">
-                        <div class="ops-panel-head">
-                            <div>
-                                <h2>Xu hướng đăng ký</h2>
-                                <p class="ops-muted mb-0">Theo dõi đăng ký mới và giao dịch thanh toán thành công theo ngày.</p>
-                            </div>
-                            <span class="ops-panel-note">Theo ngày</span>
-                        </div>
-                        <div class="ops-subscription-chart">
-                            <div class="ops-subscription-chart__legend">
-                                <span><i class="is-blue"></i>Đăng ký mới</span>
-                                <span><i class="is-green"></i>Thanh toán thành công</span>
-                            </div>
-                            <div class="ops-subscription-chart__plot">
-                                @foreach (var day in Model.Dashboard.DailySubscriptionUsage)
-                                {
-                                    var newHeight = Math.Max(4, day.NewSubscriptionCount * 100 / maxSubscriptionTrend);
-                                    var paidHeight = Math.Max(4, day.SuccessfulPaymentCount * 100 / maxSubscriptionTrend);
-                                    <div class="ops-subscription-chart__day">
-                                        <span class="ops-subscription-chart__bar is-blue" style="height:@newHeight%" title="@day.NewSubscriptionCount.ToString("N0") đăng ký mới"></span>
-                                        <span class="ops-subscription-chart__bar is-green" style="height:@paidHeight%" title="@day.SuccessfulPaymentCount.ToString("N0") thanh toán thành công"></span>
-                                        <small>@day.DateLabel</small>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="ops-panel ops-subscription-mix">
-                        <div class="ops-panel-head">
-                            <div>
-                                <h2>Cơ cấu gói đăng ký</h2>
-                                <p class="ops-muted mb-0">Tỷ trọng theo gói đang hoạt động hoặc giao dịch paid.</p>
-                            </div>
-                            <span class="ops-panel-note">Theo số lượng</span>
-                        </div>
-                        <div class="ops-subscription-donut-layout">
-                            <div class="ops-subscription-donut" style="--subscription-donut:@subscriptionDonut">
-                                <span>Tổng</span>
-                                <strong>@totalPackageVolume.ToString("N0")</strong>
-                            </div>
-                            <div class="ops-subscription-mix-table">
-                                <div class="ops-subscription-mix-row is-head"><span>Gói</span><span>Số lượng</span><span>Tỷ lệ</span></div>
-                                @foreach (var package in Model.Dashboard.PackagePurchases.Select((item, index) => new { item, index }))
-                                {
-                                    var packageVolume = package.item.ActiveSubscriptionCount > 0 ? package.item.ActiveSubscriptionCount : package.item.PaidCount;
-                                    var packageRate = totalPackageVolume == 0 ? 0 : packageVolume * 100d / totalPackageVolume;
-                                    <div class="ops-subscription-mix-row">
-                                        <span><i style="background:@packageColors[package.index % packageColors.Length]"></i>@package.item.PackageName</span>
-                                        <span>@packageVolume.ToString("N0")</span>
-                                        <span>@packageRate.ToString("0.#")%</span>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <div class="ops-subscription-grid">
-                    <section class="ops-panel">
-                        <div class="ops-panel-head">
-                            <div>
-                                <h2>Hiệu suất theo gói</h2>
-                                <p class="ops-muted mb-0">So sánh active, giao dịch mới, pending/hủy và doanh thu.</p>
-                            </div>
-                        </div>
-                        <div class="ops-table-wrap">
-                            <table class="ops-table ops-compact-table ops-subscription-table">
-                                <thead>
-                                    <tr>
-                                        <th>Gói</th>
-                                        <th>Đang hoạt động</th>
-                                        <th>Paid</th>
-                                        <th>Pending</th>
-                                        <th>Hủy/lỗi</th>
-                                        <th>Doanh thu</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var package in Model.Dashboard.PackagePurchases.Select((item, index) => new { item, index }))
-                                    {
-                                        <tr>
-                                            <td data-label="Gói"><span class="ops-package-dot" style="background:@packageColors[package.index % packageColors.Length]"></span><strong>@package.item.PackageName</strong></td>
-                                            <td data-label="Đang hoạt động">@package.item.ActiveSubscriptionCount.ToString("N0")</td>
-                                            <td data-label="Paid">@package.item.PaidCount.ToString("N0")</td>
-                                            <td data-label="Pending">@package.item.PendingCount.ToString("N0")</td>
-                                            <td data-label="Hủy/lỗi">@package.item.FailedCount.ToString("N0")</td>
-                                            <td data-label="Doanh thu">@MoneyVnd(package.item.RevenueVnd)</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-
-                    <section class="ops-panel">
-                        <div class="ops-panel-head">
-                            <div>
-                                <h2>Giao dịch gần đây</h2>
-                                <p class="ops-muted mb-0">Các giao dịch gói mới nhất trong khoảng lọc.</p>
-                            </div>
-                            <span class="ops-panel-note">Xem tất cả</span>
-                        </div>
-                        <div class="ops-table-wrap">
-                            <table class="ops-table ops-compact-table">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Gói</th>
-                                        <th>Cổng thanh toán</th>
-                                        <th>Trạng thái</th>
-                                        <th>Ngày</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var payment in Model.Dashboard.RecentPayments.Take(6))
-                                    {
-                                        <tr>
-                                            <td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td>
-                                            <td data-label="Gói">@payment.PackageName</td>
-                                            <td data-label="Cổng">@payment.Provider</td>
-                                            <td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td>
-                                            <td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                </div>
-
-                <section class="ops-panel ops-subscription-insights">
-                    <div class="ops-subscription-insight is-blue">
-                        <span class="material-symbols-outlined" aria-hidden="true">stars</span>
-                        <div><strong>Gói phổ biến nhất</strong><p>@(topSubscriptionPackage?.PackageName ?? "Chưa có dữ liệu") với @((topSubscriptionPackage?.ActiveSubscriptionCount ?? 0).ToString("N0")) người dùng active.</p></div>
+            <div class="ops-stat-two-column">
+                <section class="ops-panel">
+                    <div class="ops-panel-head">
+                        <div><h2>Cơ cấu gói bán ra</h2></div>
                     </div>
-                    <div class="ops-subscription-insight is-green">
-                        <span class="material-symbols-outlined" aria-hidden="true">trending_up</span>
-                        <div><strong>Thanh toán thành công</strong><p>@Model.Dashboard.PaidPaymentCount.ToString("N0") giao dịch paid trong khoảng lọc.</p></div>
-                    </div>
-                    <div class="ops-subscription-insight is-red">
-                        <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
-                        <div><strong>Gói cần theo dõi</strong><p>@subscriptionCancelRate.ToString("0.#")% tỷ lệ hủy trên tổng đăng ký.</p></div>
+                    <div class="ops-subscription-donut-layout">
+                        <div class="ops-subscription-donut" style="--subscription-donut:@subscriptionDonut">
+                            <span>Tổng Volume</span>
+                            <strong>@totalPackageVolume.ToString("N0")</strong>
+                        </div>
+                        <div class="ops-subscription-mix-table">
+                            <div class="ops-subscription-mix-row is-head"><span>Tên Gói</span><span>Số lượng</span><span>Tỷ trọng</span></div>
+                            @foreach (var package in Model.Dashboard.PackagePurchases.Select((item, index) => new { item, index }))
+                            {
+                                var packageVolume = package.item.ActiveSubscriptionCount > 0 ? package.item.ActiveSubscriptionCount : package.item.PaidCount;
+                                var packageRate = totalPackageVolume == 0 ? 0 : packageVolume * 100d / totalPackageVolume;
+                                <div class="ops-subscription-mix-row">
+                                    <span><i style="background:@packageColors[package.index % packageColors.Length]"></i>@package.item.PackageName</span>
+                                    <strong>@packageVolume.ToString("N0")</strong>
+                                    <span>@packageRate.ToString("0.#")%</span>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </section>
+                
+                <section class="ops-panel">
+                    <div class="ops-panel-head">
+                        <div><h2>Biểu đồ Tăng trưởng</h2></div>
+                    </div>
+                    <div class="ops-subscription-chart" style="margin-top: 1.5rem;">
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; justify-content: center; font-size: 0.875rem;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem;"><i style="width: 12px; height: 12px; background: #4f46e5; border-radius: 2px;"></i> Đăng ký mới</span>
+                            <span style="display: flex; align-items: center; gap: 0.5rem;"><i style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></i> Thanh toán thành công</span>
+                        </div>
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 200px; padding-bottom: 25px; position: relative;">
+                            @foreach (var day in Model.Dashboard.DailySubscriptionUsage)
+                            {
+                                var newHeight = Math.Max(4, day.NewSubscriptionCount * 100 / maxSubscriptionTrend);
+                                var paidHeight = Math.Max(4, day.SuccessfulPaymentCount * 100 / maxSubscriptionTrend);
+                                <div style="display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; flex: 1; position: relative; gap: 2px;">
+                                    <span style="width: 30%; max-width: 12px; background: #4f46e5; border-radius: 4px 4px 0 0; height: @newHeight%; transition: height 0.3s;" title="Mới: @day.NewSubscriptionCount"></span>
+                                    <span style="width: 30%; max-width: 12px; background: #10b981; border-radius: 4px 4px 0 0; height: @paidHeight%; transition: height 0.3s;" title="Thanh toán: @day.SuccessfulPaymentCount"></span>
+                                    <small style="position: absolute; bottom: -20px; font-size: 0.65rem; color: #9ca3af;">@day.DateLabel</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <section class="ops-panel">
+                <div class="ops-panel-head">
+                    <div><h2>Lịch sử Giao dịch (Payments)</h2></div>
+                </div>
+                <div class="ops-table-wrap">
+                    <table class="ops-table">
+                        <thead><tr><th>Tài khoản Mua</th><th>Tên Gói</th><th>Cổng thanh toán</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                        <tbody>
+                            @if (Model.Dashboard.RecentPayments.Count == 0)
+                            {
+                                <tr><td colspan="5"><div class="ops-empty">Chưa có giao dịch nào phát sinh.</div></td></tr>
+                            }
+                            @foreach (var payment in Model.Dashboard.RecentPayments.Take(8))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="ops-user-identity">
+                                            <strong>@payment.UserName</strong>
+                                            <small>@ShortEmail(payment.UserEmail)</small>
+                                        </div>
+                                    </td>
+                                    <td><strong>@payment.PackageName</strong></td>
+                                    <td>@payment.Provider</td>
+                                    <td><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td>
+                                    <td style="color: var(--text-muted);">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </section>
         }
 
         @if (Model.Tab == "billing")
         {
-            <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">payments</span><div class="ops-kpi-content"><span>Doanh thu đã thanh toán</span><strong>@Model.Dashboard.PaidRevenueVnd.ToString("N0")</strong><small>VND</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">verified</span><div class="ops-kpi-content"><span>Giao dịch paid</span><strong>@Model.Dashboard.PaidPaymentCount.ToString("N0")</strong><small>Trong khoảng lọc</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">pending_actions</span><div class="ops-kpi-content"><span>Payment pending</span><strong>@Model.Dashboard.PendingPaymentCount.ToString("N0")</strong><small>Cần theo dõi</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">workspace_premium</span><div class="ops-kpi-content"><span>Subscription active</span><strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong><small>Gói đang hoạt động</small></div></article>
-            </section>
-            <div class="ops-stat-two-column">
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Thống kê mua gói</h2><p class="ops-muted mb-0">Doanh thu và trạng thái theo package.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><thead><tr><th>Gói</th><th>Paid</th><th>Pending</th><th>Failed</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var package in Model.Dashboard.PackagePurchases){<tr><td data-label="Gói"><strong>@package.PackageName</strong><small>@package.PackageCode</small></td><td data-label="Paid">@package.PaidCount</td><td data-label="Pending">@package.PendingCount</td><td data-label="Failed">@package.FailedCount</td><td data-label="Doanh thu">@package.RevenueVnd.ToString("N0") VND</td></tr>}</tbody></table></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giao dịch gần nhất</h2><p class="ops-muted mb-0">Bảng rút gọn để tránh cuộn ngang.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><thead><tr><th>User</th><th>Gói</th><th>Cổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody>@foreach (var payment in Model.Dashboard.RecentPayments){<tr><td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td><td data-label="Gói">@payment.PackageName</td><td data-label="Cổng">@payment.Provider</td><td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td><td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM")</td></tr>}</tbody></table></div></section>
+            <div class="ops-empty">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: #9ca3af; margin-bottom: 1rem;">receipt_long</span>
+                <strong>Tab Billing đang được gộp vào Subscription</strong>
+                <p>Hãy chuyển sang tab "Gói đăng ký" để xem báo cáo doanh thu nhé.</p>
             </div>
         }
 
         @if (Model.Tab == "export")
         {
-            <section class="ops-panel ops-export-panel">
+            <section class="ops-panel" style="max-width: 700px; margin: 0 auto;">
                 <div class="ops-panel-head">
-                    <div><h2>Tạo báo cáo</h2><p class="ops-muted mb-0">Chọn loại báo cáo, khoảng thời gian, định dạng và bộ lọc trước khi xuất file.</p></div>
+                    <div>
+                        <h2>Công cụ Xuất Báo cáo</h2>
+                        <p class="ops-muted mb-0">Thiết lập các tiêu chí trước khi render file Excel/PDF.</p>
+                    </div>
                 </div>
-                <form class="ops-export-form">
-                    <label class="ops-field"><span>Loại báo cáo</span><select><option>Chatbot</option><option>Tài liệu</option><option>Người dùng</option><option>Phân quyền</option><option>Thanh toán</option></select></label>
-                    <label class="ops-field"><span>Khoảng thời gian</span><select><option>7 ngày</option><option selected>30 ngày</option><option>90 ngày</option><option>Tùy chỉnh</option></select></label>
-                    <label class="ops-field"><span>Định dạng</span><select><option>Excel</option><option>PDF</option></select></label>
-                    <label class="ops-field"><span>Môn học</span><select><option>Tất cả môn học</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select></label>
-                    <label class="ops-field"><span>Trạng thái</span><select><option>Tất cả</option><option>Đã trả lời</option><option>Chưa trả lời</option><option>Index thất bại</option></select></label>
-                    <button type="button" class="ops-button ops-button--primary"><span class="material-symbols-outlined" aria-hidden="true">download</span>Xuất báo cáo</button>
+                <form class="ops-stat-toolbar" style="flex-direction: column; align-items: stretch; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <label class="ops-field">
+                            <span>Phân hệ báo cáo</span>
+                            <select><option>Hiệu suất Chatbot</option><option>Kho Tài liệu</option><option>Báo cáo Doanh thu</option></select>
+                        </label>
+                        <label class="ops-field">
+                            <span>Định dạng File</span>
+                            <select><option>Microsoft Excel (.xlsx)</option><option>Tài liệu PDF (.pdf)</option></select>
+                        </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <label class="ops-field">
+                            <span>Phạm vi môn học</span>
+                            <select><option>Tất cả các môn</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select>
+                        </label>
+                        <label class="ops-field">
+                            <span>Trạng thái lọc</span>
+                            <select><option>Lấy tất cả dữ liệu</option><option>Chỉ lấy Lỗi/Cảnh báo</option></select>
+                        </label>
+                    </div>
+                    
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; text-align: right;">
+                        <button type="button" class="ops-button ops-button--primary" style="padding: 0.75rem 2rem; font-size: 1rem;">
+                            <span class="material-symbols-outlined" aria-hidden="true">cloud_download</span> Generate File Báo Cáo
+                        </button>
+                    </div>
                 </form>
-            </section>
-
-            <section class="ops-panel">
-                <div class="ops-panel-head"><div><h2>Lịch sử xuất báo cáo</h2><p class="ops-muted mb-0">Sẽ hiển thị các file đã tạo sau khi kết nối tác vụ xuất Excel/PDF.</p></div></div>
-                <div class="ops-empty ops-stat-empty"><strong>Chưa có báo cáo đã xuất</strong><p>Chọn loại báo cáo và định dạng ở form phía trên để chuẩn bị file cho admin/nhà trường.</p></div>
             </section>
         }
     }
