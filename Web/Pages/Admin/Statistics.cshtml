@@ -70,12 +70,13 @@
         new { Key = "documents", Label = "Tài liệu" },
         new { Key = "users", Label = "Người dùng" },
         new { Key = "permissions", Label = "Phân quyền" },
-        new { Key = "subscription", Label = "Gói đăng ký" },
-        new { Key = "export", Label = "Xuất báo cáo" }
+        new { Key = "subscription", Label = "Gói đăng ký" }
     };
 
     string TabClass(string tab) => Model.Tab == tab ? "ops-tab is-active" : "ops-tab";
     string TabUrl(string tab) => Url.Page("/Admin/Statistics", new { tab, days = Model.Days }) ?? "#";
+    string ReportDate(DateTimeOffset value) => value.ToLocalTime().ToString("dd/MM/yyyy");
+    string ReportTimestamp(DateTimeOffset value) => value.ToLocalTime().ToString("HH:mm, dd/MM/yyyy");
     string PercentLabel(int numerator, int denominator) => denominator <= 0 ? "0%" : $"{Math.Min(100, (int)Math.Round(numerator * 100d / denominator))}%";
     string MoneyVnd(decimal value) => value >= 1_000_000 ? $"{value / 1_000_000m:N1} triệu" : $"{value:N0}đ";
     string UserInitial(string value) => string.IsNullOrWhiteSpace(value) ? "U" : value.Trim()[..1].ToUpperInvariant();
@@ -121,17 +122,9 @@
                     <option value="7">7 ngày</option>
                     <option value="30">30 ngày</option>
                     <option value="90">90 ngày</option>
-                    <option value="180">Tùy chỉnh</option>
+                    <option value="180">180 ngày</option>
                 </select>
             </label>
-            <a class="ops-button ops-button--secondary" asp-page="/Account/ChangePassword">
-                <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
-                Đổi mật khẩu
-            </a>
-            <a class="ops-button ops-button--primary" href="@TabUrl("export")">
-                <span class="material-symbols-outlined" aria-hidden="true">download</span>
-                Xuất báo cáo
-            </a>
         </form>
     </div>
 
@@ -144,9 +137,27 @@
         <nav class="ops-tabs" aria-label="Báo cáo và thống kê">
             @foreach (var tab in tabs)
             {
-                <a class="@TabClass(tab.Key)" href="@TabUrl(tab.Key)">@tab.Label</a>
+                <a class="@TabClass(tab.Key)" href="@TabUrl(tab.Key)" aria-current="@(Model.Tab == tab.Key ? "page" : null)">@tab.Label</a>
             }
         </nav>
+
+        <section class="ops-report-scope" aria-label="Phạm vi dữ liệu báo cáo">
+            <div class="ops-report-scope__main">
+                <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
+                <div>
+                    <strong>Phạm vi: @ReportDate(Model.Dashboard.FromUtc) – @ReportDate(Model.Dashboard.ToUtc)</strong>
+                    <span>Tất cả môn học · Tất cả người dùng · Múi giờ địa phương</span>
+                </div>
+            </div>
+            <div class="ops-report-scope__freshness" title="Thời điểm hệ thống tổng hợp dữ liệu báo cáo">
+                <span class="ops-data-status" aria-hidden="true"></span>
+                Cập nhật @ReportTimestamp(Model.Dashboard.GeneratedAt)
+            </div>
+            @if (Model.Days != 30)
+            {
+                <a class="ops-report-scope__reset" asp-page="/Admin/Statistics" asp-route-tab="@Model.Tab" asp-route-days="30">Đặt lại 30 ngày</a>
+            }
+        </section>
 
         @if (Model.Tab == "overview")
         {
@@ -160,14 +171,6 @@
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
-                    <span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span>
-                    <div class="ops-kpi-content">
-                        <span>Phiên chat</span>
-                        <strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong>
-                        <small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") câu trả lời</small>
-                    </div>
-                </article>
-                <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">person</span>
                     <div class="ops-kpi-content">
                         <span>Sinh viên hoạt động</span>
@@ -176,19 +179,11 @@
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
-                    <span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span>
-                    <div class="ops-kpi-content">
-                        <span>Tài liệu</span>
-                        <strong>@Model.Dashboard.TotalDocuments.ToString("N0")</strong>
-                        <small>Tổng tài liệu trong kho</small>
-                    </div>
-                </article>
-                <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span>
                     <div class="ops-kpi-content">
-                        <span>Đã index</span>
-                        <strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong>
-                        <small>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments) tổng tài liệu</small>
+                        <span>Học liệu sẵn sàng</span>
+                        <strong>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments)</strong>
+                        <small>@Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu đã index</small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
@@ -296,6 +291,7 @@
                     </div>
                     <div class="ops-table-wrap">
                         <table class="ops-table ops-compact-table">
+                            <caption class="visually-hidden">Các môn học có nhiều lượt trích dẫn trong chatbot</caption>
                             <thead>
                                 <tr>
                                     <th>Môn học</th>
@@ -392,23 +388,13 @@
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span><div class="ops-kpi-content"><span>Tổng phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") user hoạt động</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">task_alt</span><div class="ops-kpi-content"><span>Tỷ lệ trả lời được</span><strong>@answerRate%</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") phản hồi assistant</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span><div class="ops-kpi-content"><span>Câu hỏi chưa trả lời</span><strong>@unansweredQuestions.ToString("N0")</strong><small>Cần bổ sung dữ liệu</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">thumb_down</span><div class="ops-kpi-content"><span>Feedback thấp</span><strong>-</strong><small>Chưa có dữ liệu đánh giá sao</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">speed</span><div class="ops-kpi-content"><span>Thời gian phản hồi</span><strong>-</strong><small>Chưa lưu latency</small></div></article>
             </section>
 
-            <section class="ops-panel">
-                <div class="ops-panel-head">
-                    <div>
-                        <h2>Bộ lọc chatbot</h2>
-                        <p class="ops-muted mb-0">Chuẩn bị UI lọc theo ngày, môn học, trạng thái và feedback.</p>
-                    </div>
-                </div>
-                <div class="ops-filter-bar ops-stat-filter">
-                    <label class="ops-field"><span>Môn học</span><select><option>Tất cả môn học</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select></label>
-                    <label class="ops-field"><span>Trạng thái</span><select><option>Tất cả</option><option>Đã trả lời</option><option>Chưa trả lời</option></select></label>
-                    <label class="ops-field"><span>Feedback</span><select><option>Tất cả</option><option>1 sao</option><option>2 sao</option><option>3 sao</option><option>4 sao</option><option>5 sao</option></select></label>
-                    <label class="ops-field ops-field--search"><span>Từ khóa câu hỏi</span><input placeholder="Nhập nội dung câu hỏi..." /></label>
-                    <button type="button" class="ops-button ops-button--secondary">Lọc</button>
+            <section class="ops-data-note" aria-label="Giới hạn dữ liệu chatbot">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <div>
+                    <strong>Phạm vi đo lường hiện tại</strong>
+                    <p>Báo cáo đang tổng hợp số câu hỏi, phiên chat và người dùng hoạt động. Feedback và thời gian phản hồi chưa được thu thập nên không được hiển thị như KPI.</p>
                 </div>
             </section>
 
@@ -418,7 +404,6 @@
                         <h2>Sử dụng chat theo ngày</h2>
                         <p class="ops-muted mb-0">Bảng gọn thay cho nhiều bảng dàn trải trên cùng một màn hình.</p>
                     </div>
-                    <button type="button" class="ops-button ops-button--secondary">Xuất câu hỏi chưa trả lời</button>
                 </div>
                 @if (!hasChatData)
                 {
@@ -428,11 +413,12 @@
                 {
                     <div class="ops-table-wrap">
                         <table class="ops-table ops-compact-table">
-                            <thead><tr><th>Ngày</th><th>Câu hỏi</th><th>Phiên chat</th><th>User hoạt động</th><th>Tỷ lệ trả lời</th></tr></thead>
+                            <caption class="visually-hidden">Sử dụng chatbot theo từng ngày trong phạm vi báo cáo</caption>
+                            <thead><tr><th>Ngày</th><th>Câu hỏi</th><th>Phiên chat</th><th>Người dùng hoạt động</th></tr></thead>
                             <tbody>
                                 @foreach (var day in Model.Dashboard.DailyChatUsage)
                                 {
-                                    <tr><td data-label="Ngày">@day.DateLabel</td><td data-label="Câu hỏi">@day.QuestionCount.ToString("N0")</td><td data-label="Phiên chat">@day.SessionCount.ToString("N0")</td><td data-label="User hoạt động">@day.ActiveUserCount.ToString("N0")</td><td data-label="Tỷ lệ trả lời"><span class="rbl-status is-success">@answerRate%</span></td></tr>
+                                    <tr><td data-label="Ngày">@day.DateLabel</td><td data-label="Câu hỏi">@day.QuestionCount.ToString("N0")</td><td data-label="Phiên chat">@day.SessionCount.ToString("N0")</td><td data-label="Người dùng hoạt động">@day.ActiveUserCount.ToString("N0")</td></tr>
                                 }
                             </tbody>
                         </table>
@@ -743,26 +729,5 @@
             </div>
         }
 
-        @if (Model.Tab == "export")
-        {
-            <section class="ops-panel ops-export-panel">
-                <div class="ops-panel-head">
-                    <div><h2>Tạo báo cáo</h2><p class="ops-muted mb-0">Chọn loại báo cáo, khoảng thời gian, định dạng và bộ lọc trước khi xuất file.</p></div>
-                </div>
-                <form class="ops-export-form">
-                    <label class="ops-field"><span>Loại báo cáo</span><select><option>Chatbot</option><option>Tài liệu</option><option>Người dùng</option><option>Phân quyền</option><option>Thanh toán</option></select></label>
-                    <label class="ops-field"><span>Khoảng thời gian</span><select><option>7 ngày</option><option selected>30 ngày</option><option>90 ngày</option><option>Tùy chỉnh</option></select></label>
-                    <label class="ops-field"><span>Định dạng</span><select><option>Excel</option><option>PDF</option></select></label>
-                    <label class="ops-field"><span>Môn học</span><select><option>Tất cả môn học</option>@foreach (var subject in Model.Dashboard.SubjectUsage){<option>@subject.SubjectCode</option>}</select></label>
-                    <label class="ops-field"><span>Trạng thái</span><select><option>Tất cả</option><option>Đã trả lời</option><option>Chưa trả lời</option><option>Index thất bại</option></select></label>
-                    <button type="button" class="ops-button ops-button--primary"><span class="material-symbols-outlined" aria-hidden="true">download</span>Xuất báo cáo</button>
-                </form>
-            </section>
-
-            <section class="ops-panel">
-                <div class="ops-panel-head"><div><h2>Lịch sử xuất báo cáo</h2><p class="ops-muted mb-0">Sẽ hiển thị các file đã tạo sau khi kết nối tác vụ xuất Excel/PDF.</p></div></div>
-                <div class="ops-empty ops-stat-empty"><strong>Chưa có báo cáo đã xuất</strong><p>Chọn loại báo cáo và định dạng ở form phía trên để chuẩn bị file cho admin/nhà trường.</p></div>
-            </section>
-        }
     }
 </section>

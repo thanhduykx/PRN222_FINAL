@@ -10,5 +10,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>PRN222-FINAL-Web-LocalSecrets</UserSecretsId>
   </PropertyGroup>
 </Project>

@@ -65,6 +65,14 @@
     {
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
+    <section class="chat-source-scope" aria-label="Phạm vi nguồn trả lời" data-chat-subject-count="@subjectOptions.Count">
+        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        <div>
+            <strong>Trả lời dựa trên tài liệu đã index</strong>
+            <span data-chat-scope-label>@(subjectOptions.Count == 0 ? "Chưa có môn học sẵn sàng" : $"Đang tìm trong {subjectOptions.Count} môn học có quyền truy cập")</span>
+        </div>
+        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))">Xem môn học</a>
+    </section>
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages">
             <div class="chat-empty-state rbl-chat-empty">

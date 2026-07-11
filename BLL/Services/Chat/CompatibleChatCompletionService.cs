@@ -17,15 +17,27 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
     };
 
     private readonly IHttpRepository _http;
-    private readonly CompatibleChatOptions _options;
+    private readonly Func<CompatibleChatOptions> _optionsFactory;
 
     public CompatibleChatCompletionService(IHttpRepository http, CompatibleChatOptions options)
+        : this(http, () => options)
     {
-        _http = http;
-        _options = options;
     }
 
-    public bool IsEnabled => _options.Enabled && !string.IsNullOrWhiteSpace(_options.ApiKey);
+    public CompatibleChatCompletionService(IHttpRepository http, Func<CompatibleChatOptions> optionsFactory)
+    {
+        _http = http;
+        _optionsFactory = optionsFactory ?? throw new ArgumentNullException(nameof(optionsFactory));
+    }
+
+    public bool IsEnabled
+    {
+        get
+        {
+            var options = _optionsFactory();
+            return options.Enabled && !string.IsNullOrWhiteSpace(options.ApiKey);
+        }
+    }
 
     public async Task<QueryIntentDecision> ClassifyQuestionAsync(
         string question,
@@ -233,16 +245,17 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
     {
         try
         {
+            var options = _optionsFactory();
             var body = JsonSerializer.Serialize(new CompatibleChatRequest(
-                    ModelName,
+                    ModelName(options),
                     [
                         new CompatibleChatMessage("system", system),
                         new CompatibleChatMessage("user", prompt)
                     ],
                     temperature,
                     maxTokens), JsonOptions);
-            var request = new HttpRequestData("POST", ResolveChatUrl(), body, Headers:
-                new Dictionary<string,string> { ["Authorization"] = $"Bearer {_options.ApiKey}" });
+            var request = new HttpRequestData("POST", ResolveChatUrl(options), body, Headers:
+                new Dictionary<string,string> { ["Authorization"] = $"Bearer {options.ApiKey}" });
             var response = await _http.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -270,15 +283,15 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
         }
     }
 
-    private string ModelName => string.IsNullOrWhiteSpace(_options.Model)
+    private static string ModelName(CompatibleChatOptions options) => string.IsNullOrWhiteSpace(options.Model)
         ? "gemini-3.5-flash"
-        : _options.Model.Trim();
+        : options.Model.Trim();
 
-    private string ResolveChatUrl()
+    private static string ResolveChatUrl(CompatibleChatOptions options)
     {
-        return string.IsNullOrWhiteSpace(_options.BaseUrl)
+        return string.IsNullOrWhiteSpace(options.BaseUrl)
             ? "https://router.huggingface.co/v1/chat/completions"
-            : _options.BaseUrl.Trim();
+            : options.BaseUrl.Trim();
     }
 
     private static QueryIntentDecision ParseIntentDecision(string? response)

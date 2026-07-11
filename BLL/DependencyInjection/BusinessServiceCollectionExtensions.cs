@@ -64,6 +64,7 @@ public static class BusinessServiceCollectionExtensions
         services.AddSingleton<IAiSettingsService>(provider => new AiSettingsService(
             contentRootPath,
             provider.GetRequiredService<GeminiOptions>(),
+            provider.GetRequiredService<ChatGenerationOptions>(),
             provider.GetRequiredService<FlmSyllabusAwareTextChunker>(),
             provider.GetRequiredService<IFileRepository>()));
         services.AddSingleton<IKnowledgeService, KnowledgeService>();
@@ -77,8 +78,9 @@ public static class BusinessServiceCollectionExtensions
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddSingleton<IMomoPaymentGateway, MomoPaymentGateway>();
         services.AddSingleton<IPayOsPaymentGateway, PayOsPaymentGateway>();
-        services.AddSingleton<ILocalChatCompletionService>(provider => new GeminiChatCompletionService(
-            provider.GetRequiredService<IHttpRepository>(), provider.GetRequiredService<GeminiOptions>()));
+        services.AddSingleton<ILocalChatCompletionService>(provider => new CompatibleChatCompletionService(
+            provider.GetRequiredService<IHttpRepository>(),
+            () => provider.GetRequiredService<ChatGenerationOptions>().CurrentCompatibleOptions));
         services.AddSingleton<IAnalyticsRepository>(_ => new AnalyticsRepository(connectionString));
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IChatUsageService, ChatUsageService>();

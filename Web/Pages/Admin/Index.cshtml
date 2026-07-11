@@ -27,6 +27,11 @@
         .Where(subject => !subject.OwnerUserId.HasValue)
         .OrderBy(subject => subject.DisplayName)
         .ToList();
+    var deletionEligibleUsers = users.Count(user =>
+        user.MeetsInactivePeriod
+        && !user.HasAssignedSubjects
+        && !user.IsLastAdmin
+        && !user.IsCurrentUser);
 
     string DisplayName(PRN222_FINAL.Web.Models.AdminUserRowViewModel user)
     {
@@ -41,6 +46,8 @@
         if (parts.Length >= 2) return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
         return source[..1].ToUpperInvariant();
     }
+
+    string AdminTabClass(IndexModel.AdminSection tab) => section == tab ? "ops-tab is-active" : "ops-tab";
 }
 
 <style>
@@ -441,11 +448,34 @@
             border: 1px solid #a7f3d0;
         }
 
-        .rbl-alert.is-error {
+    .rbl-alert.is-error {
             background: #fef2f2;
             color: #991b1b;
             border: 1px solid #fecaca;
         }
+
+    /* Bridge legacy page styles to the shared semantic design system. */
+    .ops-admin-page {
+        min-height: auto;
+        padding: 0;
+        background: transparent;
+        color: var(--ds-text);
+        font-family: var(--app-font-sans);
+    }
+
+    .ops-admin-kpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--ds-space-3);
+        margin-bottom: var(--ds-space-4);
+    }
+
+    @@media (max-width: 1100px) {
+        .ops-admin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @@media (max-width: 640px) {
+        .ops-admin-kpis { grid-template-columns: 1fr; }
+    }
 </style>
 
 <section class="ops-page ops-admin-page">
@@ -458,6 +488,26 @@
         <div class="rbl-alert is-error">@error</div>
     }
 
+    <header class="ops-page-header ops-admin-heading">
+        <div>
+            <span class="ops-eyebrow">Quản trị hệ thống</span>
+            <h1>Người dùng &amp; phân công</h1>
+            <p>Quản lý tài khoản, vai trò và phân công môn học tại một nơi.</p>
+        </div>
+        <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="create-account">
+            <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
+            Thêm tài khoản
+        </a>
+    </header>
+
+    <nav class="ops-tabs ops-admin-tabs" aria-label="Quản trị người dùng và môn học">
+        <a class="@AdminTabClass(IndexModel.AdminSection.Directory)" asp-page="/Admin/Index" asp-route-section="directory" aria-current="@(isDirectory ? "page" : null)">Danh sách</a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.LecturerTable)" asp-page="/Admin/Index" asp-route-section="lecturer-table" aria-current="@(isLecturerTable ? "page" : null)">Phân công giảng viên</a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.CreateAccount)" asp-page="/Admin/Index" asp-route-section="create-account" aria-current="@(isCreateAccount ? "page" : null)">Thêm tài khoản</a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.BulkImport)" asp-page="/Admin/Index" asp-route-section="bulk-import" aria-current="@(isBulkImport ? "page" : null)">Nhập Excel</a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.CreateSubject)" asp-page="/Admin/Index" asp-route-section="create-subject" aria-current="@(isCreateSubject ? "page" : null)">Môn học</a>
+    </nav>
+
     @if (isDirectory)
     {
         @* === DIRECTORY: Bảng người dùng / User table === *@
@@ -466,11 +516,6 @@
                 <span data-i18n="admin.totalUsers">Total users</span>
                 <strong>@Model.TotalUserCount</strong>
                 <small>@users.Count <span data-i18n="admin.usersShown">shown</span></small>
-            </article>
-            <article class="ops-kpi">
-                <span data-i18n="admin.admins">Admins</span>
-                <strong>@Model.AdminUserCount</strong>
-                <small data-i18n="admin.fullSystemAccess">Full system access</small>
             </article>
             <article class="ops-kpi">
                 <span data-i18n="admin.lecturers">Lecturers</span>
@@ -483,9 +528,9 @@
                 <small data-i18n="admin.readChatAccess">Read and chat access</small>
             </article>
             <article class="ops-kpi">
-                <span data-i18n="admin.subjects">Subjects</span>
-                <strong>@Model.SubjectCount</strong>
-                <small>@Model.AssignedSubjectCount <span data-i18n="admin.subjectsAssigned">assigned</span></small>
+                <span>Có thể xóa</span>
+                <strong>@deletionEligibleUsers</strong>
+                <small>Không phụ trách môn và ngưng hoạt động trên 3 tháng</small>
             </article>
         </section>
 

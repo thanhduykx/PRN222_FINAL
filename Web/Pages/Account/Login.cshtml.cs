@@ -146,8 +146,8 @@ public sealed class LoginModel : PageModel
     {
         return AppRoles.Normalize(role) switch
         {
-            AppRoles.Admin => RedirectToPage("/Home/Index"),
-            AppRoles.Lecturer => RedirectToPage("/Home/Index"),
+            AppRoles.Admin => RedirectToPage("/Admin/Statistics", new { tab = "overview", days = 30 }),
+            AppRoles.Lecturer => RedirectToPage("/Home/Courses"),
             _ => RedirectToPage("/Home/Chat")
         };
     }

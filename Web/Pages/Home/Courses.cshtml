@@ -6,6 +6,12 @@
     ViewData["ActiveNav"] = "courses";
     ViewData["ShellTitle"] = "Courses";
     ViewData["ShellTitleI18n"] = "shell.courses";
+    var isAdmin = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin);
+    var totalChapters = Model.Courses.Sum(course => course.ChapterCount);
+    var totalDocuments = Model.Courses.Sum(course => course.DocumentCount);
+    var indexedDocuments = Model.Courses.Sum(course => course.IndexedDocumentCount);
+    var readiness = totalDocuments == 0 ? 0 : Math.Min(100, (int)Math.Round(indexedDocuments * 100d / totalDocuments));
+    var attentionCount = Model.Courses.Count(course => course.DocumentCount == 0 || course.IndexedDocumentCount < course.DocumentCount);
 }
 
 <section class="ops-page course-list-page">
@@ -16,11 +22,30 @@
 
     <header class="ops-page-header">
         <div>
-            <span class="ops-eyebrow" data-i18n="courses.eyebrow">Course workspace</span>
-            <h1 data-i18n="shell.courses">Courses</h1>
-            <p data-i18n="courses.description">Open a course workspace to view documents, chapters, and subject chat.</p>
+            <span class="ops-eyebrow">@(isAdmin ? "Quản trị học liệu" : "Không gian giảng dạy")</span>
+            <h1>@(isAdmin ? "Tổng quan môn học" : "Môn học của tôi")</h1>
+            <p>@(isAdmin ? "Theo dõi độ phủ học liệu và mở từng môn để kiểm tra chi tiết." : "Ưu tiên môn còn thiếu tài liệu, sau đó mở workspace để quản lý chương và kiểm tra chatbot.")</p>
         </div>
+        <a class="ops-button ops-button--primary" asp-page="/Home/Index" asp-route-section="@(isAdmin ? "catalog" : "upload")">
+            <span class="material-symbols-outlined" aria-hidden="true">@(isAdmin ? "topic" : "upload_file")</span>
+            @(isAdmin ? "Quản lý danh mục" : "Tải tài liệu")
+        </a>
     </header>
+
+    <section class="role-overview-grid" aria-label="Tổng quan môn học">
+        <article class="role-overview-card">
+            <span class="material-symbols-outlined is-blue" aria-hidden="true">school</span>
+            <div><small>Môn hiển thị</small><strong>@Model.Courses.Count.ToString("N0")</strong><span>@totalChapters.ToString("N0") chương</span></div>
+        </article>
+        <article class="role-overview-card">
+            <span class="material-symbols-outlined is-green" aria-hidden="true">verified</span>
+            <div><small>Học liệu sẵn sàng</small><strong>@readiness%</strong><span>@indexedDocuments/@totalDocuments tài liệu đã index</span></div>
+        </article>
+        <article class="role-overview-card @(attentionCount > 0 ? "needs-attention" : string.Empty)">
+            <span class="material-symbols-outlined is-orange" aria-hidden="true">priority_high</span>
+            <div><small>Cần xử lý</small><strong>@attentionCount.ToString("N0")</strong><span>@(attentionCount == 0 ? "Tất cả môn đã sẵn sàng" : "Môn thiếu hoặc lỗi học liệu")</span></div>
+        </article>
+    </section>
 
     @if (Model.Courses.Count == 0)
     {
@@ -35,7 +60,12 @@
             @foreach (var course in Model.Courses)
             {
                 <a class="course-workspace-card" asp-page="/Home/CourseWorkspace" asp-route-id="@course.Id">
-                    <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                    <div class="course-workspace-card__head">
+                        <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                        <span class="course-readiness-badge @(course.DocumentCount > 0 && course.IndexedDocumentCount == course.DocumentCount ? "is-ready" : "needs-attention")">
+                            @(course.DocumentCount == 0 ? "Thiếu tài liệu" : course.IndexedDocumentCount == course.DocumentCount ? "Sẵn sàng" : "Cần kiểm tra")
+                        </span>
+                    </div>
                     <strong>@course.DisplayName</strong>
                     @if (string.IsNullOrWhiteSpace(course.Description))
                     {
