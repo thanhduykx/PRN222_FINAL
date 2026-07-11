@@ -27,7 +27,7 @@ public sealed class ReturnModel : PageModel
 
         if (!Enum.TryParse<PaymentProvider>(rawProvider, true, out var parsedProvider) || string.IsNullOrWhiteSpace(rawOrderCode))
         {
-            ErrorMessage = "Payment return data is missing.";
+            ErrorMessage = "Thiếu thông tin giao dịch từ cổng thanh toán. Vui lòng quay lại trang chọn gói.";
             return;
         }
 
@@ -35,7 +35,7 @@ public sealed class ReturnModel : PageModel
         ReturnStatusHint = ParseReturnStatusHint(parsedProvider);
         if (Status is null)
         {
-            ErrorMessage = "Payment was not found.";
+            ErrorMessage = "Không tìm thấy giao dịch tương ứng. Nếu bạn đã thanh toán, vui lòng kiểm tra lại sau ít phút.";
         }
     }
 

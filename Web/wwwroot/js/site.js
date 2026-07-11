@@ -2732,3 +2732,51 @@ if (questionInput && chatForm) {
     }
   });
 }
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-payment-toggle]");
+  if (!toggle) return;
+  const panel = document.getElementById(toggle.dataset.paymentToggle || "");
+  if (!panel) return;
+  const willOpen = panel.hidden;
+  document.querySelectorAll(".package-membership__payment-options:not([hidden])").forEach((openPanel) => {
+    if (openPanel !== panel) {
+      openPanel.hidden = true;
+      document.querySelector(`[data-payment-toggle="${openPanel.id}"]`)?.setAttribute("aria-expanded", "false");
+    }
+  });
+  panel.hidden = !willOpen;
+  toggle.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) panel.querySelector("button")?.focus();
+});
+document.addEventListener("click", (event) => {
+  const printButton = event.target.closest("[data-print-receipt]");
+  if (!printButton) return;
+  const receipt = document.getElementById(printButton.dataset.printReceipt || "");
+  if (!receipt) return;
+  document.body.classList.add("receipt-printing");
+  receipt.classList.add("is-print-target");
+  const cleanup = () => {
+    document.body.classList.remove("receipt-printing");
+    receipt.classList.remove("is-print-target");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+  window.setTimeout(cleanup, 1000);
+});
+document.addEventListener("click", (event) => {
+  document.querySelectorAll("[data-account-menu][open]").forEach((menu) => {
+    if (!menu.contains(event.target)) menu.removeAttribute("open");
+  });
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  document.querySelectorAll("[data-account-menu][open]").forEach((menu) => {
+    menu.removeAttribute("open");
+    menu.querySelector("summary")?.focus();
+  });
+});
+if (window.location.hash === "#transactionHistory") {
+  const transactionHistory = document.getElementById("transactionHistory");
+  if (transactionHistory instanceof HTMLDetailsElement) transactionHistory.open = true;
+}

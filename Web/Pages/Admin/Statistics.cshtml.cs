@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Analytics;
+using PRN222_FINAL.BLL.Services.Billing;
 using PRN222_FINAL.Models.DTOs.Analytics;
+using PRN222_FINAL.Models.DTOs.Billing;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.Web.ViewModels.Analytics;
@@ -14,11 +16,13 @@ public sealed class StatisticsModel : PageModel
 {
     private readonly IAnalyticsService _analytics;
     private readonly IUserAccountStore _users;
+    private readonly IPackageService _packages;
 
-    public StatisticsModel(IAnalyticsService analytics, IUserAccountStore users)
+    public StatisticsModel(IAnalyticsService analytics, IUserAccountStore users, IPackageService packages)
     {
         _analytics = analytics;
         _users = users;
+        _packages = packages;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -33,6 +37,7 @@ public sealed class StatisticsModel : PageModel
     public int LecturerUsers { get; private set; }
     public int AdminUsers { get; private set; }
     public string ErrorMessage { get; private set; } = string.Empty;
+    public IReadOnlyList<PackageDto> Packages { get; private set; } = Array.Empty<PackageDto>();
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -45,6 +50,7 @@ public sealed class StatisticsModel : PageModel
         try
         {
             Dashboard = Map(await _analytics.GetAdminDashboardAsync(Days, cancellationToken));
+            Packages = await _packages.GetActivePackagesAsync(cancellationToken);
             var users = await _users.GetAllAsync(cancellationToken);
             TotalUsers = users.Count;
             StudentUsers = users.Count(user => user.Role == AppRoles.Student);

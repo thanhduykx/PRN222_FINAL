@@ -41,6 +41,11 @@ public sealed class PaymentService : IPaymentService
         {
             throw new InvalidOperationException("Package is not active.");
         }
+        if (package.PriceVnd <= 0
+            && await _payments.HasSuccessfulPaymentAsync(request.UserId, package.Id, cancellationToken))
+        {
+            throw new InvalidOperationException("Gói trải nghiệm chỉ được kích hoạt một lần cho mỗi tài khoản.");
+        }
 
         var now = DateTimeOffset.UtcNow;
         var payment = new Payment

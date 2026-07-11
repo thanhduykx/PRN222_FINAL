@@ -1,98 +1,117 @@
 @page
 @model PRN222_FINAL.Web.Pages.Subscriptions.CurrentModel
 @{
-    ViewData["Title"] = "Gói hiện tại";
+    ViewData["Title"] = "Tài khoản và thanh toán";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Gói hiện tại";
+    ViewData["ShellTitle"] = "Tài khoản và thanh toán";
+
+    string StatusLabel(string status) => status switch
+    {
+        "Paid" => "Đã thanh toán",
+        "Pending" => "Đang xử lý",
+        "Canceled" => "Đã hủy",
+        "Failed" => "Chưa thành công",
+        _ => status
+    };
+    string StatusClass(string status) => status == "Paid" ? "is-success" : status == "Pending" ? "is-pending" : "is-error";
+    string ProviderLogo(string provider) => provider.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
+        ? "/img/payments/momo.svg" : "/img/payments/payos.svg";
 }
 
-<section class="ops-page">
-    <div class="ops-page-header">
-        <div>
-            <span class="ops-eyebrow">Subscription</span>
-            <h1>Gói hiện tại</h1>
-            <p>Theo dõi gói chatbot đang dùng, giới hạn chat và lịch sử thanh toán.</p>
-        </div>
-        <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
-            <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
-            Mua gói
-        </a>
-    </div>
+<section class="ops-page account-billing-page">
+    <header class="account-billing-hero">
+        <div class="account-billing-hero__icon"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span></div>
+        <div><span>Hồ sơ và thanh toán</span><h1>Quản lý tài khoản của bạn</h1><p>Cập nhật tên hiển thị, theo dõi gói học tập và xem lại biên nhận giao dịch.</p></div>
+        <a asp-page="/Packages/Index"><span class="material-symbols-outlined" aria-hidden="true">add_shopping_cart</span>Khám phá các gói</a>
+    </header>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <div class="rbl-alert is-error">@Model.ErrorMessage</div>
+        <div class="rbl-alert is-error" role="alert">@Model.ErrorMessage</div>
     }
-    else if (Model.Subscription is null)
+    @if (TempData["ProfileSuccess"] is string success)
     {
-        <div class="ops-empty">
-            <strong>Chưa có gói đang hoạt động.</strong>
-            <p>Chọn Free, Student hoặc Pro để bắt đầu dùng giới hạn phù hợp.</p>
-            <a class="ops-button ops-button--primary" asp-page="/Packages/Index">Xem gói dịch vụ</a>
-        </div>
-    }
-    else
-    {
-        <section class="ops-panel">
-            <div class="ops-panel-head">
-                <div>
-                    <h2>@Model.Subscription.PackageName</h2>
-                    <p class="ops-muted mb-0">Từ @Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm") đến @Model.Subscription.ValidUntilLabel.</p>
-                </div>
-                <span class="rbl-status is-success">@Model.Subscription.Status</span>
-            </div>
-            <div class="ops-kpi-grid">
-                <article class="ops-kpi"><span>Chat/tháng</span><strong>@Model.Subscription.MonthlyChatLimit.ToString("N0")</strong></article>
-                <article class="ops-kpi"><span>Thời hạn</span><strong>@(Model.Subscription.IsLifetime ? "Vĩnh viễn" : "Theo tháng")</strong></article>
-                <article class="ops-kpi"><span>Trạng thái</span><strong>@Model.Subscription.Status</strong></article>
-            </div>
-        </section>
+        <div class="rbl-alert is-success" role="status">@success</div>
     }
 
-    <section class="ops-panel mt-4">
-        <div class="ops-panel-head">
-            <div>
-                <h2>Lịch sử thanh toán</h2>
-                <p class="ops-muted mb-0">Các giao dịch MoMo/PayOS gần nhất của tài khoản.</p>
+    <div class="account-billing-grid">
+        <section class="account-profile-card">
+            <div class="account-profile-card__heading">
+                <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                <div><h2>Thông tin người mua</h2><p>Tên này xuất hiện trên tài khoản và biên nhận.</p></div>
             </div>
+            <form method="post" asp-page-handler="UpdateProfile" class="account-profile-form">
+                @Html.AntiForgeryToken()
+                <label><span>Tên hiển thị</span><input asp-for="Profile.FullName" autocomplete="name" maxlength="120" /><span asp-validation-for="Profile.FullName" class="field-validation-error"></span></label>
+                <label><span>Email</span><input value="@Model.AccountEmail" readonly aria-readonly="true" /></label>
+                <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Lưu thay đổi</button>
+            </form>
+        </section>
+
+        <section class="current-plan-card @(Model.Subscription is null ? "is-empty" : "")">
+            <div class="current-plan-card__heading"><span>Gói học tập hiện tại</span>@if (Model.Subscription is not null){<span class="current-plan-card__badge">Đang hoạt động</span>}</div>
+            @if (Model.Subscription is null)
+            {
+                <div class="current-plan-card__empty"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><h2>Chưa có gói hoạt động</h2><p>Chọn gói phù hợp để bắt đầu hỏi đáp theo tài liệu.</p><a asp-page="/Packages/Index">Xem các gói</a></div>
+            }
+            else
+            {
+                <div class="current-plan-card__name"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><h2>@Model.Subscription.PackageName</h2><p>Có hiệu lực đến @Model.Subscription.ValidUntilLabel</p></div></div>
+                <div class="current-plan-card__facts">
+                    <article><span>Câu hỏi mỗi tháng</span><strong>@Model.Subscription.MonthlyChatLimit.ToString("N0")</strong></article>
+                    <article><span>Bắt đầu</span><strong>@Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")</strong></article>
+                    <article><span>Trạng thái</span><strong>Đang sử dụng</strong></article>
+                </div>
+            }
+        </section>
+    </div>
+
+    <details id="transactionHistory" class="transaction-history" @(Model.PaymentHistory.Count == 0 ? "" : null)>
+        <summary>
+            <span class="transaction-history__summary-icon"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span></span>
+            <span><strong>Lịch sử giao dịch</strong><small>Bấm để xem @Model.PaymentHistory.Count giao dịch gần nhất</small></span>
+            <span class="transaction-history__count">@Model.PaymentHistory.Count</span>
+            <span class="material-symbols-outlined transaction-history__chevron" aria-hidden="true">expand_more</span>
+        </summary>
+        <div class="transaction-history__body">
+            @if (Model.PaymentHistory.Count == 0)
+            {
+                <div class="transaction-empty"><span class="material-symbols-outlined" aria-hidden="true">receipt</span><strong>Chưa có giao dịch</strong><p>Biên nhận sẽ xuất hiện tại đây sau khi bạn thanh toán hoặc kích hoạt gói.</p></div>
+            }
+            else
+            {
+                foreach (var payment in Model.PaymentHistory)
+                {
+                    var receiptId = $"receipt-{payment.PaymentId:N}";
+                    <details class="transaction-item @StatusClass(payment.Status)">
+                        <summary>
+                            <img src="@ProviderLogo(payment.Provider)" alt="" />
+                            <span class="transaction-item__identity"><strong>@payment.PackageName</strong><small>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy · HH:mm")</small></span>
+                            <strong class="transaction-item__amount">@payment.AmountVnd.ToString("N0")đ</strong>
+                            <span class="transaction-item__status">@StatusLabel(payment.Status)</span>
+                            <span class="material-symbols-outlined transaction-item__chevron" aria-hidden="true">expand_more</span>
+                        </summary>
+                        <div id="@receiptId" class="payment-receipt">
+                            <div class="payment-receipt__brand"><span class="material-symbols-outlined" aria-hidden="true">school</span><div><strong>Course Assistant</strong><small>BIÊN NHẬN THANH TOÁN</small></div></div>
+                            <div class="payment-receipt__status @StatusClass(payment.Status)"><span class="material-symbols-outlined" aria-hidden="true">@(payment.Status == "Paid" ? "check_circle" : payment.Status == "Pending" ? "schedule" : "cancel")</span><span>@StatusLabel(payment.Status)</span></div>
+                            <div class="payment-receipt__customer"><span>Người mua</span><strong>@Model.Profile.FullName</strong><small>@Model.AccountEmail</small></div>
+                            <dl>
+                                <div><dt>Gói dịch vụ</dt><dd>@payment.PackageName</dd></div>
+                                <div><dt>Cổng thanh toán</dt><dd><img src="@ProviderLogo(payment.Provider)" alt="" /> @payment.Provider</dd></div>
+                                <div><dt>Mã đơn hàng</dt><dd>@payment.OrderCode</dd></div>
+                                <div><dt>Ngày tạo</dt><dd>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd></div>
+                                <div><dt>Ngày thanh toán</dt><dd>@(payment.PaidAt?.LocalDateTime.ToString("dd/MM/yyyy HH:mm") ?? "Chưa xác nhận")</dd></div>
+                            </dl>
+                            <div class="payment-receipt__total"><span>Tổng thanh toán</span><strong>@payment.AmountVnd.ToString("N0") VND</strong></div>
+                            @if (!string.IsNullOrWhiteSpace(payment.FailureReason)){<p class="payment-receipt__failure">@payment.FailureReason</p>}
+                            <div class="payment-receipt__footer"><small>Biên nhận được tạo tự động từ dữ liệu giao dịch trong hệ thống.</small><button type="button" data-print-receipt="@receiptId"><span class="material-symbols-outlined" aria-hidden="true">print</span>In biên nhận</button></div>
+                        </div>
+                    </details>
+                }
+            }
         </div>
-        @if (Model.PaymentHistory.Count == 0)
-        {
-            <div class="ops-empty compact">Chưa có giao dịch thanh toán.</div>
-        }
-        else
-        {
-            <div class="ops-table-wrap">
-                <table class="ops-table">
-                    <thead>
-                        <tr>
-                            <th>Gói</th>
-                            <th>Cổng</th>
-                            <th>Trạng thái</th>
-                            <th>Số tiền</th>
-                            <th>Mã đơn</th>
-                            <th>Thời gian</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var payment in Model.PaymentHistory)
-                        {
-                            <tr>
-                                <td data-label="Gói">
-                                    <strong>@payment.PackageName</strong>
-                                    <small>@payment.PackageCode</small>
-                                </td>
-                                <td data-label="Cổng">@payment.Provider</td>
-                                <td data-label="Trạng thái"><span class="rbl-status @(payment.Status == "Paid" ? "is-success" : payment.Status == "Pending" ? "is-running" : "is-error")">@payment.Status</span></td>
-                                <td data-label="Số tiền">@payment.AmountVnd.ToString("N0") VND</td>
-                                <td data-label="Mã đơn"><code>@payment.OrderCode</code></td>
-                                <td data-label="Thời gian">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </section>
+    </details>
 </section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

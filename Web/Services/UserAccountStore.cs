@@ -769,12 +769,6 @@ public sealed class UserAccountStore : IUserAccountStore
                 continue;
             }
 
-            if (existing.FullName != fixedAccount.FullName)
-            {
-                existing.FullName = fixedAccount.FullName;
-                changed = true;
-            }
-
             if (existing.Provider != "Local")
             {
                 existing.Provider = "Local";
@@ -787,14 +781,8 @@ public sealed class UserAccountStore : IUserAccountStore
                 changed = true;
             }
 
-            if (!PasswordMatches(existing.PasswordHash, fixedAccount.Password))
-            {
-                existing.PasswordHash = HashPassword(fixedAccount.Password);
-                existing.PasswordResetTokenHash = null;
-                existing.PasswordResetTokenExpiresAt = null;
-                existing.PasswordChangedAt = DateTimeOffset.UtcNow;
-                changed = true;
-            }
+            // Fixed accounts are bootstrap identities only. Never overwrite user-edited
+            // names or passwords after the account has been created.
         }
 
         return changed;

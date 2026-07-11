@@ -1,9 +1,14 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Billing;
+using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
+using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.Web.ViewModels.Billing;
 
 namespace PRN222_FINAL.Web.Pages.Subscriptions;
@@ -13,35 +18,67 @@ public sealed class CurrentModel : PageModel
 {
     private readonly ISubscriptionService _subscriptions;
     private readonly IPaymentService _payments;
+    private readonly IUserAccountStore _users;
+    private readonly ILogger<CurrentModel> _logger;
 
-    public CurrentModel(ISubscriptionService subscriptions, IPaymentService payments)
+    public CurrentModel(ISubscriptionService subscriptions, IPaymentService payments, IUserAccountStore users, ILogger<CurrentModel> logger)
     {
         _subscriptions = subscriptions;
         _payments = payments;
+        _users = users;
+        _logger = logger;
     }
+
+    [BindProperty]
+    public ProfileInput Profile { get; set; } = new();
 
     public SubscriptionViewModel? Subscription { get; private set; }
     public IReadOnlyList<PaymentHistoryItemViewModel> PaymentHistory { get; private set; } = Array.Empty<PaymentHistoryItemViewModel>();
+    public string AccountEmail { get; private set; } = string.Empty;
     public string ErrorMessage { get; private set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
     {
-        if (!IsStudent())
+        if (!IsStudent()) return RedirectForRole();
+        await LoadPageAsync(cancellationToken);
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostUpdateProfileAsync(CancellationToken cancellationToken)
+    {
+        if (!IsStudent()) return RedirectForRole();
+        if (!ModelState.IsValid)
         {
-            return RedirectForRole();
+            await LoadPageAsync(cancellationToken, loadProfile: false);
+            return Page();
         }
 
         try
         {
-            var userId = GetUserId();
-            var subscription = await _subscriptions.GetCurrentSubscriptionAsync(userId, cancellationToken);
-            if (subscription is null)
-            {
-                PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
-                return Page();
-            }
+            var user = await _users.UpdateFullNameAsync(GetUserId(), Profile.FullName, cancellationToken);
+            await RefreshAuthenticationAsync(user);
+            TempData["ProfileSuccess"] = "Đã cập nhật tên hiển thị.";
+            return RedirectToPage();
+        }
+        catch (InvalidOperationException exception)
+        {
+            ModelState.AddModelError("Profile.FullName", exception.Message);
+            await LoadPageAsync(cancellationToken, loadProfile: false);
+            return Page();
+        }
+    }
 
-            Subscription = new SubscriptionViewModel
+    private async Task LoadPageAsync(CancellationToken cancellationToken, bool loadProfile = true)
+    {
+        try
+        {
+            var userId = GetUserId();
+            var user = await _users.FindByIdAsync(userId, cancellationToken);
+            AccountEmail = user?.Email ?? User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+            if (loadProfile) Profile.FullName = user?.FullName ?? User.Identity?.Name ?? string.Empty;
+
+            var subscription = await _subscriptions.GetCurrentSubscriptionAsync(userId, cancellationToken);
+            Subscription = subscription is null ? null : new SubscriptionViewModel
             {
                 PackageId = subscription.PackageId,
                 PackageName = subscription.PackageName,
@@ -53,12 +90,11 @@ public sealed class CurrentModel : PageModel
             };
             PaymentHistory = await LoadPaymentHistoryAsync(userId, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = "Chưa thể tải thông tin tài khoản và giao dịch. Vui lòng thử lại.";
+            _logger.LogWarning(exception, "Could not load account billing page for user {UserId}.", GetUserId());
         }
-
-        return Page();
     }
 
     private async Task<IReadOnlyList<PaymentHistoryItemViewModel>> LoadPaymentHistoryAsync(Guid userId, CancellationToken cancellationToken)
@@ -66,6 +102,7 @@ public sealed class CurrentModel : PageModel
         var payments = await _payments.GetPaymentsForUserAsync(userId, 20, cancellationToken);
         return payments.Select(payment => new PaymentHistoryItemViewModel
         {
+            PaymentId = payment.PaymentId,
             PackageName = string.IsNullOrWhiteSpace(payment.PackageName) ? payment.PackageCode : payment.PackageName,
             PackageCode = payment.PackageCode,
             Provider = payment.Provider.ToString(),
@@ -78,21 +115,28 @@ public sealed class CurrentModel : PageModel
         }).ToList();
     }
 
-    private Guid GetUserId()
+    private async Task RefreshAuthenticationAsync(UserAccount user)
     {
-        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(value, out var userId) ? userId : Guid.Empty;
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, AppRoles.Normalize(user.Role))
+        };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
     }
 
-    private bool IsStudent()
-    {
-        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Student;
-    }
+    private Guid GetUserId() => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
+    private bool IsStudent() => AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Student;
+    private IActionResult RedirectForRole() => AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Admin
+        ? RedirectToPage("/Admin/Statistics") : RedirectToPage("/Home/Courses");
 
-    private IActionResult RedirectForRole()
+    public sealed class ProfileInput
     {
-        return AppRoles.Normalize(User.FindFirstValue(ClaimTypes.Role)) == AppRoles.Admin
-            ? RedirectToPage("/Admin/Statistics")
-            : RedirectToPage("/Home/Courses");
+        [Required(ErrorMessage = "Vui lòng nhập tên hiển thị.")]
+        [StringLength(120, MinimumLength = 2, ErrorMessage = "Tên cần có từ 2 đến 120 ký tự.")]
+        public string FullName { get; set; } = string.Empty;
     }
 }
