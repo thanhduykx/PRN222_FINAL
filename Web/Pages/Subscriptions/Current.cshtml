@@ -36,19 +36,6 @@
     }
 
     <div class="account-billing-grid">
-        <section class="account-profile-card">
-            <div class="account-profile-card__heading">
-                <span class="material-symbols-outlined" aria-hidden="true">person</span>
-                <div><h2>Thông tin người mua</h2><p>Tên này xuất hiện trên tài khoản và biên nhận.</p></div>
-            </div>
-            <form method="post" asp-page-handler="UpdateProfile" class="account-profile-form">
-                @Html.AntiForgeryToken()
-                <label><span>Tên hiển thị</span><input asp-for="Profile.FullName" autocomplete="name" maxlength="120" /><span asp-validation-for="Profile.FullName" class="field-validation-error"></span></label>
-                <label><span>Email</span><input value="@Model.AccountEmail" readonly aria-readonly="true" /></label>
-                <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Lưu thay đổi</button>
-            </form>
-        </section>
-
         <section class="current-plan-card @(Model.Subscription is null ? "is-empty" : "")">
             <div class="current-plan-card__heading"><span>Gói học tập hiện tại</span>@if (Model.Subscription is not null){<span class="current-plan-card__badge">Đang hoạt động</span>}</div>
             @if (Model.Subscription is null)

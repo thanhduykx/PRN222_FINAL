@@ -9106,7 +9106,7 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
 .account-billing-hero h1 { margin: .15rem 0; color: #fff; font-size: 1.45rem; font-weight: 800; }
 .account-billing-hero p { margin: 0; color: #cbd7e9; font-size: .84rem; }
 .account-billing-hero > a { display: inline-flex; min-height: 42px; align-items: center; gap: .4rem; padding: .55rem .75rem; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; background: rgba(255,255,255,.1); color: #fff; font-size: .78rem; font-weight: 750; text-decoration: none; }
-.account-billing-grid { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); gap: 1rem; margin-bottom: 1rem; }
+.account-billing-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 1rem; margin-bottom: 1rem; }
 .account-profile-card, .current-plan-card { padding: 1.15rem; border: 1px solid #dbe4ef; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(39,68,112,.07); }
 .account-profile-card__heading, .current-plan-card__name { display: flex; align-items: center; gap: .7rem; }
 .account-profile-card__heading > .material-symbols-outlined, .current-plan-card__name > .material-symbols-outlined { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: #e0f2fe; color: #0284c7; }
