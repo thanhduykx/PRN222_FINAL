@@ -18,19 +18,28 @@ public sealed class ChatModel : HomePageModelBase
         IRagChatService chatService,
         IUserAccountStore users,
         IWebHostEnvironment environment,
-        IDocumentIndexJobQueue indexJobQueue)
+        IDocumentIndexJobQueue indexJobQueue,
+        IChatUsageService chatUsage)
         : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
     {
+        _chatUsage = chatUsage;
     }
+
+    private readonly IChatUsageService _chatUsage;
 
     public IReadOnlyList<ChatSessionSummary> ChatSessions { get; private set; } = Array.Empty<ChatSessionSummary>();
     public IReadOnlyList<IndexedDocument> Documents { get; private set; } = Array.Empty<IndexedDocument>();
     public IReadOnlyList<string> SubjectOptions { get; private set; } = Array.Empty<string>();
     public string? LoadErrorMessage { get; private set; }
+    public ChatUsage Usage { get; private set; } = new(null, 0, null, "");
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         var currentUser = await GetCurrentUserAccountAsync(cancellationToken);
+        if (currentUser is not null && CurrentRole() == AppRoles.Student)
+        {
+            Usage = await _chatUsage.GetAsync(currentUser.Id, cancellationToken);
+        }
         var chatScope = BuildDocumentAccessScope(DocumentAccessMode.Chat);
         IReadOnlyList<string> subjectOptions;
         IReadOnlyList<IndexedDocument> indexedDocuments;

@@ -33,7 +33,8 @@ namespace PRN222_FINAL.Web
             builder.Configuration.Sources.Clear();
             builder.Configuration
                 .SetBasePath(builder.Environment.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables();
 
             builder.Services.AddRazorPages(options =>
             {
@@ -221,7 +222,10 @@ namespace PRN222_FINAL.Web
                 return new PRN222_FINAL.BLL.GeminiChatCompletionService(httpClient, geminiOptions);
             });
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IDocumentTextExtractor, PRN222_FINAL.BLL.DocumentTextExtractor>();
-            builder.Services.AddSingleton<PRN222_FINAL.BLL.ITextChunker, PRN222_FINAL.BLL.FlmSyllabusAwareTextChunker>();
+            builder.Services.AddSingleton<PRN222_FINAL.BLL.FlmSyllabusAwareTextChunker>();
+            builder.Services.AddSingleton<PRN222_FINAL.BLL.ITextChunker>(provider =>
+                provider.GetRequiredService<PRN222_FINAL.BLL.FlmSyllabusAwareTextChunker>());
+            builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IAiSettingsService, PRN222_FINAL.Web.Services.AiSettingsService>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IChunkRetrievalEnrichmentService, PRN222_FINAL.BLL.AiChunkRetrievalEnrichmentService>();
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IDocumentIndexJobQueue, PRN222_FINAL.BLL.DocumentIndexJobQueue>();
             builder.Services.AddSingleton<PRN222_FINAL.Web.Services.IAccountEmailSender, PRN222_FINAL.Web.Services.SmtpAccountEmailSender>();
@@ -234,9 +238,11 @@ namespace PRN222_FINAL.Web
                 }));
             builder.Services.AddScoped<PRN222_FINAL.BLL.IDocumentIndexingService, PRN222_FINAL.BLL.DocumentIndexingService>();
             builder.Services.AddScoped<PRN222_FINAL.BLL.IRagChatService, PRN222_FINAL.BLL.RagChatService>();
+            builder.Services.AddScoped<PRN222_FINAL.Web.Services.IChatUsageService, PRN222_FINAL.Web.Services.ChatUsageService>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.DocumentIndexWorker>();
 
             var app = builder.Build();
+            _ = app.Services.GetRequiredService<PRN222_FINAL.Web.Services.IAiSettingsService>();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.IKnowledgeService>();
             _ = app.Services.GetRequiredService<PRN222_FINAL.Web.Services.IUserAccountStore>()
                 .HasAnyUsersAsync()

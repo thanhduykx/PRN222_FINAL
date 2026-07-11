@@ -134,6 +134,8 @@ public sealed class ChatRequest
     public string? Question { get; set; }
     public string? Language { get; set; }
     public string? SubjectFilter { get; set; }
+    public string? ResponsePace { get; set; }
+    public string? AnswerDepth { get; set; }
 }
 
 public sealed class ChatSessionRenameRequest

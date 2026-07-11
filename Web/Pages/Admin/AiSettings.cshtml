@@ -1,0 +1,56 @@
+@page
+@model PRN222_FINAL.Web.Pages.Admin.AiSettingsModel
+@{
+    ViewData["Title"] = "Thiết lập trợ lý học tập";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "admin";
+    ViewData["AdminSection"] = "ai-settings";
+    ViewData["ShellTitle"] = "Thiết lập trợ lý học tập";
+}
+
+<section class="ops-page ai-settings-page">
+    <header class="ops-page-heading">
+        <div>
+            <span class="ops-eyebrow">Cách trợ lý đọc và trả lời</span>
+            <h1>Thiết lập trợ lý học tập</h1>
+            <p>Điều chỉnh chất lượng trả lời và cách chia tài liệu thành các phần dễ tìm kiếm.</p>
+        </div>
+    </header>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="rbl-alert is-success" role="status">@success</div>
+    }
+    <div asp-validation-summary="ModelOnly" class="rbl-alert is-error" role="alert"></div>
+
+    <form method="post" class="ai-settings-grid">
+        <section class="ops-panel ai-settings-card">
+            <div class="ops-panel-head"><div><h2>Cách tạo câu trả lời</h2><p>Chọn bộ máy dùng để hiểu câu hỏi và viết câu trả lời.</p></div></div>
+            <label class="ops-field">
+                <span>Bộ máy trả lời</span>
+                <input asp-for="Input.AnswerModel" autocomplete="off" aria-describedby="answer-help" />
+                <small id="answer-help">Ví dụ: gemini-3.5-flash. Chỉ thay đổi khi nhà cung cấp xác nhận tên mới.</small>
+                <span asp-validation-for="Input.AnswerModel"></span>
+            </label>
+        </section>
+
+        <section class="ops-panel ai-settings-card">
+            <div class="ops-panel-head"><div><h2>Cách đọc tài liệu</h2><p>Thiết lập này ảnh hưởng đến khả năng tìm đúng nội dung trong tài liệu.</p></div></div>
+            <label class="ops-field"><span>Bộ máy đọc tài liệu</span><input asp-for="Input.ReadingModel" autocomplete="off" /><span asp-validation-for="Input.ReadingModel"></span></label>
+            <label class="ops-field"><span>Mức chi tiết khi ghi nhớ</span><input asp-for="Input.ReadingDetail" type="number" min="128" max="4096" /><small>768 phù hợp với hầu hết tài liệu môn học.</small><span asp-validation-for="Input.ReadingDetail"></span></label>
+        </section>
+
+        <section class="ops-panel ai-settings-card ai-settings-card--wide">
+            <div class="ops-panel-head"><div><h2>Cách chia nội dung</h2><p>Đoạn ngắn tìm nhanh hơn; đoạn dài giữ được nhiều ngữ cảnh hơn.</p></div></div>
+            <div class="ai-settings-fields">
+                <label class="ops-field"><span>Độ dài mỗi đoạn</span><input asp-for="Input.SectionLength" type="number" min="300" max="4000" /><small>Khuyến nghị: 800–1.200 ký tự.</small><span asp-validation-for="Input.SectionLength"></span></label>
+                <label class="ops-field"><span>Phần nối giữa hai đoạn</span><input asp-for="Input.SectionConnection" type="number" min="0" max="500" /><small>Khuyến nghị: 50–150 ký tự để không mất ý.</small><span asp-validation-for="Input.SectionConnection"></span></label>
+            </div>
+            <div class="rbl-alert is-info"><strong>Lưu ý:</strong> tài liệu đã xử lý trước đây cần được xử lý lại để dùng thiết lập mới.</div>
+        </section>
+
+        <div class="ai-settings-actions"><button type="submit" class="ops-button ops-button--primary"><span class="material-symbols-outlined" aria-hidden="true">save</span>Lưu thiết lập</button></div>
+    </form>
+</section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

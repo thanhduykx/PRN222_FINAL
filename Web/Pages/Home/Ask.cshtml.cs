@@ -10,7 +10,6 @@ using PRN222_FINAL.BLL;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
-[IgnoreAntiforgeryToken]
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class AskModel : HomePageModelBase
 {
@@ -22,10 +21,14 @@ public sealed class AskModel : HomePageModelBase
         IRagChatService chatService,
         IUserAccountStore users,
         IWebHostEnvironment environment,
-        IDocumentIndexJobQueue indexJobQueue)
+        IDocumentIndexJobQueue indexJobQueue,
+        IChatUsageService chatUsage)
         : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
     {
+        _chatUsage = chatUsage;
     }
+
+    private readonly IChatUsageService _chatUsage;
 
     public async Task<IActionResult> OnPostAsync([FromBody] ChatRequest? request, CancellationToken cancellationToken)
     {
@@ -33,6 +36,13 @@ public sealed class AskModel : HomePageModelBase
         {
             Response.StatusCode = StatusCodes.Status400BadRequest;
             return new JsonResult(new { error = "Invalid question payload." });
+        }
+
+        var question = request.Question?.Trim() ?? string.Empty;
+        if (question.Length is < 1 or > 4000)
+        {
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            return new JsonResult(new { error = "Câu hỏi cần có từ 1 đến 4.000 ký tự." });
         }
 
         if (!Guid.TryParse(request.SessionId, out var sessionId))
@@ -43,6 +53,15 @@ public sealed class AskModel : HomePageModelBase
         try
         {
             var currentUser = await GetCurrentUserAccountAsync(cancellationToken);
+            if (currentUser is not null && CurrentRole() == AppRoles.Student)
+            {
+                var usageBefore = await _chatUsage.GetAsync(currentUser.Id, cancellationToken);
+                if (usageBefore.IsExhausted)
+                {
+                    Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                    return new JsonResult(new { error = "Bạn đã dùng hết số câu hỏi trong tháng. Hãy xem các gói dịch vụ để tiếp tục." });
+                }
+            }
             var chatScope = BuildDocumentAccessScope(DocumentAccessMode.Chat);
             var allowedSubjects = await _knowledge.GetIndexedSubjectsAsync(chatScope, cancellationToken);
             var displayName = User.FindFirstValue(ClaimTypes.Name)
@@ -58,15 +77,19 @@ public sealed class AskModel : HomePageModelBase
 
             var answer = await _chatService.AskAsync(
                 sessionId,
-                request.Question ?? string.Empty,
+                question,
                 displayName,
                 request.SubjectFilter,
                 request.Language,
                 allowedSubjects,
                 BuildChatSessionOwnerInfo(),
                 chatScope,
+                request.AnswerDepth,
                 cancellationToken);
 
+            var usage = currentUser is not null && CurrentRole() == AppRoles.Student
+                ? await _chatUsage.GetAsync(currentUser.Id, cancellationToken)
+                : null;
             return new JsonResult(new
             {
                 sessionId,
@@ -77,7 +100,8 @@ public sealed class AskModel : HomePageModelBase
                 subjectOptions = answer.SubjectOptions,
                 answerSource = answer.AnswerSource,
                 hasDirectCitation = answer.HasDirectCitation,
-                fallbackModel = answer.FallbackModel
+                fallbackModel = answer.FallbackModel,
+                questionsRemaining = usage?.Remaining
             });
         }
         catch (Exception ex) when (IsDataAccessTimeout(ex))
@@ -87,8 +111,9 @@ public sealed class AskModel : HomePageModelBase
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Chat request could not be completed.");
             Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new JsonResult(new { error = ex.Message });
+            return new JsonResult(new { error = "Chưa thể trả lời câu hỏi này. Vui lòng kiểm tra nội dung và thử lại." });
         }
     }
 

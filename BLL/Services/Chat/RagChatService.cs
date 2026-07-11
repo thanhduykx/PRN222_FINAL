@@ -29,6 +29,7 @@ public interface IRagChatService
         IReadOnlyCollection<string>? allowedSubjects = null,
         ChatSessionOwnerInfo? ownerInfo = null,
         DocumentAccessScope? accessScope = null,
+        string? answerDepth = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -185,6 +186,7 @@ public sealed class RagChatService : IRagChatService
         IReadOnlyCollection<string>? allowedSubjects = null,
         ChatSessionOwnerInfo? ownerInfo = null,
         DocumentAccessScope? accessScope = null,
+        string? answerDepth = null,
         CancellationToken cancellationToken = default)
     {
         var trimmedQuestion = question.Trim();
@@ -226,6 +228,7 @@ public sealed class RagChatService : IRagChatService
                     allowedSubjects,
                     scopedChunks,
                     accessScope,
+                    answerDepth,
                     cancellationToken));
             }
 
@@ -243,6 +246,7 @@ public sealed class RagChatService : IRagChatService
             allowedSubjects,
             scopedChunks: null,
             accessScope,
+            answerDepth,
             cancellationToken);
 
         return await SaveAssistantAnswer(
@@ -268,6 +272,7 @@ public sealed class RagChatService : IRagChatService
         IReadOnlyCollection<string>? allowedSubjects,
         IReadOnlyList<DocumentChunk>? scopedChunks,
         DocumentAccessScope? accessScope,
+        string? answerDepth,
         CancellationToken cancellationToken)
     {
         if (IsBotIdentityQuestion(question))
@@ -426,7 +431,7 @@ public sealed class RagChatService : IRagChatService
         var matchedChunks = matches.Select(item => item.Chunk).ToList();
         var resolvedSubject = route.SelectedSubject ?? ResolveSubject(matchedChunks);
         var generatedAnswer = await _chatCompletionService.GenerateAnswerAsync(
-            resolvedQuestion,
+            ApplyAnswerDepth(resolvedQuestion, answerDepth, responseLanguage),
             resolvedSubject,
             historyBeforeQuestion,
             matchedChunks,
@@ -459,6 +464,17 @@ public sealed class RagChatService : IRagChatService
         }
 
         return new SingleQuestionAnswer(question, answer, citations, resolvedSubject);
+    }
+
+    private static string ApplyAnswerDepth(string question, string? answerDepth, string language)
+    {
+        var instruction = answerDepth?.Trim().ToLowerInvariant() switch
+        {
+            "concise" => language == "vi" ? "Trả lời thật ngắn gọn, tối đa 3 ý chính." : "Answer concisely in at most 3 key points.",
+            "deep" => language == "vi" ? "Giải thích kỹ, có cấu trúc và nêu mối liên hệ giữa các ý trong tài liệu." : "Explain thoroughly with structure and relationships between ideas in the documents.",
+            _ => language == "vi" ? "Trả lời vừa đủ, rõ ràng và dễ học." : "Give a balanced, clear answer that is easy to study."
+        };
+        return $"{question}\n\nYêu cầu cách trình bày: {instruction}";
     }
 
     private async Task<IReadOnlyList<DocumentChunk>> GetScopedChunksAsync(
