@@ -23,7 +23,6 @@
     
     var hideAssistantLauncher = ViewData["HideAssistantLauncher"] as bool? ?? false;
     var hideSidebarOnlineUsers = ViewData["HideSidebarOnlineUsers"] as bool? ?? false;
-    var showStudentTableNav = ViewData["ShowStudentTable"] as bool? ?? false;
     var shellTitleI18n = ViewData["ShellTitleI18n"] as string;
     var chatNavClass = activeNav == "chat" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var coursesNavClass = activeNav == "courses" ? "rbl-nav-link is-active" : "rbl-nav-link";
@@ -37,11 +36,7 @@
         currentDocumentSection = "list";
     }
 
-    var currentAdminSection = (ViewData["AdminSection"] as string ?? Context.Request.RouteValues["section"] as string ?? string.Empty).ToLowerInvariant();
-    var currentReportsSection = (ViewData["ReportsSection"] as string ?? Context.Request.Query["tab"].ToString() ?? "overview").ToLowerInvariant();
     string DocumentSublinkClass(string sectionName) => currentDocumentSection == sectionName ? "rbl-nav-sublink is-active" : "rbl-nav-sublink";
-    string AdminSublinkClass(string sectionName) => currentAdminSection == sectionName ? "rbl-nav-sublink is-active" : "rbl-nav-sublink";
-    string ReportsSublinkClass(string sectionName) => currentReportsSection == sectionName ? "rbl-nav-sublink is-active" : "rbl-nav-sublink";
 }
 <!DOCTYPE html>
 <html lang="vi" class="i18n-pending">
@@ -77,9 +72,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1&amp;display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 </head>
 <body class="@bodyClass">
+    <a class="ds-skip-link" href="#mainContent">Bỏ qua tới nội dung chính</a>
     @if (useRblShell)
     {
         <div class="rbl-app-frame">
@@ -92,18 +89,23 @@
                         <strong>Course Assistant</strong>
                         <span data-i18n="shell.portal">Cổng học tập</span>
                     </div>
+                    <button type="button" class="rbl-mobile-nav-toggle" data-mobile-nav-toggle aria-expanded="false" aria-controls="primaryNavigation">
+                        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+                        <span class="visually-hidden">Mở menu chính</span>
+                    </button>
                 </div>
 
-                <nav class="rbl-nav">
+                <nav class="rbl-nav" id="primaryNavigation" data-primary-navigation>
+                    <span class="rbl-nav-section-label">Học tập</span>
                     @if (canChat)
                     {
-                    <a class="@chatNavClass" asp-page="/Home/Chat">
+                    <a class="@chatNavClass" asp-page="/Home/Chat" aria-current="@(activeNav == "chat" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">chat</span>
                         <span data-i18n="shell.chatbot">Chatbot</span>
                     </a>
                     @if (canViewCourses)
                     {
-                    <a class="@coursesNavClass" asp-page="/Home/Courses">
+                    <a class="@coursesNavClass" asp-page="/Home/Courses" aria-current="@(activeNav == "courses" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">school</span>
                         <span data-i18n="shell.courses">Môn học</span>
                     </a>
@@ -141,86 +143,26 @@
                     }
                     @if (isAuthenticated && currentRole == AppRoles.Student)
                     {
-                    <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index">
+                    <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">payments</span>
                         <span>Gói dịch vụ</span>
                     </a>
                     }
                     @if (canManageUsers)
                     {
-                    <a class="@assistantSettingsNavClass" asp-page="/Admin/AiSettings">
+                    <span class="rbl-nav-section-label">Quản trị</span>
+                    <a class="@assistantSettingsNavClass" asp-page="/Admin/AiSettings" aria-current="@(activeNav == "assistant-settings" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">tune</span>
                         <span>Thiết lập trợ lý</span>
                     </a>
-                    <details class="rbl-nav-dropdown" @((activeNav == "reports") ? "open" : "")>
-                        <summary class="rbl-nav-link-summary @reportsNavClass">
-                            <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
-                            <span>Báo cáo &amp; Thống kê</span>
-                            <span class="material-symbols-outlined rbl-dropdown-chevron" aria-hidden="true">expand_more</span>
-                        </summary>
-                        <div class="rbl-nav-sublist">
-                            <a class="@(ReportsSublinkClass("overview"))" asp-page="/Admin/Statistics" asp-route-tab="overview">
-                                <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
-                                <span>Tổng quan</span>
-                            </a>
-                            <a class="@(ReportsSublinkClass("chatbot"))" asp-page="/Admin/Statistics" asp-route-tab="chatbot">
-                                <span class="material-symbols-outlined" aria-hidden="true">forum</span>
-                                <span>Chatbot</span>
-                            </a>
-                            <a class="@(ReportsSublinkClass("documents"))" asp-page="/Admin/Statistics" asp-route-tab="documents">
-                                <span class="material-symbols-outlined" aria-hidden="true">article</span>
-                                <span>Tài liệu</span>
-                            </a>
-                            <a class="@(ReportsSublinkClass("users"))" asp-page="/Admin/Statistics" asp-route-tab="users">
-                                <span class="material-symbols-outlined" aria-hidden="true">group</span>
-                                <span>Người dùng</span>
-                            </a>
-                            <a class="@(ReportsSublinkClass("subscription"))" asp-page="/Admin/Statistics" asp-route-tab="subscription">
-                                <span class="material-symbols-outlined" aria-hidden="true">person</span>
-                                <span>Gói đăng ký</span>
-                            </a>
-                            <a class="@(ReportsSublinkClass("export"))" asp-page="/Admin/Statistics" asp-route-tab="export">
-                                <span class="material-symbols-outlined" aria-hidden="true">download</span>
-                                <span>Xuất báo cáo</span>
-                            </a>
-                        </div>
-                    </details>
-                    <details class="rbl-nav-dropdown" @((activeNav == "admin") ? "open" : "")>
-                        <summary class="rbl-nav-link-summary @adminNavClass">
-                            <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
-                            <span data-i18n="shell.users">Người dùng</span>
-                            <span class="material-symbols-outlined rbl-dropdown-chevron" aria-hidden="true">expand_more</span>
-                        </summary>
-                        <div class="rbl-nav-sublist">
-                            <a class="@(AdminSublinkClass("directory"))" asp-page="/Admin/Index" asp-route-section="directory">
-                                <span class="material-symbols-outlined" aria-hidden="true">group</span>
-                                <span data-i18n="admin.navDirectory">Directory</span>
-                            </a>
-                            <a class="@(AdminSublinkClass("lecturer-table"))" asp-page="/Admin/Index" asp-route-section="lecturer-table">
-                                <span class="material-symbols-outlined" aria-hidden="true">school</span>
-                                <span data-i18n="admin.navLecturerTable">Lecturer table</span>
-                            </a>
-                            @if (showStudentTableNav)
-                            {
-                            <a class="@(AdminSublinkClass("student-table"))" asp-page="/Admin/Index" asp-route-section="student-table">
-                                <span class="material-symbols-outlined" aria-hidden="true">face</span>
-                                <span data-i18n="admin.navStudentTable">Student table</span>
-                            </a>
-                            }
-                            <a class="@(AdminSublinkClass("create-account"))" asp-page="/Admin/Index" asp-route-section="create-account">
-                                <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
-                                <span data-i18n="admin.navCreateAccount">Create account</span>
-                            </a>
-                            <a class="@(AdminSublinkClass("bulk-import"))" asp-page="/Admin/Index" asp-route-section="bulk-import">
-                                <span class="material-symbols-outlined" aria-hidden="true">group_add</span>
-                                <span data-i18n="admin.navImportExcel">Import from Excel</span>
-                            </a>
-                            <a class="@(AdminSublinkClass("create-subject"))" asp-page="/Admin/Index" asp-route-section="create-subject">
-                                <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
-                                <span data-i18n="admin.navSubjectManagement">Subject management</span>
-                            </a>
-                        </div>
-                    </details>
+                    <a class="@reportsNavClass" asp-page="/Admin/Statistics" asp-route-tab="overview" asp-route-days="30" aria-current="@(activeNav == "reports" ? "page" : null)">
+                        <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
+                        <span>Báo cáo &amp; Thống kê</span>
+                    </a>
+                    <a class="@adminNavClass" asp-page="/Admin/Index" asp-route-section="directory" aria-current="@(activeNav == "admin" ? "page" : null)">
+                        <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
+                        <span data-i18n="shell.users">Người dùng</span>
+                    </a>
                     }
                 </nav>
 
@@ -310,7 +252,7 @@
                     </div>
                 </header>
 
-                <main role="main" class="rbl-main">
+                <main role="main" class="rbl-main" id="mainContent" tabindex="-1">
                     @RenderBody()
                     @if (isAuthenticated && showLearningFooter)
                     {
@@ -426,7 +368,7 @@
             </nav>
         </header>
         <div class="container">
-            <main role="main" class="pb-3">
+            <main role="main" class="pb-3" id="mainContent" tabindex="-1">
                 @RenderBody()
                 @if (isAuthenticated && showLearningFooter)
                 {

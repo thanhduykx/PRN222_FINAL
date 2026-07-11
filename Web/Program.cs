@@ -39,11 +39,12 @@ namespace PRN222_FINAL.Web
                 .SetBasePath(builder.Environment.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables();
-
-            builder.Services.AddRazorPages(options =>
+            if (builder.Environment.IsDevelopment())
             {
-                options.Conventions.AddPageRoute("/Home/Index", "");
-            });
+                builder.Configuration.AddUserSecrets<Program>(optional: true);
+            }
+
+            builder.Services.AddRazorPages();
             builder.Services
                 .AddDataProtection()
                 .SetApplicationName("Group07MVC.CourseAssistant");
@@ -190,6 +191,26 @@ namespace PRN222_FINAL.Web
                 geminiSection["EmbeddingBaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta");
 
             builder.Services.AddSingleton(geminiOptions);
+
+            var groqSection = builder.Configuration.GetSection("Groq");
+            var groqApiKey = groqSection["ApiKey"] ?? string.Empty;
+            var chatGenerationOptions = new ChatGenerationOptions
+            {
+                Provider = ChatProviders.Normalize(builder.Configuration["Chat:Provider"]),
+                Model = geminiOptions.ChatModel,
+                GeminiEnabled = geminiOptions.Enabled,
+                GeminiApiKey = geminiOptions.ApiKey,
+                GeminiBaseUrl = geminiOptions.ChatBaseUrl,
+                GroqEnabled = !bool.TryParse(groqSection["Enabled"], out var parsedGroqEnabled)
+                    ? !string.IsNullOrWhiteSpace(groqApiKey)
+                    : parsedGroqEnabled,
+                GroqApiKey = groqApiKey,
+                GroqBaseUrl = groqSection["ChatBaseUrl"] ?? "https://api.groq.com/openai/v1/chat/completions",
+                TimeoutSeconds = int.TryParse(groqSection["TimeoutSeconds"], out var parsedGroqTimeout)
+                    ? Math.Clamp(parsedGroqTimeout, 5, 180)
+                    : geminiOptions.TimeoutSeconds
+            };
+            builder.Services.AddSingleton(chatGenerationOptions);
 
             builder.Services.AddKnowledgeBusinessServices(builder.Configuration, builder.Environment.ContentRootPath);
             builder.Services.AddSingleton<PRN222_FINAL.BLL.IDocumentTextExtractor, PRN222_FINAL.BLL.DocumentTextExtractor>();

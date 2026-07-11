@@ -159,7 +159,7 @@ public sealed class StatisticsModel : PageModel
     private static string NormalizeTab(string value)
     {
         var normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
-        return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "subscription" or "billing" or "export"
+        return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "subscription" or "billing"
             ? normalized
             : "overview";
     }

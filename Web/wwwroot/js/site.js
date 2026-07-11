@@ -924,6 +924,23 @@ function setSelectedSubjectFilter(subject) {
   });
   updateSuggestionButtons();
   renderRelatedQuestions();
+  updateChatSourceScope(normalizedSubject);
+}
+
+function updateChatSourceScope(selectedSubject) {
+  const scope = document.querySelector(".chat-source-scope");
+  const label = scope?.querySelector("[data-chat-scope-label]");
+  if (!scope || !label) return;
+
+  if (selectedSubject) {
+    label.textContent = `Chỉ tìm trong tài liệu môn ${selectedSubject}`;
+    return;
+  }
+
+  const subjectCount = Number.parseInt(scope.dataset.chatSubjectCount || "0", 10);
+  label.textContent = subjectCount > 0
+    ? `Đang tìm trong ${subjectCount} môn học có quyền truy cập`
+    : "Chưa có môn học sẵn sàng";
 }
 
 function bindSubjectFilterChips() {
@@ -2780,3 +2797,29 @@ if (window.location.hash === "#transactionHistory") {
   const transactionHistory = document.getElementById("transactionHistory");
   if (transactionHistory instanceof HTMLDetailsElement) transactionHistory.open = true;
 }
+const mobileNavToggle = document.querySelector("[data-mobile-nav-toggle]");
+const primaryNavigation = document.querySelector("[data-primary-navigation]");
+
+function setMobileNavigation(open) {
+  if (!mobileNavToggle || !primaryNavigation) return;
+
+  document.body.classList.toggle("mobile-nav-open", open);
+  mobileNavToggle.setAttribute("aria-expanded", String(open));
+  const hiddenLabel = mobileNavToggle.querySelector(".visually-hidden");
+  if (hiddenLabel) hiddenLabel.textContent = open ? "Đóng menu chính" : "Mở menu chính";
+}
+
+mobileNavToggle?.addEventListener("click", () => {
+  setMobileNavigation(mobileNavToggle.getAttribute("aria-expanded") !== "true");
+});
+
+primaryNavigation?.addEventListener("click", (event) => {
+  const clickedElement = event.target instanceof Element ? event.target : null;
+  if (clickedElement?.closest("a") && window.matchMedia("(max-width: 900px)").matches) {
+    setMobileNavigation(false);
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 900) setMobileNavigation(false);
+});

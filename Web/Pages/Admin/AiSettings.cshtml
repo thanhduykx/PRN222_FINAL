@@ -270,16 +270,34 @@
                 <p>Chọn bộ máy AI dùng để hiểu câu hỏi và viết câu trả lời cuối cùng.</p>
             </div>
             <label class="ops-field">
-                <span>Model trả lời (Chat Model)</span>
-                <select asp-for="Input.AnswerModel" class="modern-input">
-                    @foreach (var modelName in Model.AnswerModelOptions)
+                <span>Nhà cung cấp câu trả lời</span>
+                <select asp-for="Input.AnswerProvider" class="modern-input" data-chat-provider>
+                    @foreach (var provider in Model.AnswerProviderOptions)
                     {
-                        <option value="@modelName">@modelName</option>
+                        <option value="@provider" data-configured="@Model.IsProviderConfigured(provider).ToString().ToLowerInvariant()">@provider</option>
                     }
                 </select>
-                <small>Khuyến nghị dùng gemini-3.5-flash cho tốc độ nhanh nhất.</small>
+                <small>API key được đọc từ cấu hình máy chủ và không được lưu trong trang này.</small>
+                <span asp-validation-for="Input.AnswerProvider" class="text-danger"></span>
+            </label>
+            <label class="ops-field">
+                <span>Model trả lời (Chat Model)</span>
+                <select asp-for="Input.AnswerModel" class="modern-input" data-chat-model>
+                    @foreach (var providerModels in Model.AnswerModelsByProvider)
+                    {
+                        foreach (var modelName in providerModels.Value)
+                        {
+                            <option value="@modelName" data-provider="@providerModels.Key">@modelName</option>
+                        }
+                    }
+                </select>
+                <small data-chat-model-hint>Gemini phù hợp mặc định; Groq là lựa chọn tốc độ cao cho sinh câu trả lời RAG.</small>
                 <span asp-validation-for="Input.AnswerModel" class="text-danger"></span>
             </label>
+            <div class="provider-status @(Model.IsSelectedProviderConfigured ? "is-configured" : "is-missing")" data-provider-status>
+                <span class="material-symbols-outlined" aria-hidden="true" data-provider-status-icon>@(Model.IsSelectedProviderConfigured ? "check_circle" : "key_off")</span>
+                <span data-provider-status-text>@(Model.IsSelectedProviderConfigured ? "Provider đã có API key" : "Provider chưa có API key")</span>
+            </div>
         </section>
 
         <section class="ops-panel ai-settings-card">
@@ -366,6 +384,46 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const providerSelect = document.querySelector('[data-chat-provider]');
+            const modelSelect = document.querySelector('[data-chat-model]');
+            const modelHint = document.querySelector('[data-chat-model-hint]');
+            const providerStatus = document.querySelector('[data-provider-status]');
+            const providerStatusIcon = document.querySelector('[data-provider-status-icon]');
+            const providerStatusText = document.querySelector('[data-provider-status-text]');
+
+            function syncProviderModels(changeSelection) {
+                if (!providerSelect || !modelSelect) return;
+
+                const provider = providerSelect.value;
+                const availableOptions = Array.from(modelSelect.options).filter(option => option.dataset.provider === provider);
+                Array.from(modelSelect.options).forEach(option => {
+                    const matches = option.dataset.provider === provider;
+                    option.hidden = !matches;
+                    option.disabled = !matches;
+                });
+
+                const currentIsAvailable = availableOptions.some(option => option.value === modelSelect.value);
+                if ((changeSelection || !currentIsAvailable) && availableOptions.length > 0) {
+                    modelSelect.value = availableOptions[0].value;
+                }
+
+                if (modelHint) {
+                    modelHint.textContent = provider === 'Groq'
+                        ? 'Khuyến nghị llama-3.3-70b-versatile cho chất lượng hoặc llama-3.1-8b-instant cho tốc độ.'
+                        : 'Khuyến nghị gemini-3.5-flash cho tốc độ và chi phí cân bằng.';
+                }
+
+                const selectedProviderOption = providerSelect.selectedOptions[0];
+                const isConfigured = selectedProviderOption?.dataset.configured === 'true';
+                providerStatus?.classList.toggle('is-configured', isConfigured);
+                providerStatus?.classList.toggle('is-missing', !isConfigured);
+                if (providerStatusIcon) providerStatusIcon.textContent = isConfigured ? 'check_circle' : 'key_off';
+                if (providerStatusText) providerStatusText.textContent = isConfigured ? 'Provider đã có API key' : 'Provider chưa có API key';
+            }
+
+            providerSelect?.addEventListener('change', () => syncProviderModels(true));
+            syncProviderModels(false);
+
             // Hàm đồng bộ thanh trượt (Range) và ô nhập số (Number)
             function syncInputs(sliderId, numberInputId) {
                 const slider = document.getElementById(sliderId);
