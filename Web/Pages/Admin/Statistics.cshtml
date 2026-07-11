@@ -41,17 +41,6 @@
     var subscriptionCancelRate = Model.Dashboard.TotalSubscriptionCount == 0
         ? 0
         : Math.Round(Model.Dashboard.CanceledSubscriptionCount * 100d / Model.Dashboard.TotalSubscriptionCount, 1);
-    const decimal estimatedCostPerQuestionVnd = 450m;
-    const decimal assumedPaymentFeeRate = 0.03m;
-    var paymentAttempts = Model.Dashboard.PackagePurchases.Sum(package => package.PaidCount + package.PendingCount + package.FailedCount);
-    var successfulPayments = Model.Dashboard.PackagePurchases.Sum(package => package.PaidCount);
-    var paymentSuccessRate = paymentAttempts == 0 ? 0 : Math.Round(successfulPayments * 100d / paymentAttempts, 1);
-    var averageOrderValue = successfulPayments == 0 ? 0 : Model.Dashboard.PaidRevenueVnd / successfulPayments;
-    var estimatedAiCost = Model.Dashboard.TotalChatQuestions * estimatedCostPerQuestionVnd;
-    var estimatedPaymentFees = Model.Dashboard.PaidRevenueVnd * assumedPaymentFeeRate;
-    var estimatedContribution = Model.Dashboard.PaidRevenueVnd - estimatedAiCost - estimatedPaymentFees;
-    var estimatedContributionMargin = Model.Dashboard.PaidRevenueVnd <= 0 ? 0 : Math.Round(estimatedContribution * 100m / Model.Dashboard.PaidRevenueVnd, 1);
-    var questionsPerActiveUser = Model.Dashboard.ActiveChatUsers == 0 ? 0 : Math.Round(Model.Dashboard.TotalChatQuestions * 1d / Model.Dashboard.ActiveChatUsers, 1);
     var topSubscriptionPackage = Model.Dashboard.PackagePurchases
         .OrderByDescending(package => package.ActiveSubscriptionCount)
         .ThenByDescending(package => package.PaidCount)
@@ -540,47 +529,6 @@
         @if (Model.Tab == "subscription")
         {
             <section class="ops-subscription-page">
-                <section class="finance-summary" aria-label="Tóm tắt tài chính">
-                    <div class="finance-summary__heading">
-                        <div><span class="ops-eyebrow">Tài chính &amp; tăng trưởng</span><h2>Hiệu quả kinh doanh</h2><p>Các chỉ số trong @Model.Days ngày gần nhất, dùng để ra quyết định giá và kiểm soát chi phí.</p></div>
-                        <span class="finance-summary__assumption">Ước tính: 450đ/câu · phí thanh toán 3%</span>
-                    </div>
-                    <div class="finance-summary__kpis">
-                        <article><span>Tỷ lệ thanh toán thành công</span><strong>@paymentSuccessRate.ToString("0.#")%</strong><small>@successfulPayments/@paymentAttempts lượt thanh toán</small></article>
-                        <article><span>Giá trị đơn trung bình</span><strong>@MoneyVnd(averageOrderValue)</strong><small>Doanh thu / giao dịch thành công</small></article>
-                        <article><span>Lãi góp ước tính</span><strong class="@(estimatedContribution < 0 ? "is-negative" : "is-positive")">@MoneyVnd(estimatedContribution)</strong><small>Doanh thu trừ AI và phí thanh toán</small></article>
-                        <article><span>Biên lãi góp ước tính</span><strong class="@(estimatedContributionMargin < 25 ? "is-negative" : "is-positive")">@estimatedContributionMargin.ToString("0.#")%</strong><small>Mục tiêu vận hành: từ 30%</small></article>
-                        <article><span>Câu hỏi / người hoạt động</span><strong>@questionsPerActiveUser.ToString("0.#")</strong><small>Phát hiện gói đang quá rộng hoặc quá chật</small></article>
-                    </div>
-                </section>
-
-                <section class="ops-panel package-economics">
-                    <div class="ops-panel-head"><div><h2>Mô hình kinh tế theo gói</h2><p class="ops-muted mb-0">Kịch bản sử dụng hết hạn mức; chi phí thực tế cần thay bằng token usage khi hệ thống có dữ liệu.</p></div></div>
-                    <div class="ops-table-wrap">
-                        <table class="ops-table">
-                            <thead><tr><th>Gói</th><th>Giá bán</th><th>Câu/tháng</th><th>Chi phí ước tính</th><th>Lãi góp</th><th>Biên lãi</th></tr></thead>
-                            <tbody>
-                            @foreach (var package in Model.Packages)
-                            {
-                                var monthlyRevenue = package.DurationDays >= 360 ? package.PriceVnd / 12m : package.PriceVnd;
-                                var packageAiCost = package.MonthlyChatLimit * estimatedCostPerQuestionVnd;
-                                var packageFee = monthlyRevenue * assumedPaymentFeeRate;
-                                var packageContribution = monthlyRevenue - packageAiCost - packageFee;
-                                var packageMargin = monthlyRevenue <= 0 ? 0 : packageContribution * 100m / monthlyRevenue;
-                                <tr>
-                                    <td data-label="Gói"><strong>@package.Name</strong><small>@package.Code</small></td>
-                                    <td data-label="Giá bán">@(package.PriceVnd <= 0 ? "Miễn phí" : $"{package.PriceVnd:N0}đ")</td>
-                                    <td data-label="Câu/tháng">@package.MonthlyChatLimit.ToString("N0")</td>
-                                    <td data-label="Chi phí ước tính">@packageAiCost.ToString("N0")đ</td>
-                                    <td data-label="Lãi góp"><span class="@(packageContribution < 0 ? "finance-negative" : "finance-positive")">@packageContribution.ToString("N0")đ</span></td>
-                                    <td data-label="Biên lãi">@(package.PriceVnd <= 0 ? "Gói thu hút" : $"{packageMargin:N1}%")</td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
                 <section class="ops-kpi-grid ops-subscription-kpis" aria-label="Chỉ số gói đăng ký">
                     <article class="ops-kpi ops-stat-kpi">
                         <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">business_center</span>
