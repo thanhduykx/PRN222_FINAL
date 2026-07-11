@@ -4,6 +4,7 @@ using PRN222_FINAL.DAL.Entities;
 using PRN222_FINAL.DAL.Mapping;
 using PRN222_FINAL.DAL.Schema;
 using Microsoft.EntityFrameworkCore;
+using PRN222_FINAL.DAL.Repositories;
 
 namespace PRN222_FINAL.DAL.Repositories;
 

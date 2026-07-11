@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.BLL.Models;
 
 namespace PRN222_FINAL.BLL;
 

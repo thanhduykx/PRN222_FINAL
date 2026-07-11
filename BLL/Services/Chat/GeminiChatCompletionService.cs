@@ -4,10 +4,10 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 {
     private readonly CompatibleChatCompletionService _inner;
 
-    public GeminiChatCompletionService(HttpClient httpClient, GeminiOptions options)
+    public GeminiChatCompletionService(PRN222_FINAL.DAL.Repositories.Http.IHttpRepository http, GeminiOptions options)
     {
         _inner = new CompatibleChatCompletionService(
-            httpClient,
+            http,
             new CompatibleChatOptions(
                 options.Enabled,
                 options.ApiKey,
@@ -20,7 +20,7 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 
     public Task<QueryIntentDecision> ClassifyQuestionAsync(
         string question,
-        IReadOnlyList<PRN222_FINAL.Models.ChatMessage> history,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.ChatMessage> history,
         string language,
         CancellationToken cancellationToken = default)
     {
@@ -29,7 +29,7 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 
     public Task<string> RewriteQuestionAsync(
         string question,
-        IReadOnlyList<PRN222_FINAL.Models.ChatMessage> history,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.ChatMessage> history,
         CancellationToken cancellationToken = default)
     {
         return _inner.RewriteQuestionAsync(question, history, cancellationToken);
@@ -37,7 +37,7 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 
     public Task<IReadOnlyList<string>> RewriteQueriesAsync(
         string question,
-        IReadOnlyList<PRN222_FINAL.Models.ChatMessage> history,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.ChatMessage> history,
         CancellationToken cancellationToken = default)
     {
         return _inner.RewriteQueriesAsync(question, history, cancellationToken);
@@ -45,7 +45,7 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 
     public Task<IReadOnlyList<ChatChunkRerankResult>> RerankChunksAsync(
         string question,
-        IReadOnlyList<PRN222_FINAL.Models.DocumentChunk> chunks,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.DocumentChunk> chunks,
         string language,
         CancellationToken cancellationToken = default)
     {
@@ -55,8 +55,8 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
     public Task<string?> GenerateAnswerAsync(
         string question,
         string subject,
-        IReadOnlyList<PRN222_FINAL.Models.ChatMessage> history,
-        IReadOnlyList<PRN222_FINAL.Models.DocumentChunk> chunks,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.ChatMessage> history,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.DocumentChunk> chunks,
         string language,
         CancellationToken cancellationToken = default)
     {
@@ -66,7 +66,7 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
     public Task<GroundingDecision?> ValidateGroundingAsync(
         string question,
         string answer,
-        IReadOnlyList<PRN222_FINAL.Models.DocumentChunk> chunks,
+        IReadOnlyList<PRN222_FINAL.BLL.Models.DocumentChunk> chunks,
         string language,
         CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using PRN222_FINAL.BLL.Services.Email;
+using PRN222_FINAL.BLL.Services.Accounts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.Web.Models;
@@ -11,13 +13,13 @@ public sealed class ForgotPasswordModel : PageModel
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
-    private readonly IUserAccountStore _users;
-    private readonly IAccountEmailSender _emailSender;
+    private readonly IUserAccountService _users;
+    private readonly IAccountEmailService _emailSender;
     private readonly ILogger<ForgotPasswordModel> _logger;
 
     public ForgotPasswordModel(
-        IUserAccountStore users,
-        IAccountEmailSender emailSender,
+        IUserAccountService users,
+        IAccountEmailService emailSender,
         ILogger<ForgotPasswordModel> logger)
     {
         _users = users;

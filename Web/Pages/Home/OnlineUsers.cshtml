@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = "Online users";
     ViewData["UseRblShell"] = true;
-    ViewData["ActiveNav"] = User.IsInRole(PRN222_FINAL.Web.Security.AppRoles.Admin) ? "admin" : "online-users";
+    ViewData["ActiveNav"] = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin) ? "admin" : "online-users";
     ViewData["AdminSection"] = "online-users";
     ViewData["ShellTitle"] = "Online users";
     ViewData["ShellTitleI18n"] = "admin.navOnlineUsers";

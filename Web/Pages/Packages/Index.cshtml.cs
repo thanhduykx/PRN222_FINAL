@@ -1,10 +1,11 @@
+﻿using PRN222_FINAL.BLL.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Billing;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.ViewModels.Billing;
 

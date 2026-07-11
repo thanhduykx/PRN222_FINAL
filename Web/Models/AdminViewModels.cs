@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using PRN222_FINAL.BLL.Security;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 
@@ -94,7 +95,7 @@ public sealed class CreateAdminUserViewModel
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Role is required.")]
-    public string Role { get; set; } = PRN222_FINAL.Web.Security.AppRoles.Student;
+    public string Role { get; set; } = PRN222_FINAL.BLL.Security.AppRoles.Student;
 
     public List<Guid> SubjectIds { get; set; } = new();
 }
@@ -105,7 +106,7 @@ public sealed class ImportAdminUsersViewModel
     public IFormFile ExcelFile { get; set; } = null!;
 
     [Required(ErrorMessage = "Role is required.")]
-    public string Role { get; set; } = PRN222_FINAL.Web.Security.AppRoles.Student;
+    public string Role { get; set; } = PRN222_FINAL.BLL.Security.AppRoles.Student;
 
     public List<Guid> SubjectIds { get; set; } = new();
 }

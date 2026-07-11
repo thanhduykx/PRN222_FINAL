@@ -1,6 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using PRN222_FINAL.DAL.Mapping;
-using PRN222_FINAL.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using PRN222_FINAL.DAL.Entities.Billing;
 
 namespace PRN222_FINAL.DAL.Repositories.Billing;
 
@@ -10,18 +9,17 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
     {
     }
 
-    public async Task<IReadOnlyList<Package>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<KnowledgeSqlPackage>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         return await context.Packages
             .AsNoTracking()
             .OrderBy(package => package.SortOrder)
             .ThenBy(package => package.PriceVnd)
-            .Select(package => BillingSqlMapper.ToModel(package))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Package>> GetActiveAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<KnowledgeSqlPackage>> GetActiveAsync(CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         return await context.Packages
@@ -29,24 +27,22 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
             .Where(package => package.IsActive)
             .OrderBy(package => package.SortOrder)
             .ThenBy(package => package.PriceVnd)
-            .Select(package => BillingSqlMapper.ToModel(package))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Package?> GetByIdAsync(Guid packageId, CancellationToken cancellationToken = default)
+    public async Task<KnowledgeSqlPackage?> GetByIdAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
-        var entity = await context.Packages.AsNoTracking().FirstOrDefaultAsync(package => package.Id == packageId, cancellationToken);
-        return entity is null ? null : BillingSqlMapper.ToModel(entity);
+        return await context.Packages.AsNoTracking().FirstOrDefaultAsync(package => package.Id == packageId, cancellationToken);
     }
 
-    public async Task UpsertAsync(Package package, CancellationToken cancellationToken = default)
+    public async Task UpsertAsync(KnowledgeSqlPackage package, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         var existing = await context.Packages.FirstOrDefaultAsync(item => item.Code == package.Code, cancellationToken);
         if (existing is null)
         {
-            context.Packages.Add(BillingSqlMapper.ToEntity(package));
+            context.Packages.Add(package);
         }
         else
         {

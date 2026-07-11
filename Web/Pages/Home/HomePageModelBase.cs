@@ -1,12 +1,14 @@
-﻿using System.Security.Claims;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using System.Security.Claims;
 using System.Text;
-using PRN222_FINAL.Models;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
-using PRN222_FINAL.Models.DTOs.Documents;
+using PRN222_FINAL.BLL.Contracts.Documents;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -17,7 +19,7 @@ public abstract class HomePageModelBase : PageModel
     protected readonly IDocumentIndexingService _indexingService;
     protected readonly IWebPageTextExtractor _webPageTextExtractor;
     protected readonly IRagChatService _chatService;
-    protected readonly IUserAccountStore _users;
+    protected readonly IUserAccountService _users;
     protected readonly IWebHostEnvironment _environment;
     protected readonly IDocumentIndexJobQueue _indexJobQueue;
 
@@ -27,7 +29,7 @@ public abstract class HomePageModelBase : PageModel
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue)
     {
@@ -661,34 +663,6 @@ public abstract class HomePageModelBase : PageModel
         protected string GetUploadsRoot()
         {
             return Path.GetFullPath(Path.Combine(_environment.WebRootPath, "uploads"));
-        }
-
-        protected void TryDeleteStoredFile(IndexedDocument document)
-        {
-            try
-            {
-                var storedPath = Path.GetFullPath(document.StoredPath);
-                if (IsPathUnderDirectory(storedPath, GetUploadsRoot()) && System.IO.File.Exists(storedPath))
-                {
-                    System.IO.File.Delete(storedPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not delete stored file for document {DocumentId}", document.Id);
-            }
-        }
-
-        protected static bool IsPathUnderDirectory(string path, string directory)
-        {
-            var fullPath = Path.GetFullPath(path);
-            var fullDirectory = Path.GetFullPath(directory);
-            if (!fullDirectory.EndsWith(Path.DirectorySeparatorChar))
-            {
-                fullDirectory += Path.DirectorySeparatorChar;
-            }
-
-            return fullPath.StartsWith(fullDirectory, StringComparison.OrdinalIgnoreCase);
         }
 
         protected static string ResolveContentType(IndexedDocument document)

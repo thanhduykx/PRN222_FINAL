@@ -1,8 +1,9 @@
-using PRN222_FINAL.DAL;
-using System.Text;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Documents;
+﻿using System.Text;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Documents;
+using PRN222_FINAL.BLL.Mapping;
 using PRN222_FINAL.DAL.Repositories;
+using PRN222_FINAL.DAL.Repositories.Files;
 
 namespace PRN222_FINAL.BLL;
 
@@ -38,19 +39,22 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
     private readonly IEmbeddingService _embeddingService;
     private readonly ITextChunker _chunker;
     private readonly IChunkRetrievalEnrichmentService _chunkEnrichment;
+    private readonly IFileRepository _files;
 
     public DocumentIndexingService(
         IKnowledgeRepository repository,
         IDocumentTextExtractor extractor,
         IEmbeddingService embeddingService,
         ITextChunker chunker,
-        IChunkRetrievalEnrichmentService chunkEnrichment)
+        IChunkRetrievalEnrichmentService chunkEnrichment,
+        IFileRepository files)
     {
         _repository = repository;
         _extractor = extractor;
         _embeddingService = embeddingService;
         _chunker = chunker;
         _chunkEnrichment = chunkEnrichment;
+        _files = files;
     }
 
     private string EffectiveChunkingStrategy => $"{_chunker.StrategyName}+{_chunkEnrichment.StrategyName}";
@@ -58,7 +62,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
     public async Task<IReadOnlyList<DocumentDto>> GetDocumentsAsync(CancellationToken cancellationToken = default)
     {
         var documents = await _repository.GetDocumentsAsync(cancellationToken);
-        return documents.Select(DocumentDtoMapper.ToDto).ToList();
+        return documents.Select(KnowledgeModelMapper.ToModel).Select(DocumentDtoMapper.ToDto).ToList();
     }
 
     public async Task<DocumentUploadResultDto> QueueFileAsync(
@@ -67,8 +71,6 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
     {
         ArgumentNullException.ThrowIfNull(request);
         var uploadsRoot = NormalizeRequiredText(request.UploadsRoot, "Upload path is required.");
-        Directory.CreateDirectory(uploadsRoot);
-
         await using var copy = new MemoryStream();
         await request.FileStream.CopyToAsync(copy, cancellationToken);
         if (copy.Length == 0)
@@ -79,10 +81,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         var safeFileName = NormalizeFileName(request.FileName);
         var storedPath = Path.Combine(uploadsRoot, $"{Guid.NewGuid():N}{Path.GetExtension(safeFileName)}");
         copy.Position = 0;
-        await using (var savedFile = File.Create(storedPath))
-        {
-            await copy.CopyToAsync(savedFile, cancellationToken);
-        }
+        var savedLength = await _files.SaveAsync(storedPath, copy, cancellationToken);
 
         var document = CreateProcessingDocument(
             safeFileName,
@@ -90,10 +89,10 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
             request.Subject,
             request.Chapter,
             storedPath,
-            copy.Length,
+            savedLength,
             request.Uploader);
 
-        await _repository.AddDocumentAsync(document, Array.Empty<DocumentChunk>(), cancellationToken);
+        await _repository.AddDocumentAsync(KnowledgeModelMapper.ToData(document), Array.Empty<PRN222_FINAL.DAL.Models.DocumentChunk>(), cancellationToken);
         return new DocumentUploadResultDto(document.Id, 0, $"Queued {document.FileName} for indexing.");
     }
 
@@ -108,11 +107,10 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         }
 
         var uploadsRoot = NormalizeRequiredText(request.UploadsRoot, "Upload path is required.");
-        Directory.CreateDirectory(uploadsRoot);
         var safeSourceName = MakeSafeSourceName(request.SourceName);
         var storedPath = Path.Combine(uploadsRoot, $"{Guid.NewGuid():N}.txt");
         var normalizedText = TextEncodingHelper.NormalizeForIndexing(request.Text);
-        await File.WriteAllTextAsync(storedPath, normalizedText, Encoding.UTF8, cancellationToken);
+        await _files.WriteTextAsync(storedPath, normalizedText, cancellationToken);
 
         var document = CreateProcessingDocument(
             safeSourceName,
@@ -123,7 +121,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
             Encoding.UTF8.GetByteCount(normalizedText),
             request.Uploader);
 
-        await _repository.AddDocumentAsync(document, Array.Empty<DocumentChunk>(), cancellationToken);
+        await _repository.AddDocumentAsync(KnowledgeModelMapper.ToData(document), Array.Empty<PRN222_FINAL.DAL.Models.DocumentChunk>(), cancellationToken);
         return new DocumentUploadResultDto(document.Id, 0, $"Queued {document.FileName} for indexing.");
     }
     public async Task ProcessDocumentAsync(
@@ -131,7 +129,8 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         IProgress<DocumentIndexingProgressUpdate>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        var document = await _repository.GetDocumentAsync(documentId, cancellationToken);
+        var documentData = await _repository.GetDocumentAsync(documentId, cancellationToken);
+        var document = documentData is null ? null : KnowledgeModelMapper.ToModel(documentData);
         if (document is null)
         {
             return;
@@ -163,14 +162,14 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         await _repository.MarkDocumentIndexProcessingAsync(document.Id, cancellationToken);
 
         var storedPath = Path.GetFullPath(document.StoredPath);
-        if (!File.Exists(storedPath))
+        if (!_files.Exists(storedPath))
         {
             throw new InvalidOperationException("Stored file was not found for indexing.");
         }
 
         ReportProgress("Extracting", 18, "Extracting readable text from the source file.");
         string extractedText;
-        await using (var stream = File.OpenRead(storedPath))
+        await using (var stream = await _files.OpenReadAsync(storedPath, cancellationToken))
         {
             extractedText = TextEncodingHelper.NormalizeForIndexing(await _extractor.ExtractAsync(stream, document.FileName, cancellationToken));
         }
@@ -228,7 +227,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         ReportProgress("Saving", 92, "Saving indexed chunks and metadata.");
         await _repository.CompleteDocumentIndexAsync(
             document.Id,
-            chunks,
+            chunks.Select(KnowledgeModelMapper.ToData).ToList(),
             _embeddingService.ModelName,
             _embeddingService.Dimensions,
             EffectiveChunkingStrategy,

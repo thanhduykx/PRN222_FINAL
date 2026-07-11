@@ -1,5 +1,6 @@
-using PRN222_FINAL.DAL.Repositories.Analytics;
-using PRN222_FINAL.Models.DTOs.Analytics;
+﻿using PRN222_FINAL.DAL.Repositories.Analytics;
+using PRN222_FINAL.BLL.Contracts.Analytics;
+using PRN222_FINAL.BLL.Mapping;
 
 namespace PRN222_FINAL.BLL.Services.Analytics;
 
@@ -38,15 +39,16 @@ public sealed class AnalyticsService : IAnalyticsService
         request.SubjectName = Normalize(request.SubjectName, 255);
         request.AccessArea = Normalize(string.IsNullOrWhiteSpace(request.AccessArea) ? "course" : request.AccessArea, 64);
 
-        await _analytics.AddCourseAccessAsync(request, cancellationToken);
+        await _analytics.AddCourseAccessAsync(AnalyticsDtoMapper.ToData(request), cancellationToken);
     }
 
-    public Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(int days, CancellationToken cancellationToken = default)
+    public async Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(int days, CancellationToken cancellationToken = default)
     {
         var normalizedDays = Math.Clamp(days, MinDays, MaxDays);
         var toUtc = DateTimeOffset.UtcNow;
         var fromUtc = toUtc.AddDays(-normalizedDays);
-        return _analytics.GetAdminDashboardAsync(fromUtc, toUtc, cancellationToken);
+        var data = await _analytics.GetAdminDashboardAsync(fromUtc, toUtc, cancellationToken);
+        return AnalyticsDtoMapper.ToDto(data);
     }
 
     private static string Normalize(string value, int maxLength)

@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.SignalR;
 using PRN222_FINAL.Web.Hubs;
 using PRN222_FINAL.BLL;

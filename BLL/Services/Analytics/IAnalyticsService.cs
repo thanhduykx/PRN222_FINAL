@@ -1,4 +1,4 @@
-using PRN222_FINAL.Models.DTOs.Analytics;
+﻿using PRN222_FINAL.BLL.Contracts.Analytics;
 
 namespace PRN222_FINAL.BLL.Services.Analytics;
 

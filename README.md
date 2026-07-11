@@ -29,13 +29,13 @@ EduVietRAG là web app ASP.NET Core Razor Pages hỗ trợ quản lý tài liệ
 | Chat RAG | Hỏi đáp theo phiên chat, truy xuất chunk liên quan, sinh câu trả lời từ context và lưu lịch sử. |
 | Citation | Câu trả lời kèm nguồn tài liệu/chunk để người dùng kiểm tra lại. |
 | Realtime status | SignalR cập nhật trạng thái index tài liệu cho giao diện. |
-| Kiểm thử | Có test project riêng cho chunking, retrieval, embedding, indexing và RAG service. |
+| Kiểm thử | Có script kiểm tra dependency 3 lớp, build và smoke test ứng dụng. |
 
 ## Kiến Trúc Hệ Thống
 
 ![Sơ đồ kiến trúc EduVietRAG](docs/architecture.jpg)
 
-Sơ đồ trên thể hiện đúng các lớp chính của hệ thống: Presentation Layer xử lý Razor Pages, tài khoản và realtime status; BAL/ServicesLayer xử lý nghiệp vụ RAG, chunking, embedding và index tài liệu; Data Access Layer làm việc với repository, mapper, DbContext và SQL Server; các dịch vụ ngoài gồm Gemini API, Google OAuth và SMTP.
+Hệ thống tuân thủ luồng một chiều `Web → BLL → DAL`. `Web` chỉ nhận input và hiển thị; `BLL` validate, xử lý nghiệp vụ và map raw data sang DTO/model; `DAL` thực hiện PostgreSQL, filesystem, SMTP và HTTP API. Kết quả quay về theo chiều `DAL → BLL → Web`; không có tham chiếu ngược lớp.
 
 ### Luồng RAG Tóm Tắt
 
@@ -78,53 +78,35 @@ sequenceDiagram
 ## Cấu Trúc Source Code
 
 ```text
-C:\Assignment2
-|-- Group7_SE1950.sln
+C:\PRN222_FINAL
+|-- PRN222_FINAL.sln
 |-- README.md
-|-- DataAccessLayer/
+|-- BLL/                         # Business Logic Layer
+|   |-- Contracts/               # Request/response DTO theo feature
+|   |-- Models/                  # Model nghiệp vụ dùng qua interface BLL
+|   |-- Mapping/                 # Raw DAL model -> business model/DTO
+|   |-- Services/                # Validation và nghiệp vụ
+|   `-- BLL.csproj
+|-- DAL/                         # Data Access Layer
 |   |-- Context/                  # EF Core DbContext và factory
-|   |-- Entities/                 # Entity SQL cho document, chunk, chat, subject...
-|   |-- Enums/                    # Role, status, file type, message role...
-|   |-- Mapping/                  # Mapper entity <-> model nghiệp vụ
-|   |-- Repositories/             # SqlKnowledgeRepository
-|   |-- Schema/                   # Tự tạo/cập nhật schema và seed catalog môn học
-|   |-- IKnowledgeRepository.cs   # Contract truy cập dữ liệu RAG
-|   `-- DataAccessLayer.csproj
-|-- ServicesLayer/
-|   |-- DocumentIndexingService.cs        # Pipeline upload/index tài liệu
-|   |-- DocumentIndexJobQueue.cs          # Hàng đợi index background
-|   |-- DocumentTextExtractor.cs          # Extract PDF/DOCX/PPTX/TXT
-|   |-- WebPageTextExtractor.cs           # Extract nội dung URL
-|   |-- TextChunker.cs                    # Chunking thường và FLM syllabus-aware
-|   |-- EmbeddingService.cs               # Hashing fallback embedding
-|   |-- GeminiEmbeddingService.cs         # Embedding qua Gemini
-|   |-- GeminiChatCompletionService.cs    # Chat completion qua Gemini
-|   |-- ChunkRetrievalEnrichmentService.cs
-|   |-- RagChatService.cs                 # Orchestrator hỏi đáp RAG
-|   `-- ServicesLayer.csproj
-|-- PresentationLayer/
-|   |-- Pages/
-|   |   |-- Account/              # Login, Google callback, đổi/quên/reset password
-|   |   |-- Admin/                # Quản trị user, role, subject, import Excel
-|   |   |-- Home/                 # Chat, courses, documents, preview, online users
-|   |   `-- Shared/               # Layout và partial view
-|   |-- Hubs/                     # SignalR hub cập nhật trạng thái document
-|   |-- Models/                   # ViewModel cho account, admin, home
-|   |-- Security/                 # AppRoles và AuthorizationPolicies
-|   |-- Services/                 # User store, SMTP sender, worker, notifier
-|   |-- wwwroot/                  # CSS, JS, fonts, images, client libraries
-|   |-- Program.cs                # DI, auth, SignalR, hosted service, routing
-|   `-- Group07MVC.csproj
-|-- ServicesLayer.Tests/
-|   |-- *Tests.cs                 # Unit/integration tests cho service layer
-|   `-- ServicesLayer.Tests.csproj
-`-- TestData/
-    `-- qa-test-50-vi-q-a.txt     # Bộ câu hỏi/đáp án kiểm thử thủ công
+|   |-- Entities/                 # Entity persistence, không lộ lên Web
+|   |-- Models/                   # Raw data model chỉ dùng giữa DAL và BLL
+|   |-- Mapping/                  # Mapper database entity <-> raw model
+|   |-- Repositories/             # Database, file, SMTP và HTTP transport
+|   |-- Schema/                   # Khởi tạo/cập nhật schema
+|   `-- DAL.csproj
+`-- Web/                         # Presentation Layer
+    |-- Pages/                    # Razor Pages
+    |-- Models/, ViewModels/      # Input/view model chỉ dành cho giao diện
+    |-- Hubs/, Services/          # SignalR, worker và adapter web
+    |-- wwwroot/
+    |-- Program.cs
+    `-- Web.csproj
 ```
 
 ## Phân Quyền Người Dùng
 
-Hệ thống có 3 role chính, được định nghĩa trong `PresentationLayer/Security/AppRoles.cs`.
+Hệ thống có 3 role chính, được định nghĩa trong `BLL/Security/AppRoles.cs`.
 
 | Role | Quyền truy cập | Ghi chú nghiệp vụ |
 |---|---|---|
@@ -199,7 +181,7 @@ flowchart LR
 
 ### File Cấu Hình Chính
 
-`PresentationLayer/appsettings.json` chứa các nhóm cấu hình sau:
+`Web/appsettings.json` chứa các nhóm cấu hình sau:
 
 | Nhóm | Ý nghĩa |
 |---|---|
@@ -224,10 +206,10 @@ $env:ConnectionStrings__DefaultConnection="Server=localhost;Database=EduVietRAG;
 Chạy từ thư mục solution:
 
 ```powershell
-cd C:\Assignment2
+cd C:\PRN222_FINAL
 dotnet restore
-dotnet build Group7_SE1950.sln
-dotnet run --project PresentationLayer\Group07MVC.csproj --urls http://0.0.0.0:9999
+dotnet build PRN222_FINAL.sln
+dotnet run --project Web\Web.csproj --urls http://0.0.0.0:9999
 ```
 
 Mở trình duyệt:
@@ -284,7 +266,7 @@ Khi app khởi động, hệ thống sẽ:
 Chạy toàn bộ test:
 
 ```powershell
-dotnet test Group7_SE1950.sln
+dotnet test PRN222_FINAL.sln
 ```
 
 Các nhóm test hiện có:

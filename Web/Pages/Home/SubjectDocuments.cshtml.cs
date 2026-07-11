@@ -1,5 +1,6 @@
-﻿using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Documents;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Documents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRN222_FINAL.Web.Models;
@@ -7,7 +8,7 @@ using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
 using PRN222_FINAL.BLL.Services.Analytics;
-using PRN222_FINAL.Models.DTOs.Analytics;
+using PRN222_FINAL.BLL.Contracts.Analytics;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -23,7 +24,7 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
         IDocumentStatusNotifier documentStatusNotifier,
@@ -205,8 +206,7 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
             return Forbid();
         }
 
-        await _knowledge.DeleteDocumentAsync(documentId, cancellationToken);
-        TryDeleteStoredFile(document);
+        await _knowledge.DeleteDocumentAsync(documentId, GetUploadsRoot(), cancellationToken);
         TempData["Success"] = $"Da xoa tai lieu {document.FileName}.";
         return RedirectToPage("/Home/SubjectDocuments", new { id });
     }

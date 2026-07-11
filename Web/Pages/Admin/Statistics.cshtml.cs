@@ -1,10 +1,12 @@
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Services.Analytics;
 using PRN222_FINAL.BLL.Services.Billing;
-using PRN222_FINAL.Models.DTOs.Analytics;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Contracts.Analytics;
+using PRN222_FINAL.BLL.Contracts.Billing;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.Web.ViewModels.Analytics;
@@ -15,10 +17,10 @@ namespace PRN222_FINAL.Web.Pages.Admin;
 public sealed class StatisticsModel : PageModel
 {
     private readonly IAnalyticsService _analytics;
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
     private readonly IPackageService _packages;
 
-    public StatisticsModel(IAnalyticsService analytics, IUserAccountStore users, IPackageService packages)
+    public StatisticsModel(IAnalyticsService analytics, IUserAccountService users, IPackageService packages)
     {
         _analytics = analytics;
         _users = users;

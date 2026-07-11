@@ -1,5 +1,5 @@
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+﻿using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
 
 namespace PRN222_FINAL.BLL.Services.Billing;
 

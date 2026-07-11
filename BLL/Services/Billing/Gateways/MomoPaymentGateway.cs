@@ -1,21 +1,23 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PRN222_FINAL.BLL.Options;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
+using PRN222_FINAL.DAL.Models.Http;
+using PRN222_FINAL.DAL.Repositories.Http;
 
 namespace PRN222_FINAL.BLL.Services.Billing.Gateways;
 
 public sealed class MomoPaymentGateway : IMomoPaymentGateway
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly HttpClient _httpClient;
+    private readonly IHttpRepository _http;
     private readonly PaymentOptions _options;
 
-    public MomoPaymentGateway(HttpClient httpClient, IOptions<PaymentOptions> options)
+    public MomoPaymentGateway(IHttpRepository http, IOptions<PaymentOptions> options)
     {
-        _httpClient = httpClient;
+        _http = http;
         _options = options.Value;
     }
 
@@ -48,11 +50,12 @@ public sealed class MomoPaymentGateway : IMomoPaymentGateway
             ["signature"] = signature
         };
 
-        using var response = await _httpClient.PostAsJsonAsync(momo.Endpoint, payload, JsonOptions, cancellationToken);
-        var rawResponse = await response.Content.ReadAsStringAsync(cancellationToken);
+        var rawRequest = JsonSerializer.Serialize(payload, JsonOptions);
+        var response = await _http.SendAsync(new HttpRequestData("POST", momo.Endpoint, rawRequest), cancellationToken);
+        var rawResponse = response.Body;
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"MoMo checkout failed: {(int)response.StatusCode} {rawResponse}");
+            throw new InvalidOperationException($"MoMo checkout failed: {response.StatusCode} {rawResponse}");
         }
 
         using var json = JsonDocument.Parse(rawResponse);

@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.DAL.Models;
 using PRN222_FINAL.DAL.Entities;
 
 namespace PRN222_FINAL.DAL.Mapping;

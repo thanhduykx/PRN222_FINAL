@@ -1,21 +1,23 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PRN222_FINAL.BLL.Options;
-using PRN222_FINAL.Models;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Contracts.Billing;
+using PRN222_FINAL.DAL.Models.Http;
+using PRN222_FINAL.DAL.Repositories.Http;
 
 namespace PRN222_FINAL.BLL.Services.Billing.Gateways;
 
 public sealed class PayOsPaymentGateway : IPayOsPaymentGateway
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly HttpClient _httpClient;
+    private readonly IHttpRepository _http;
     private readonly PaymentOptions _options;
 
-    public PayOsPaymentGateway(HttpClient httpClient, IOptions<PaymentOptions> options)
+    public PayOsPaymentGateway(IHttpRepository http, IOptions<PaymentOptions> options)
     {
-        _httpClient = httpClient;
+        _http = http;
         _options = options.Value;
     }
 
@@ -38,18 +40,13 @@ public sealed class PayOsPaymentGateway : IPayOsPaymentGateway
             ["signature"] = signature
         };
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, payos.Endpoint)
-        {
-            Content = JsonContent.Create(payload, options: JsonOptions)
-        };
-        httpRequest.Headers.Add("x-client-id", payos.ClientId);
-        httpRequest.Headers.Add("x-api-key", payos.ApiKey);
-
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        var rawResponse = await response.Content.ReadAsStringAsync(cancellationToken);
+        var requestBody = JsonSerializer.Serialize(payload, JsonOptions);
+        var response = await _http.SendAsync(new HttpRequestData("POST", payos.Endpoint, requestBody, Headers:
+            new Dictionary<string,string> { ["x-client-id"] = payos.ClientId, ["x-api-key"] = payos.ApiKey }), cancellationToken);
+        var rawResponse = response.Body;
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"PayOS checkout failed: {(int)response.StatusCode} {rawResponse}");
+            throw new InvalidOperationException($"PayOS checkout failed: {response.StatusCode} {rawResponse}");
         }
 
         using var json = JsonDocument.Parse(rawResponse);

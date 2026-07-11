@@ -1,2 +1,2 @@
-﻿global using PRN222_FINAL.Models;
+﻿global using PRN222_FINAL.DAL.Models;
 

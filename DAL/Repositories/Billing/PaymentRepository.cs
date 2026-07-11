@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using PRN222_FINAL.DAL.Mapping;
-using PRN222_FINAL.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using PRN222_FINAL.DAL.Entities.Billing;
+using PRN222_FINAL.DAL.Enums;
 
 namespace PRN222_FINAL.DAL.Repositories.Billing;
 
@@ -10,14 +10,14 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
     {
     }
 
-    public async Task AddAsync(Payment payment, CancellationToken cancellationToken = default)
+    public async Task AddAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
-        context.Payments.Add(BillingSqlMapper.ToEntity(payment));
+        context.Payments.Add(payment);
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Payment payment, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         var entity = await context.Payments.FirstOrDefaultAsync(item => item.Id == payment.Id, cancellationToken)
@@ -45,17 +45,17 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Payment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
+    public async Task<KnowledgeSqlPayment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         var entity = await context.Payments
             .AsNoTracking()
             .Include(item => item.Package)
             .FirstOrDefaultAsync(item => item.Id == paymentId, cancellationToken);
-        return entity is null ? null : BillingSqlMapper.ToModel(entity);
+        return entity;
     }
 
-    public async Task<Payment?> GetByOrderCodeAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default)
+    public async Task<KnowledgeSqlPayment?> GetByOrderCodeAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default)
     {
         var normalizedOrderCode = (orderCode ?? string.Empty).Trim();
         await using var context = CreateContext();
@@ -63,10 +63,10 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.Provider == provider && item.OrderCode == normalizedOrderCode, cancellationToken);
 
-        return entity is null ? null : BillingSqlMapper.ToModel(entity);
+        return entity;
     }
 
-    public async Task<IReadOnlyList<Payment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<KnowledgeSqlPayment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
         return await context.Payments
@@ -75,7 +75,6 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .Where(payment => payment.UserId == userId)
             .OrderByDescending(payment => payment.CreatedAt)
             .Take(Math.Clamp(limit, 1, 100))
-            .Select(payment => BillingSqlMapper.ToModel(payment))
             .ToListAsync(cancellationToken);
     }
 

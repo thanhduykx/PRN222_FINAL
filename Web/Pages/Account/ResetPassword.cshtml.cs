@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.Web.Models;
@@ -9,9 +10,9 @@ namespace PRN222_FINAL.Web.Pages.Account;
 [AllowAnonymous]
 public sealed class ResetPasswordModel : PageModel
 {
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
 
-    public ResetPasswordModel(IUserAccountStore users)
+    public ResetPasswordModel(IUserAccountService users)
     {
         _users = users;
     }

@@ -1,6 +1,6 @@
-using PRN222_FINAL.BLL.Mapping;
+﻿using PRN222_FINAL.BLL.Mapping;
 using PRN222_FINAL.DAL.Repositories.Billing;
-using PRN222_FINAL.Models.DTOs.Billing;
+using PRN222_FINAL.BLL.Contracts.Billing;
 
 namespace PRN222_FINAL.BLL.Services.Billing;
 
@@ -21,6 +21,6 @@ public sealed class SubscriptionService : ISubscriptionService
         }
 
         var subscription = await _subscriptions.GetCurrentActiveAsync(userId, cancellationToken);
-        return subscription is null ? null : BillingDtoMapper.ToDto(subscription);
+        return subscription is null ? null : BillingDtoMapper.ToDto(BillingDtoMapper.ToModel(subscription));
     }
 }

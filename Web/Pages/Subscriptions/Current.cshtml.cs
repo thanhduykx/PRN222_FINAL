@@ -1,3 +1,6 @@
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using PRN222_FINAL.BLL.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
@@ -18,10 +21,10 @@ public sealed class CurrentModel : PageModel
 {
     private readonly ISubscriptionService _subscriptions;
     private readonly IPaymentService _payments;
-    private readonly IUserAccountStore _users;
+    private readonly IUserAccountService _users;
     private readonly ILogger<CurrentModel> _logger;
 
-    public CurrentModel(ISubscriptionService subscriptions, IPaymentService payments, IUserAccountStore users, ILogger<CurrentModel> logger)
+    public CurrentModel(ISubscriptionService subscriptions, IPaymentService payments, IUserAccountService users, ILogger<CurrentModel> logger)
     {
         _subscriptions = subscriptions;
         _payments = payments;

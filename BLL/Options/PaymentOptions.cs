@@ -1,4 +1,4 @@
-namespace PRN222_FINAL.BLL.Options;
+﻿namespace PRN222_FINAL.BLL.Options;
 
 public sealed class PaymentOptions
 {

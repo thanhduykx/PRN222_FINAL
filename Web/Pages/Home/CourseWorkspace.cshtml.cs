@@ -1,12 +1,14 @@
-﻿using System.Text.RegularExpressions;
-using PRN222_FINAL.Models;
+﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Security;
+using System.Text.RegularExpressions;
+using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.BLL;
 using PRN222_FINAL.BLL.Services.Analytics;
-using PRN222_FINAL.Models.DTOs.Analytics;
+using PRN222_FINAL.BLL.Contracts.Analytics;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
@@ -22,7 +24,7 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
         IRagChatService chatService,
-        IUserAccountStore users,
+        IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
         IAnalyticsService analytics)
