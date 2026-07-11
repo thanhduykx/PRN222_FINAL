@@ -16,8 +16,8 @@
     var suggestedQuestions = subjectOptions.Count == 0
         ? new (string En, string Vi, string Subject)[]
         {
-            ("Which subjects have indexed documents?", "Hiện có những môn nào đã index tài liệu?", string.Empty),
-            ("Summarize the uploaded documents.", "Tóm tắt các tài liệu đã upload.", string.Empty),
+            ("Which subjects have ready documents?", "Hiện có những môn nào đã có tài liệu sẵn sàng?", string.Empty),
+            ("Summarize the available documents.", "Tóm tắt các tài liệu hiện có.", string.Empty),
             ("What can I ask from the document repository?", "Tôi có thể hỏi gì từ kho tài liệu?", string.Empty)
         }
         : subjectOptions
@@ -66,6 +66,31 @@
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
+        @if (User.IsInRole(PRN222_FINAL.Web.Security.AppRoles.Student))
+        {
+            <section class="chat-preferences" aria-label="Tùy chọn trả lời">
+                <label>
+                    <span>Tốc độ hiển thị</span>
+                    <select id="responsePace">
+                        <option value="fast">Nhanh</option>
+                        <option value="comfortable" selected>Dễ theo dõi</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Mức độ hỗ trợ</span>
+                    <select id="answerDepth">
+                        <option value="concise">Tóm tắt</option>
+                        <option value="balanced" selected>Cân bằng</option>
+                        <option value="deep">Phân tích kỹ</option>
+                    </select>
+                </label>
+                <div class="chat-usage" aria-live="polite">
+                    <span>Câu hỏi còn lại</span>
+                    <strong id="questionsRemaining">@(Model.Usage.Remaining?.ToString("N0") ?? "Không giới hạn")</strong>
+                    <small>@Model.Usage.PlanName</small>
+                </div>
+            </section>
+        }
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages">
             <div class="chat-empty-state rbl-chat-empty">
                 <span class="rbl-bot-mark">AI</span>
@@ -79,11 +104,12 @@
                 </div>
             </div>
             <div class="message assistant">
-                <div class="bubble" data-i18n="chat.welcome">Bạn có thể hỏi về nội dung tài liệu đã upload. Câu trả lời sẽ ưu tiên ngắn gọn và có nguồn.</div>
+                <div class="bubble" data-i18n="chat.welcome">Bạn có thể hỏi về nội dung tài liệu môn học. Câu trả lời sẽ rõ ràng và có nguồn tham khảo.</div>
             </div>
         </div>
 
         <form id="chatForm" class="chat-form codex-chat-form rbl-chat-form">
+            @Html.AntiForgeryToken()
             @if (subjectOptions.Count > 0)
             {
                 <div class="chat-subject-filter" aria-label="Subject filter">
@@ -106,7 +132,7 @@
                     </div>
                 </div>
             }
-            <textarea id="questionInput" rows="2" placeholder="Hỏi về môn, chương hoặc tài liệu đã index..." data-i18n-placeholder="chat.placeholder"></textarea>
+            <textarea id="questionInput" rows="2" maxlength="4000" aria-label="Nhập câu hỏi" placeholder="Hỏi về môn học, chương hoặc tài liệu..." data-i18n-placeholder="chat.placeholder"></textarea>
             <button type="submit" class="rbl-submit-button" data-i18n="chat.send">
                 <span class="material-symbols-outlined" aria-hidden="true">send</span>
                 Send

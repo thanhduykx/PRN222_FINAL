@@ -2202,6 +2202,25 @@ function appendMessageTo(target, role, content, citations = []) {
   return wrapper;
 }
 
+async function appendAssistantAnswer(target, content, citations) {
+  const pace = document.getElementById("responsePace")?.value || "comfortable";
+  if (pace === "fast" || !content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return appendMessageTo(target, "assistant", content, citations);
+  }
+  const wrapper = appendMessageTo(target, "assistant", "", []);
+  const bubble = wrapper?.querySelector(".bubble");
+  if (!wrapper || !bubble) return wrapper;
+  const step = content.length > 800 ? 8 : 4;
+  for (let index = 0; index < content.length; index += step) {
+    bubble.textContent = content.slice(0, index + step);
+    if (index % 32 === 0) target.scrollTop = target.scrollHeight;
+    await new Promise((resolve) => window.setTimeout(resolve, 12));
+  }
+  appendCitationsToMessage(wrapper, citations);
+  target.scrollTop = target.scrollHeight;
+  return wrapper;
+}
+
 function appendCitationsToMessage(messageWrapper, citations) {
   const sourceItems = Array.isArray(citations)
     ? citations.filter((citation) => citation && typeof citation === "object")
@@ -2309,12 +2328,17 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
   try {
     const response = await fetch("/Home/Ask", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "RequestVerificationToken": chatForm?.querySelector('input[name="__RequestVerificationToken"]')?.value || ""
+      },
       body: JSON.stringify({
         sessionId: getSessionId(),
         question,
         subjectFilter: getSelectedSubjectFilter(),
-        language: getLanguage()
+        language: getLanguage(),
+        responsePace: document.getElementById("responsePace")?.value || "comfortable",
+        answerDepth: document.getElementById("answerDepth")?.value || "balanced"
       })
     });
 
@@ -2327,11 +2351,15 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
     }
 
     setSessionId(payload.sessionId);
+    const remainingQuestions = document.getElementById("questionsRemaining");
+    if (remainingQuestions && Number.isInteger(payload.questionsRemaining)) {
+      remainingQuestions.textContent = new Intl.NumberFormat(getLanguage() === "vi" ? "vi-VN" : "en-US").format(payload.questionsRemaining);
+    }
     rememberAskedQuestion(question);
     if (activeSessionTitle && (!activeSessionTitle.textContent?.trim() || activeSessionTitle.textContent.trim() === t("chat.defaultSessionTitle"))) {
       activeSessionTitle.textContent = question.length <= 56 ? question : `${question.slice(0, 56)}...`;
     }
-    const answerMessage = appendMessageTo(messagesTarget, "assistant", payload.answer, payload.citations || []);
+    const answerMessage = await appendAssistantAnswer(messagesTarget, payload.answer, payload.citations || []);
     if (payload.needsClarification && Array.isArray(payload.subjectOptions)) {
       renderClarificationOptions(answerMessage, payload.subjectOptions, question);
     }

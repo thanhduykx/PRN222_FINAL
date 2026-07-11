@@ -8929,3 +8929,27 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
     grid-template-columns: minmax(0, 1fr) 70px 58px;
   }
 }
+/* Assistant settings: calm hierarchy, large touch targets, and responsive grouping. */
+.ai-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.ai-settings-card { display: grid; align-content: start; gap: 1rem; }
+.ai-settings-card--wide, .ai-settings-actions { grid-column: 1 / -1; }
+.ai-settings-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.ai-settings-card .ops-field small { color: var(--rbl-text-muted, #5f6b7a); line-height: 1.5; }
+.ai-settings-card .field-validation-error { color: var(--rbl-red-dark, #b42318); font-size: .875rem; }
+.ai-settings-actions { display: flex; justify-content: flex-end; }
+@media (max-width: 760px) {
+  .ai-settings-grid, .ai-settings-fields { grid-template-columns: 1fr; }
+  .ai-settings-card--wide, .ai-settings-actions { grid-column: auto; }
+  .ai-settings-actions .ops-button { width: 100%; min-height: 44px; justify-content: center; }
+}
+.chat-preferences { display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)) minmax(150px, auto); gap: .75rem; padding: .875rem 1rem; border: 1px solid var(--rbl-border, #d8dee8); border-radius: 14px; background: var(--rbl-surface, #fff); }
+.chat-preferences label, .chat-usage { display: grid; gap: .35rem; }
+.chat-preferences label > span, .chat-usage > span { color: var(--rbl-text-muted, #5f6b7a); font-size: .78rem; font-weight: 700; }
+.chat-preferences select { min-height: 42px; border: 1px solid var(--rbl-border, #cfd6e2); border-radius: 10px; padding: 0 .75rem; background: #fff; color: inherit; }
+.chat-usage { align-content: center; padding-inline-start: 1rem; border-inline-start: 1px solid var(--rbl-border, #d8dee8); }
+.chat-usage strong { color: var(--rbl-primary, #2457d6); font-size: 1.15rem; }
+.chat-usage small { color: var(--rbl-text-muted, #5f6b7a); }
+@media (max-width: 680px) {
+  .chat-preferences { grid-template-columns: 1fr 1fr; }
+  .chat-usage { grid-column: 1 / -1; padding: .65rem 0 0; border-inline-start: 0; border-top: 1px solid var(--rbl-border, #d8dee8); }
+}
