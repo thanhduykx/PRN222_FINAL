@@ -30,6 +30,7 @@
     var documentsNavClass = activeNav == "documents" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var adminNavClass = activeNav == "admin" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var reportsNavClass = activeNav == "reports" ? "rbl-nav-link is-active" : "rbl-nav-link";
+    var assistantSettingsNavClass = activeNav == "assistant-settings" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var currentDocumentSection = (ViewData["DocumentSection"] as string ?? Context.Request.Query["section"].ToString() ?? string.Empty).ToLowerInvariant();
     if (string.IsNullOrWhiteSpace(currentDocumentSection))
     {
@@ -147,6 +148,10 @@
                     }
                     @if (canManageUsers)
                     {
+                    <a class="@assistantSettingsNavClass" asp-page="/Admin/AiSettings">
+                        <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                        <span>Thiết lập trợ lý</span>
+                    </a>
                     <details class="rbl-nav-dropdown" @((activeNav == "reports") ? "open" : "")>
                         <summary class="rbl-nav-link-summary @reportsNavClass">
                             <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
@@ -213,10 +218,6 @@
                             <a class="@(AdminSublinkClass("create-subject"))" asp-page="/Admin/Index" asp-route-section="create-subject">
                                 <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
                                 <span data-i18n="admin.navSubjectManagement">Subject management</span>
-                            </a>
-                            <a class="@(AdminSublinkClass("ai-settings"))" asp-page="/Admin/AiSettings">
-                                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-                                <span>Thiết lập trợ lý</span>
                             </a>
                         </div>
                     </details>
