@@ -14,6 +14,7 @@ public sealed class SubscriptionViewModel
 
 public sealed class PaymentHistoryItemViewModel
 {
+    public Guid PaymentId { get; set; }
     public string PackageName { get; set; } = string.Empty;
     public string PackageCode { get; set; } = string.Empty;
     public string Provider { get; set; } = string.Empty;

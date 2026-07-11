@@ -78,4 +78,14 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .Select(payment => BillingSqlMapper.ToModel(payment))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> HasSuccessfulPaymentAsync(Guid userId, Guid packageId, CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments.AsNoTracking().AnyAsync(payment =>
+            payment.UserId == userId
+            && payment.PackageId == packageId
+            && payment.Status == PaymentStatus.Paid,
+            cancellationToken);
+    }
 }

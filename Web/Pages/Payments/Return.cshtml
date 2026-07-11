@@ -14,78 +14,94 @@
             : Model.Status?.Status;
     var isSuccess = status == PaymentStatus.Paid;
     var isFailure = status is PaymentStatus.Failed or PaymentStatus.Canceled;
-    var resultClass = isSuccess ? "is-success" : isFailure ? "is-error" : "is-running";
-    var resultIcon = isSuccess ? "check_circle" : isFailure ? "cancel" : "hourglass_top";
-    var resultTitle = isSuccess
+    var stateClass = isSuccess ? "is-success" : isFailure ? "is-error" : "is-pending";
+    var stateIcon = isSuccess ? "check_circle" : isFailure ? "cancel" : "hourglass_top";
+    var stateTitle = isSuccess
         ? "Thanh toán thành công"
         : isFailure
-            ? "Thanh toán thất bại hoặc đã hủy"
-            : "Đang chờ xác nhận thanh toán";
-    var resultMessage = isSuccess
-        ? "Gói dịch vụ đã được kích hoạt hoặc gia hạn cho tài khoản của bạn."
+            ? "Thanh toán chưa thành công"
+            : "Đang xác nhận thanh toán";
+    var stateMessage = isSuccess
+        ? "Gói học tập đã được kích hoạt hoặc gia hạn cho tài khoản của bạn."
         : isFailure
-            ? "Giao dịch chưa được ghi nhận thành công. Bạn có thể chọn lại gói và thanh toán lại."
-            : "Hệ thống đang chờ MoMo/PayOS gửi xác nhận webhook. Nếu bạn vừa thanh toán, hãy kiểm tra lại gói hiện tại sau vài giây.";
+            ? "Giao dịch chưa hoàn tất. Bạn chưa bị thay đổi gói và có thể thử lại bất cứ lúc nào."
+            : "Hệ thống đang nhận xác nhận từ cổng thanh toán. Quá trình này thường chỉ mất vài giây.";
+    var statusLabel = isSuccess ? "Thành công" : isFailure ? "Chưa thành công" : "Đang xử lý";
+    var providerName = Model.Status?.Provider.ToString() ?? string.Empty;
+    var providerLogo = providerName.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
+        ? "/img/payments/momo.svg"
+        : "/img/payments/payos.svg";
 }
 
-<section class="ops-page">
-    <div class="ops-page-header">
-        <div>
-            <span class="ops-eyebrow">Payment result</span>
-            <h1>Kết quả thanh toán</h1>
-            <p>Trạng thái giao dịch MoMo/PayOS sau khi quay lại hệ thống.</p>
+<section class="ops-page payment-result-page">
+    <header class="payment-result-hero">
+        <div class="payment-result-hero__mark @stateClass">
+            <span class="material-symbols-outlined" aria-hidden="true">@stateIcon</span>
         </div>
-    </div>
+        <span class="payment-result-hero__eyebrow">Kết quả giao dịch</span>
+        <h1>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateTitle : "Chưa tìm thấy giao dịch")</h1>
+        <p>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateMessage : "Thông tin trả về chưa đủ để xác định giao dịch của bạn.")</p>
+    </header>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
-        <section class="ops-panel">
-            <div class="ops-panel-head">
-                <div class="d-flex align-items-center gap-3">
-                    <span class="material-symbols-outlined text-danger" aria-hidden="true">error</span>
-                    <div>
-                        <h2>Không xác định được giao dịch</h2>
-                        <p class="ops-muted mb-0">@Model.ErrorMessage</p>
-                    </div>
-                </div>
+        <section class="payment-result-card is-error" role="alert">
+            <div class="payment-result-card__message">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <div><strong>Cần kiểm tra lại thông tin</strong><p>@Model.ErrorMessage</p></div>
             </div>
-            <div class="ops-panel-actions">
-                <a class="ops-button ops-button--primary" asp-page="/Packages/Index">Quay lại mua gói</a>
-            </div>
+            <a class="payment-result-action is-primary" asp-page="/Packages/Index">
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                Quay lại chọn gói
+            </a>
         </section>
     }
     else if (Model.Status is not null)
     {
-        <section class="ops-panel">
-            <div class="ops-panel-head">
-                <div class="d-flex align-items-center gap-3">
-                    <span class="material-symbols-outlined" aria-hidden="true">@resultIcon</span>
-                    <div>
-                        <h2>@resultTitle</h2>
-                        <p class="ops-muted mb-0">@resultMessage</p>
-                    </div>
+        <section class="payment-result-card @stateClass">
+            <div class="payment-result-card__heading">
+                <div>
+                    <span>Trạng thái</span>
+                    <h2>@stateTitle</h2>
                 </div>
-                <span class="rbl-status @resultClass">@status</span>
+                <span class="payment-result-status">@statusLabel</span>
             </div>
-            <div class="ops-kpi-grid">
-                <article class="ops-kpi"><span>Cổng</span><strong>@Model.Status.Provider</strong></article>
-                <article class="ops-kpi"><span>Mã đơn</span><strong>@Model.Status.OrderCode</strong></article>
-                <article class="ops-kpi"><span>Giao dịch</span><strong>@(string.IsNullOrWhiteSpace(Model.Status.ProviderTransactionId) ? "-" : Model.Status.ProviderTransactionId)</strong></article>
+
+            <div class="payment-result-details">
+                <article class="payment-result-provider">
+                    <img src="@providerLogo" alt="" />
+                    <div><span>Thanh toán qua</span><strong>@providerName</strong></div>
+                </article>
+                <article><span>Mã đơn hàng</span><strong>@Model.Status.OrderCode</strong></article>
+                <article><span>Mã giao dịch</span><strong>@(string.IsNullOrWhiteSpace(Model.Status.ProviderTransactionId) ? "Chưa có" : Model.Status.ProviderTransactionId)</strong></article>
             </div>
+
             @if (!string.IsNullOrWhiteSpace(Model.Status.Message))
             {
-                <p class="ops-panel-note mt-3">@Model.Status.Message</p>
+                <div class="payment-result-note"><span class="material-symbols-outlined" aria-hidden="true">info</span><span>@Model.Status.Message</span></div>
             }
-            <div class="ops-panel-actions mt-3">
-                <a class="ops-button ops-button--primary" asp-page="/Subscriptions/Current">
-                    <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-                    Xem gói hiện tại
-                </a>
-                @if (!isSuccess)
+
+            <div class="payment-result-actions">
+                @if (isSuccess)
                 {
-                    <a class="ops-button ops-button--secondary" asp-page="/Packages/Index">
-                        <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
-                        Chọn lại gói
+                    <a class="payment-result-action is-primary" asp-page="/Subscriptions/Current">
+                        <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+                        Xem gói hiện tại
+                    </a>
+                    <a class="payment-result-action" asp-page="/Home/Chat">
+                        <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+                        Bắt đầu hỏi đáp
+                    </a>
+                }
+                else
+                {
+                    <a class="payment-result-action is-primary" asp-page="/Packages/Index">
+                        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+                        Chọn lại phương thức
+                    </a>
+                    <a class="payment-result-action" asp-page="/Subscriptions/Current">
+                        <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+                        Kiểm tra gói hiện tại
                     </a>
                 }
             </div>

@@ -73,9 +73,6 @@
             }
         })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&amp;display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1&amp;display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -254,14 +251,6 @@
                         <span class="material-symbols-outlined" aria-hidden="true">help</span>
                         <span data-i18n="shell.help">Help</span>
                     </a>
-                    <div class="rbl-user-card">
-                            <span class="rbl-user-avatar">@userInitial</span>
-                            <div>
-                                <strong>@displayName</strong>
-                                <span>@accountEmail</span>
-                                <span>@currentRole</span>
-                            </div>
-                        </div>
                 </div>
             </aside>
 
@@ -284,17 +273,31 @@
                         </div>
                         @if (isAuthenticated)
                         {
-                            <a class="rbl-account-button" asp-page="/Account/ChangePassword">
-                                <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
-                                <span data-i18n="shell.changePassword">Đổi mật khẩu</span>
-                            </a>
-                            <form asp-page="/Account/Logout" method="post" class="rbl-account-form">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="rbl-account-button">
-                                    <span class="material-symbols-outlined" aria-hidden="true">person</span>
-                                    @displayName
-                                </button>
-                            </form>
+                            <details class="rbl-account-menu" data-account-menu>
+                                <summary aria-label="Mở menu tài khoản">
+                                    <span class="rbl-user-avatar">@userInitial</span>
+                                    <span class="rbl-account-menu__name">@displayName</span>
+                                    <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+                                </summary>
+                                <div class="rbl-account-menu__panel">
+                                    <div class="rbl-account-menu__identity">
+                                        <span class="rbl-user-avatar is-large">@userInitial</span>
+                                        <div><strong>@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div>
+                                    </div>
+                                    <nav aria-label="Tài khoản">
+                                        @if (currentRole == AppRoles.Student)
+                                        {
+                                            <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
+                                            <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
+                                        }
+                                        <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
+                                    </nav>
+                                    <form asp-page="/Account/Logout" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Đăng xuất</button>
+                                    </form>
+                                </div>
+                            </details>
                         }
                         else
                         {
@@ -323,13 +326,7 @@
                                 </div>
                             </section>
                             <section class="learning-footer__session" aria-label="Current session">
-                                <div class="learning-footer__session-line">
-                                    You are logged in as @displayName
-                                    <form asp-page="/Account/Logout" method="post" class="learning-footer__logout-form">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit">Log out</button>
-                                    </form>
-                                </div>
+                                <div class="learning-footer__session-line">Đang đăng nhập với tên @displayName</div>
                             </section>
                         </footer>
                     }
@@ -399,14 +396,21 @@
                             @if (isAuthenticated)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-page="/Account/ChangePassword">Đổi mật khẩu</a>
-                                </li>
-                                <li class="nav-item user-chip">@User.FindFirstValue(ClaimTypes.Email) / @currentRole</li>
-                                <li class="nav-item">
-                                    <form asp-page="/Account/Logout" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="nav-link logout-button" data-i18n="nav.logout">Logout</button>
-                                    </form>
+                                    <details class="rbl-account-menu" data-account-menu>
+                                        <summary><span class="rbl-user-avatar">@userInitial</span><span class="rbl-account-menu__name">@displayName</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+                                        <div class="rbl-account-menu__panel">
+                                            <div class="rbl-account-menu__identity"><span class="rbl-user-avatar is-large">@userInitial</span><div><strong>@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div></div>
+                                            <nav aria-label="Tài khoản">
+                                                @if (currentRole == AppRoles.Student)
+                                                {
+                                                    <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
+                                                    <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
+                                                }
+                                                <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
+                                            </nav>
+                                            <form asp-page="/Account/Logout" method="post">@Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Đăng xuất</button></form>
+                                        </div>
+                                    </details>
                                 </li>
                             }
                             else
@@ -438,13 +442,7 @@
                             </div>
                         </section>
                         <section class="learning-footer__session" aria-label="Current session">
-                            <div class="learning-footer__session-line">
-                                You are logged in as @displayName
-                                <form asp-page="/Account/Logout" method="post" class="learning-footer__logout-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit">Log out</button>
-                                </form>
-                            </div>
+                            <div class="learning-footer__session-line">Đang đăng nhập với tên @displayName</div>
                         </section>
                     </footer>
                 }

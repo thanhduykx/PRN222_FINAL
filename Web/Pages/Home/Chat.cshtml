@@ -66,31 +66,6 @@
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
-        @if (User.IsInRole(PRN222_FINAL.Web.Security.AppRoles.Student))
-        {
-            <section class="chat-preferences" aria-label="Tùy chọn trả lời">
-                <label>
-                    <span>Tốc độ hiển thị</span>
-                    <select id="responsePace">
-                        <option value="fast">Nhanh</option>
-                        <option value="comfortable" selected>Dễ theo dõi</option>
-                    </select>
-                </label>
-                <label>
-                    <span>Mức độ hỗ trợ</span>
-                    <select id="answerDepth">
-                        <option value="concise">Tóm tắt</option>
-                        <option value="balanced" selected>Cân bằng</option>
-                        <option value="deep">Phân tích kỹ</option>
-                    </select>
-                </label>
-                <div class="chat-usage" aria-live="polite">
-                    <span>Câu hỏi còn lại</span>
-                    <strong id="questionsRemaining">@(Model.Usage.Remaining?.ToString("N0") ?? "Không giới hạn")</strong>
-                    <small>@Model.Usage.PlanName</small>
-                </div>
-            </section>
-        }
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages">
             <div class="chat-empty-state rbl-chat-empty">
                 <span class="rbl-bot-mark">AI</span>
@@ -138,6 +113,31 @@
                 Send
             </button>
         </form>
+        @if (User.IsInRole(PRN222_FINAL.Web.Security.AppRoles.Student))
+        {
+            <section class="chat-preferences" aria-label="Tùy chọn trả lời">
+                <label>
+                    <span>Tốc độ</span>
+                    <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời">
+                        <option value="fast">Nhanh</option>
+                        <option value="comfortable" selected>Dễ theo dõi</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Trả lời</span>
+                    <select id="answerDepth" aria-label="Mức độ hỗ trợ">
+                        <option value="concise">Tóm tắt</option>
+                        <option value="balanced" selected>Cân bằng</option>
+                        <option value="deep">Phân tích kỹ</option>
+                    </select>
+                </label>
+                <div class="chat-usage" aria-live="polite">
+                    <span>Còn lại</span>
+                    <strong id="questionsRemaining">@(Model.Usage.Remaining?.ToString("N0") ?? "Không giới hạn")</strong>
+                    <small>@Model.Usage.PlanName</small>
+                </div>
+            </section>
+        }
     </main>
 
     <aside class="rbl-session-panel" aria-label="Chat session history" data-i18n-aria-label="chat.sessionsAria">
