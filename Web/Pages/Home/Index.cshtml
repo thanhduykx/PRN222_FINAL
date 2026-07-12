@@ -2,11 +2,10 @@
 @using PRN222_FINAL.BLL.Models
 @model PRN222_FINAL.Web.Pages.Home.IndexModel
 @{
-    ViewData["Title"] = "Kho tài liệu / Documents";
+    ViewData["Title"] = "Kho tài liệu";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "documents";
-    ViewData["ShellTitle"] = "Kho tài liệu / Documents";
-    ViewData["ShellTitleI18n"] = "home.shellTitleDocs";
+    ViewData["ShellTitle"] = "Kho tài liệu";
     ViewData["ShellTitleI18n"] = "documents.shellTitle";
 
     var documents = Model.Documents.OrderByDescending(item => item.UploadedAt).ToList();
@@ -403,30 +402,41 @@
                                         <div class="ops-row-actions" data-document-actions>
                                             @if (document.Status == DocumentIndexStatus.Indexed)
                                             {
-                                                <button type="button" class="ops-mini-button" data-document-preview-action
+                                                <button type="button" class="ops-mini-button ops-icon-action" data-document-preview-action
                                                         data-document-preview-label="Xem"
-                                                        data-document-preview-url="/Home/DocumentPreview/@document.Id"><span data-i18n="documents.view">Xem</span></button>
+                                                        data-document-preview-url="/Home/DocumentPreview/@document.Id"
+                                                        aria-label="Xem tài liệu" title="Xem">
+                                                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                                                </button>
                                             }
                                             else
                                             {
-                                                <button type="button" class="ops-mini-button" data-document-preview-action
+                                                <button type="button" class="ops-mini-button ops-icon-action" data-document-preview-action
                                                         data-document-preview-label="Xem" disabled
-                                                        title="@StatusTitle(document)"><span data-i18n="documents.view">Xem</span></button>
+                                                        title="@StatusTitle(document)" aria-label="Xem tài liệu">
+                                                    <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                                                </button>
                                             }
                                             @if (canManageDocuments && Model.CanEditDocumentMetadata(document, courseCatalog))
                                             {
-                                                <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id"><span data-i18n="documents.edit">Sửa</span></a>
+                                                <a class="ops-mini-button ops-icon-action" asp-page="/Home/EditDocument" asp-route-id="@document.Id" aria-label="Sửa tài liệu" title="Sửa">
+                                                    <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                                                </a>
                                                     <form asp-page-handler="ReindexDocument" method="post"
                                                           data-confirm="Re-index tài liệu này?" data-confirm-i18n="documents.reindexConfirm">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
-                                                        <button type="submit" class="ops-mini-button"><span data-i18n="documents.reindex">Re-Index</span></button>
+                                                        <button type="submit" class="ops-mini-button ops-icon-action" aria-label="Re-index tài liệu" title="Re-index">
+                                                            <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+                                                        </button>
                                                     </form>
                                                     <form asp-page-handler="DeleteDocument" method="post"
                                                           data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác." data-confirm-i18n="documents.deleteConfirm">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
-                                                        <button type="submit" class="ops-mini-button ops-mini-button--danger"><span data-i18n="documents.delete">Xóa</span></button>
+                                                        <button type="submit" class="ops-mini-button ops-icon-action ops-mini-button--danger" aria-label="Xóa tài liệu" title="Xóa">
+                                                            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                                        </button>
                                                     </form>
                                                 }
                                             </div>
