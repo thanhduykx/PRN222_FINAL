@@ -1,4 +1,4 @@
-﻿@page "{id:guid?}"
+@page "{id:guid?}"
 @model PRN222_FINAL.Web.Pages.Home.ViewDocumentModel
 @{
     ViewData["Title"] = Model.Document.FileName;
@@ -71,7 +71,7 @@
         <h1>Syllabus Details</h1>
 
         <table class="flm-syllabus-table">
-            <caption class="visually-hidden">Thông tin chi tiết đề cương môn học</caption>
+            <caption class="visually-hidden" data-i18n="documents.syllabusDetailsCaption">Thông tin chi tiết đề cương môn học</caption>
             <tbody>
                 @foreach (var row in rows)
                 {

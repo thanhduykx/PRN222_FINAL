@@ -1,10 +1,11 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Home.ChatModel
 @{
     ViewData["Title"] = "Chatbot";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "chat";
     ViewData["ShellTitle"] = "Chatbot tài liệu";
+    ViewData["ShellTitleI18n"] = "home.shellTitleChat";
     ViewData["ShellTitleI18n"] = "chat.title";
     ViewData["HideAssistantLauncher"] = true;
 
@@ -16,9 +17,9 @@
     var suggestedQuestions = subjectOptions.Count == 0
         ? new (string En, string Vi, string Subject)[]
         {
-            ("Which subjects have ready documents?", "Hiện có những môn nào đã có tài liệu sẵn sàng?", string.Empty),
-            ("Summarize the available documents.", "Tóm tắt các tài liệu hiện có.", string.Empty),
-            ("What can I ask from the document repository?", "Tôi có thể hỏi gì từ kho tài liệu?", string.Empty)
+            ("Which subjects have ready documents?", "Which subjects have ready documents?", string.Empty),
+            ("Summarize the available documents.", "Summarize the available documents.", string.Empty),
+            ("What can I ask from the document repository?", "What can I ask from the document repository?", string.Empty)
         }
         : subjectOptions
             .Take(6)
@@ -65,16 +66,25 @@
     {
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
-    <section class="chat-source-scope" aria-label="Phạm vi nguồn trả lời" data-chat-subject-count="@subjectOptions.Count">
+    <section class="chat-source-scope" aria-label="Phạm vi nguồn trả lời" data-i18n-aria-label="chat.scopeAria" data-chat-subject-count="@subjectOptions.Count">
         <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
         <div>
-            <strong>Trả lời dựa trên tài liệu đã index</strong>
-            <span data-chat-scope-label>@(subjectOptions.Count == 0 ? "Chưa có môn học sẵn sàng" : $"Đang tìm trong {subjectOptions.Count} môn học có quyền truy cập")</span>
+            <strong data-i18n="chat.scopeTitle">Trả lời dựa trên tài liệu đã index</strong>
+            <span data-chat-scope-label>
+                @if (subjectOptions.Count == 0)
+                {
+                    <span data-i18n="chat.scopeEmpty">Chưa có môn học sẵn sàng</span>
+                }
+                else
+                {
+                    <span data-i18n="chat.scopeCountPrefix">Đang tìm trong</span> @subjectOptions.Count <span data-i18n="chat.scopeCountSuffix">môn học có quyền truy cập</span>
+                }
+            </span>
         </div>
-        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))">Xem môn học</a>
+        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))" data-i18n="chat.viewCourses">Xem môn học</a>
     </section>
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
-        <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Nội dung hội thoại">
+        <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Nội dung hội thoại" data-i18n-aria-label="chat.messagesAria">
             <div class="chat-empty-state rbl-chat-empty">
                 <span class="rbl-bot-mark">AI</span>
                 <h3 data-i18n="chat.emptyTitle">Bắt đầu bằng một câu hỏi cụ thể</h3>
@@ -115,7 +125,7 @@
                     </div>
                 </div>
             }
-            <textarea id="questionInput" rows="2" maxlength="4000" aria-label="Nhập câu hỏi" placeholder="Hỏi về môn học, chương hoặc tài liệu..." data-i18n-placeholder="chat.placeholder"></textarea>
+            <textarea id="questionInput" rows="2" maxlength="4000" aria-label="Nhập câu hỏi" data-i18n-aria-label="chat.inputAria" placeholder="Hỏi về môn học, chương hoặc tài liệu..." data-i18n-placeholder="chat.placeholder"></textarea>
             <button type="submit" class="rbl-submit-button" data-i18n="chat.send">
                 <span class="material-symbols-outlined" aria-hidden="true">send</span>
                 Send
@@ -123,26 +133,42 @@
         </form>
         @if (User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student))
         {
-            <section class="chat-preferences" aria-label="Tùy chọn trả lời">
+            <section class="chat-preferences" aria-label="Reply preferences" data-i18n-aria-label="chat.replyPrefsAria">
                 <label>
-                    <span>Tốc độ</span>
-                    <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời">
-                        <option value="fast">Nhanh</option>
-                        <option value="comfortable" selected>Dễ theo dõi</option>
+                    <span data-i18n="chat.speed">Tốc độ</span>
+                    <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời" data-i18n-aria-label="chat.responsePaceAria">
+                        <option value="fast" data-i18n="chat.paceFast">Nhanh</option>
+                        <option value="comfortable" selected data-i18n="chat.paceComfortable">Dễ theo dõi</option>
                     </select>
                 </label>
                 <label>
-                    <span>Trả lời</span>
-                    <select id="answerDepth" aria-label="Mức độ hỗ trợ">
-                        <option value="concise">Tóm tắt</option>
-                        <option value="balanced" selected>Cân bằng</option>
-                        <option value="deep">Phân tích kỹ</option>
+                    <span data-i18n="chat.replyMode">Trả lời</span>
+                    <select id="answerDepth" aria-label="Mức độ hỗ trợ" data-i18n-aria-label="chat.answerDepthAria">
+                        <option value="concise" data-i18n="chat.depthConcise">Tóm tắt</option>
+                        <option value="balanced" selected data-i18n="chat.depthBalanced">Cân bằng</option>
+                        <option value="deep" data-i18n="chat.depthDeep">Phân tích kỹ</option>
                     </select>
                 </label>
                 <div class="chat-usage" aria-live="polite">
-                    <span>Còn lại</span>
-                    <strong id="questionsRemaining">@(Model.Usage.Remaining?.ToString("N0") ?? "Không giới hạn")</strong>
-                    <small>@Model.Usage.PlanName</small>
+                    <span data-i18n="chat.remaining">Còn lại</span>
+                    @if (Model.Usage.Remaining.HasValue)
+                    {
+                        <strong id="questionsRemaining">@Model.Usage.Remaining.Value.ToString("N0")</strong>
+                    }
+                    else
+                    {
+                        <strong id="questionsRemaining" data-i18n="chat.unlimited">Không giới hạn</strong>
+                    }
+                    @{
+                        var planKey = Model.Usage.PlanName switch {
+                            "Free" => "packages.name.free",
+                            "Student" => "packages.name.student",
+                            "Pro" => "packages.name.pro",
+                            "12 tháng" => "packages.name.annual",
+                            _ => "packages.name.none"
+                        };
+                    }
+                    <small data-i18n="@planKey">@Model.Usage.PlanName</small>
                 </div>
             </section>
         }

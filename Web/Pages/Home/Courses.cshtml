@@ -1,10 +1,11 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Home.CoursesModel
 @{
     ViewData["Title"] = "Courses";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "courses";
     ViewData["ShellTitle"] = "Courses";
+    ViewData["ShellTitleI18n"] = "home.shellTitleCourses";
     ViewData["ShellTitleI18n"] = "shell.courses";
     var isAdmin = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin);
     var totalChapters = Model.Courses.Sum(course => course.ChapterCount);
@@ -22,35 +23,36 @@
 
     <header class="ops-page-header">
         <div>
-            <span class="ops-eyebrow">@(isAdmin ? "Quản trị học liệu" : "Không gian giảng dạy")</span>
-            <h1>@(isAdmin ? "Tổng quan môn học" : "Môn học của tôi")</h1>
-            <p>@(isAdmin ? "Theo dõi độ phủ học liệu và mở từng môn để kiểm tra chi tiết." : "Ưu tiên môn còn thiếu tài liệu, sau đó mở workspace để quản lý chương và kiểm tra chatbot.")</p>
+            <span class="ops-eyebrow" data-i18n="@(isAdmin ? "courses.eyebrowAdmin" : "courses.eyebrowTeacher")">@(isAdmin ? "Quản trị học liệu" : "Không gian giảng dạy")</span>
+            <h1 data-i18n="@(isAdmin ? "courses.titleAdmin" : "courses.titleTeacher")">@(isAdmin ? "Tổng quan môn học" : "Môn học của tôi")</h1>
+            <p data-i18n="@(isAdmin ? "courses.descAdmin" : "courses.descTeacher")">@(isAdmin ? "Theo dõi độ phủ học liệu và mở từng môn để kiểm tra chi tiết." : "Ưu tiên môn còn thiếu tài liệu, sau đó mở workspace để quản lý chương và kiểm tra chatbot.")</p>
         </div>
         <a class="ops-button ops-button--primary" asp-page="/Home/Index" asp-route-section="@(isAdmin ? "catalog" : "upload")">
             <span class="material-symbols-outlined" aria-hidden="true">@(isAdmin ? "topic" : "upload_file")</span>
-            @(isAdmin ? "Quản lý danh mục" : "Tải tài liệu")
+            <span data-i18n="@(isAdmin ? "courses.btnAdmin" : "courses.btnTeacher")">@(isAdmin ? "Quản lý danh mục" : "Tải tài liệu")</span>
+
         </a>
     </header>
 
     <section class="role-overview-grid" aria-label="Tổng quan môn học">
         <article class="role-overview-card">
             <span class="material-symbols-outlined is-blue" aria-hidden="true">school</span>
-            <div><small>Môn hiển thị</small><strong>@Model.Courses.Count.ToString("N0")</strong><span>@totalChapters.ToString("N0") chương</span></div>
+            <div><small data-i18n="courses.kpiCourses">Môn hiển thị</small><strong>@Model.Courses.Count.ToString("N0")</strong><span>@totalChapters.ToString("N0") <span data-i18n="courses.kpiChaptersUnit">chương</span></span></div>
         </article>
         <article class="role-overview-card">
             <span class="material-symbols-outlined is-green" aria-hidden="true">verified</span>
-            <div><small>Học liệu sẵn sàng</small><strong>@readiness%</strong><span>@indexedDocuments/@totalDocuments tài liệu đã index</span></div>
+            <div><small data-i18n="courses.kpiReadiness">Học liệu sẵn sàng</small><strong>@readiness%</strong><span>@indexedDocuments/@totalDocuments <span data-i18n="courses.kpiIndexedUnit">tài liệu đã index</span></span></div>
         </article>
         <article class="role-overview-card @(attentionCount > 0 ? "needs-attention" : string.Empty)">
             <span class="material-symbols-outlined is-orange" aria-hidden="true">priority_high</span>
-            <div><small>Cần xử lý</small><strong>@attentionCount.ToString("N0")</strong><span>@(attentionCount == 0 ? "Tất cả môn đã sẵn sàng" : "Môn thiếu hoặc lỗi học liệu")</span></div>
+            <div><small data-i18n="courses.kpiAttention">Cần xử lý</small><strong>@attentionCount.ToString("N0")</strong><span data-i18n="@(attentionCount == 0 ? "courses.kpiAllReady" : "courses.kpiNeedsAttention")">@(attentionCount == 0 ? "Tất cả môn đã sẵn sàng" : "Môn thiếu hoặc lỗi học liệu")</span></div>
         </article>
     </section>
 
     @if (Model.Courses.Count == 0)
     {
         <section class="ops-panel ops-empty">
-            <strong data-i18n="courses.emptyTitle">No course workspace is available.</strong>
+            <strong data-i18n="courses.emptyTitle">Chưa có môn học nào.</strong>
             <p data-i18n="courses.emptyHint">Hãy thêm và xử lý tài liệu môn học trước, sau đó quay lại đây.</p>
         </section>
     }
@@ -62,7 +64,7 @@
                 <a class="course-workspace-card" asp-page="/Home/CourseWorkspace" asp-route-id="@course.Id">
                     <div class="course-workspace-card__head">
                         <span class="material-symbols-outlined" aria-hidden="true">school</span>
-                        <span class="course-readiness-badge @(course.DocumentCount > 0 && course.IndexedDocumentCount == course.DocumentCount ? "is-ready" : "needs-attention")">
+                        <span class="course-readiness-badge @(course.DocumentCount > 0 && course.IndexedDocumentCount == course.DocumentCount ? "is-ready" : "needs-attention")" data-i18n="@(course.DocumentCount == 0 ? "courses.statusMissing" : course.IndexedDocumentCount == course.DocumentCount ? "courses.statusReady" : "courses.statusAttention")">
                             @(course.DocumentCount == 0 ? "Thiếu tài liệu" : course.IndexedDocumentCount == course.DocumentCount ? "Sẵn sàng" : "Cần kiểm tra")
                         </span>
                     </div>
@@ -78,14 +80,14 @@
                     <span class="course-card-meta">
                         @if (course.OwnerName == "Unassigned")
                         {
-                            <span class="ops-muted" data-i18n="courses.unassigned">Unassigned</span>
+                            <span class="ops-muted" data-i18n="courses.unassigned">Chưa phân công</span>
                         }
                         else
                         {
                             <span>@course.OwnerName</span>
                         }
-                        <span>@course.ChapterCount <span data-i18n="courses.chaptersUnit">Chapters</span></span>
-                        <span>@course.IndexedDocumentCount/@course.DocumentCount <span data-i18n="documents.indexedStatus">đã sẵn sàng</span></span>
+                        <span>@course.ChapterCount <span data-i18n="courses.chaptersUnit">chương</span></span>
+                        <span>@course.IndexedDocumentCount/@course.DocumentCount <span data-i18n="courses.indexedStatus">tài liệu đã index</span></span>
                     </span>
                 </a>
             }
