@@ -81,7 +81,9 @@ const translations = {
         "documents.noDocsInChapter": "No documents in this chapter yet.",
         
         "chat.replyPrefsAria": "Reply preferences",
-        "chat.speed": "Speed",
+        "chat.speed": "Display speed",
+        "chat.speedHelp": "Typing effect",
+        "chat.depthHelp": "Adjust answer detail",
         "chat.accuracy": "Accuracy",
         "chat.accuracyDesc": "Recommended for students, ensures information is strictly based on documents with clear citations.",
         
@@ -808,7 +810,7 @@ const translations = {
     "chat.responsePaceAria": "Response pace",
     "chat.paceFast": "Fast",
     "chat.paceComfortable": "Comfortable",
-    "chat.replyMode": "Reply",
+    "chat.replyMode": "Answer detail",
     "chat.answerDepthAria": "Assistance depth",
     "chat.depthConcise": "Concise",
     "chat.depthBalanced": "Balanced",
@@ -1053,7 +1055,7 @@ const translations = {
         "chat.responsePaceAria": "Tốc độ hiển thị câu trả lời",
         "chat.paceFast": "Nhanh",
         "chat.paceComfortable": "Dễ theo dõi",
-        "chat.replyMode": "Trả lời",
+        "chat.replyMode": "Độ chi tiết",
         "chat.answerDepthAria": "Mức độ hỗ trợ",
         "chat.depthConcise": "Tóm tắt",
         "chat.depthBalanced": "Cân bằng",
@@ -1123,7 +1125,9 @@ const translations = {
         "documents.noDocsInChapter": "Chưa có tài liệu trong chương/mục này.",
         
         "chat.replyPrefsAria": "Tùy chọn trả lời",
-        "chat.speed": "Tốc độ",
+        "chat.speed": "Tốc độ hiển thị",
+        "chat.speedHelp": "Hiệu ứng trả chữ",
+        "chat.depthHelp": "Điều chỉnh nội dung",
         "chat.accuracy": "Độ chính xác",
         "chat.accuracyDesc": "Khuyến nghị cho sinh viên, đảm bảo thông tin dựa hoàn toàn vào tài liệu, có nguồn trích dẫn rõ ràng.",
         
@@ -3546,13 +3550,33 @@ function appendMessageTo(target, role, content, citations = []) {
 
 function appendSafeInlineContent(target, text) {
   const value = String(text || "");
-  const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`|\[(?:[1-9]|1\d|20)\])/g;
   let cursor = 0;
   for (const match of value.matchAll(tokenPattern)) {
     if (match.index > cursor) target.appendChild(document.createTextNode(value.slice(cursor, match.index)));
     const token = match[0];
-    const element = document.createElement(token.startsWith("**") ? "strong" : "code");
-    element.textContent = token.startsWith("**") ? token.slice(2, -2) : token.slice(1, -1);
+    let element;
+    if (/^\[\d+\]$/.test(token)) {
+      const sourceNumber = Number(token.slice(1, -1));
+      element = document.createElement("button");
+      element.type = "button";
+      element.className = "citation-inline-marker";
+      element.textContent = token;
+      element.setAttribute("aria-label", getLanguage() === "vi" ? `Mở nguồn ${sourceNumber}` : `Open source ${sourceNumber}`);
+      element.addEventListener("click", () => {
+        const message = element.closest(".message");
+        const sourceDrawer = message?.querySelector("details.citation-cards");
+        const source = message?.querySelector(`.citation-card[data-citation-index="${sourceNumber}"]`);
+        if (!sourceDrawer || !source) return;
+        sourceDrawer.open = true;
+        source.open = true;
+        source.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        source.querySelector("summary")?.focus({ preventScroll: true });
+      });
+    } else {
+      element = document.createElement(token.startsWith("**") ? "strong" : "code");
+      element.textContent = token.startsWith("**") ? token.slice(2, -2) : token.slice(1, -1);
+    }
     target.appendChild(element);
     cursor = match.index + token.length;
   }
@@ -3651,48 +3675,35 @@ function appendCitationsToMessage(messageWrapper, citations) {
     return;
   }
 
-  const seenSources = new Set();
-  const compactSources = [];
-  for (const citation of sourceItems) {
-    const fileName = citation.fileName || citation.FileName || "";
-    const subject = citation.subject || citation.Subject || "";
-    const chapter = citation.chapter || citation.Chapter || "";
-    const chunkIndex = citation.chunkIndex ?? citation.ChunkIndex;
-    const sourceKey = `${fileName || subject}|${chapter}|${chunkIndex ?? ""}`;
-    if (seenSources.has(sourceKey)) {
-      continue;
-    }
-
-    seenSources.add(sourceKey);
-    compactSources.push(citation);
-    if (compactSources.length === 5) {
-      break;
-    }
-  }
+  // Preserve server ordering so inline markers [n] always open the same source.
+  // The server already deduplicates citations; a client-side cap could hide a cited source.
+  const compactSources = sourceItems;
 
   if (compactSources.length === 0) {
     return;
   }
 
-  const list = document.createElement("div");
+  const list = document.createElement("details");
   list.className = "citations citation-cards";
   list.setAttribute("aria-label", getLanguage() === "vi" ? "Nguồn tham khảo" : "References");
 
-  const label = document.createElement("span");
+  const label = document.createElement("summary");
   label.className = "citation-label";
   label.textContent = getLanguage() === "vi"
-    ? `Nguồn tham khảo (${compactSources.length})`
-    : `References (${compactSources.length})`;
+    ? `Nguồn (${compactSources.length})`
+    : `Sources (${compactSources.length})`;
   list.appendChild(label);
+
+  const sourceList = document.createElement("div");
+  sourceList.className = "citation-card-list";
 
   compactSources.forEach((citation, index) => {
     const item = document.createElement("details");
     item.className = "citation-card";
-    if (index === 0) item.open = true;
+    item.dataset.citationIndex = String(index + 1);
     const fileName = citation.fileName || citation.FileName || "";
     const chunkIndex = citation.chunkIndex ?? citation.ChunkIndex;
     const excerpt = citation.excerpt || citation.Excerpt || "";
-    const scoreValue = Number(citation.score ?? citation.Score);
     const metaValues = [
       citation.subject || citation.Subject,
       citation.chapter || citation.Chapter,
@@ -3703,7 +3714,7 @@ function appendCitationsToMessage(messageWrapper, citations) {
     const summary = document.createElement("summary");
     const order = document.createElement("span");
     order.className = "citation-card__order";
-    order.textContent = String(index + 1).padStart(2, "0");
+    order.textContent = `[${index + 1}]`;
     const identity = document.createElement("span");
     identity.className = "citation-card__identity";
     const title = document.createElement("strong");
@@ -3712,13 +3723,6 @@ function appendCitationsToMessage(messageWrapper, citations) {
     meta.textContent = metaValues.join(" · ");
     identity.append(title, meta);
     summary.append(order, identity);
-    if (Number.isFinite(scoreValue) && scoreValue > 0) {
-      const score = document.createElement("span");
-      score.className = "citation-card__score";
-      score.textContent = `${Math.round(Math.min(scoreValue, 1) * 100)}%`;
-      score.title = getLanguage() === "vi" ? "Độ liên quan" : "Relevance";
-      summary.appendChild(score);
-    }
 
     const body = document.createElement("div");
     body.className = "citation-card__body";
@@ -3729,8 +3733,10 @@ function appendCitationsToMessage(messageWrapper, citations) {
     body.appendChild(bodyText);
     item.append(summary, body);
 
-    list.appendChild(item);
+    sourceList.appendChild(item);
   });
+
+  list.appendChild(sourceList);
 
   messageWrapper.appendChild(list);
 }

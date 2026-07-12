@@ -134,15 +134,23 @@
         @if (User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student))
         {
             <section class="chat-preferences" aria-label="Reply preferences" data-i18n-aria-label="chat.replyPrefsAria">
-                <label>
-                    <span data-i18n="chat.speed">Tốc độ</span>
+                <label class="chat-preference-control">
+                    <span class="material-symbols-outlined chat-preference-control__icon" aria-hidden="true">speed</span>
+                    <span class="chat-preference-control__copy">
+                        <strong data-i18n="chat.speed">Tốc độ hiển thị</strong>
+                        <small data-i18n="chat.speedHelp">Hiệu ứng trả chữ</small>
+                    </span>
                     <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời" data-i18n-aria-label="chat.responsePaceAria">
                         <option value="fast" data-i18n="chat.paceFast">Nhanh</option>
                         <option value="comfortable" selected data-i18n="chat.paceComfortable">Dễ theo dõi</option>
                     </select>
                 </label>
-                <label>
-                    <span data-i18n="chat.replyMode">Trả lời</span>
+                <label class="chat-preference-control">
+                    <span class="material-symbols-outlined chat-preference-control__icon" aria-hidden="true">format_align_left</span>
+                    <span class="chat-preference-control__copy">
+                        <strong data-i18n="chat.replyMode">Độ chi tiết</strong>
+                        <small data-i18n="chat.depthHelp">Điều chỉnh nội dung</small>
+                    </span>
                     <select id="answerDepth" aria-label="Mức độ hỗ trợ" data-i18n-aria-label="chat.answerDepthAria">
                         <option value="concise" data-i18n="chat.depthConcise">Tóm tắt</option>
                         <option value="balanced" selected data-i18n="chat.depthBalanced">Cân bằng</option>

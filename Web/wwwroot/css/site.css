@@ -8989,18 +8989,181 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
   .ai-settings-card--wide, .ai-settings-actions { grid-column: auto; }
   .ai-settings-actions .ops-button { width: 100%; min-height: 44px; justify-content: center; }
 }
-.chat-preferences { display: flex; align-items: center; gap: .5rem; margin-top: .4rem; padding: .35rem .5rem; border: 0; border-radius: 10px; background: transparent; color: var(--rbl-text-muted, #5f6b7a); }
+.chat-preferences { display: flex; align-items: center; gap: .6rem; margin-top: .5rem; padding: .45rem .5rem; border: 0; border-radius: 10px; background: transparent; color: var(--rbl-text-muted, #5f6b7a); }
 .chat-preferences label { display: flex; align-items: center; gap: .35rem; margin: 0; }
 .chat-preferences label > span, .chat-usage > span { font-size: .72rem; font-weight: 700; white-space: nowrap; }
 .chat-preferences select { width: auto; min-width: 112px; min-height: 34px; border: 1px solid var(--rbl-border, #cfd6e2); border-radius: 8px; padding: 0 1.75rem 0 .55rem; background-color: var(--rbl-surface, #fff); color: inherit; font-size: .8rem; }
+.chat-preferences .chat-preference-control {
+  display: grid;
+  grid-template-columns: auto minmax(86px, auto) auto;
+  gap: .5rem;
+  min-height: 48px;
+  padding: .35rem .4rem .35rem .55rem;
+  border: 1px solid var(--rbl-border, #d8dee8);
+  border-radius: 12px;
+  background: var(--rbl-surface, #fff);
+  box-shadow: 0 2px 8px rgba(23, 32, 51, .04);
+}
+.chat-preferences .chat-preference-control__icon {
+  color: var(--rbl-primary, #2457d6);
+  font-size: 20px;
+  font-weight: 500;
+}
+.chat-preferences .chat-preference-control__copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.15;
+  white-space: normal;
+}
+.chat-preference-control__copy strong {
+  color: var(--rbl-text, #172033);
+  font-size: .76rem;
+  white-space: nowrap;
+}
+.chat-preference-control__copy small {
+  color: var(--rbl-text-muted, #687386);
+  font-size: .65rem;
+  white-space: nowrap;
+}
+.chat-preference-control:focus-within {
+  border-color: var(--rbl-primary, #2457d6);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rbl-primary, #2457d6) 14%, transparent);
+}
 .chat-usage { display: flex; align-items: baseline; gap: .3rem; margin-inline-start: auto; padding-inline-start: .65rem; border-inline-start: 1px solid var(--rbl-border, #d8dee8); white-space: nowrap; }
 .chat-usage strong { color: var(--rbl-primary, #2457d6); font-size: .9rem; }
 .chat-usage small { color: var(--rbl-text-muted, #5f6b7a); font-size: .7rem; }
 @media (max-width: 680px) {
   .chat-preferences { flex-wrap: wrap; padding-inline: 0; }
-  .chat-preferences label { flex: 1 1 140px; }
+  .chat-preferences label { flex: 1 1 220px; }
+  .chat-preferences .chat-preference-control { grid-template-columns: auto minmax(0, 1fr) minmax(110px, auto); }
   .chat-preferences select { flex: 1; min-height: 44px; min-width: 0; }
   .chat-usage { flex: 1 1 100%; justify-content: flex-end; padding: .25rem 0 0; border-inline-start: 0; }
+}
+
+/* Chat evidence uses progressive disclosure: compact by default, inspectable on demand. */
+.message details.citation-cards {
+  display: block;
+  width: fit-content;
+  max-width: min(760px, 82%);
+  margin-top: 6px;
+  color: var(--rbl-text-muted, #5f6b7a);
+  font-size: .75rem;
+}
+
+.message details.citation-cards > .citation-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid var(--rbl-border, #cfd6e2);
+  border-radius: 999px;
+  background: var(--rbl-surface, #fff);
+  color: var(--rbl-primary, #2457d6);
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.message details.citation-cards > .citation-label::-webkit-details-marker { display: none; }
+.message details.citation-cards > .citation-label::before {
+  content: "library_books";
+  margin-inline-end: 6px;
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-weight: 400;
+}
+.message details.citation-cards > .citation-label::after {
+  content: "expand_more";
+  margin-inline-start: 5px;
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-weight: 400;
+  transition: transform 160ms ease;
+}
+.message details.citation-cards[open] > .citation-label::after { transform: rotate(180deg); }
+.message details.citation-cards > .citation-label:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--rbl-primary, #2457d6) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.citation-card-list {
+  display: grid;
+  gap: 6px;
+  width: min(620px, 78vw);
+  margin-top: 7px;
+}
+.citation-card {
+  overflow: hidden;
+  border: 1px solid var(--rbl-border, #d8dee8);
+  border-radius: 10px;
+  background: var(--rbl-surface, #fff);
+}
+.citation-card > summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 9px;
+  cursor: pointer;
+  list-style: none;
+}
+.citation-card > summary::-webkit-details-marker { display: none; }
+.citation-card > summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--rbl-primary, #2457d6) 25%, transparent);
+  outline-offset: -3px;
+}
+.citation-card__order {
+  color: var(--rbl-primary, #2457d6);
+  font-weight: 900;
+}
+.citation-card__identity { min-width: 0; }
+.citation-card__identity strong,
+.citation-card__identity small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.citation-card__identity strong { color: var(--rbl-text, #172033); font-size: .76rem; }
+.citation-card__identity small { margin-top: 1px; color: var(--rbl-text-muted, #687386); font-size: .68rem; }
+.citation-card__body {
+  padding: 0 10px 9px 39px;
+  color: var(--rbl-text-muted, #5f6b7a);
+  line-height: 1.45;
+}
+.citation-card__body p { margin: 0; }
+
+.citation-inline-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 22px;
+  margin-inline: 2px;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rbl-primary, #2457d6) 11%, #fff);
+  color: var(--rbl-primary, #2457d6);
+  font: inherit;
+  font-size: .7em;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: super;
+  cursor: pointer;
+}
+.citation-inline-marker:hover { background: color-mix(in srgb, var(--rbl-primary, #2457d6) 19%, #fff); }
+.citation-inline-marker:focus-visible {
+  outline: 2px solid var(--rbl-primary, #2457d6);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .message details.citation-cards { max-width: 100%; }
+  .citation-card-list { width: min(100%, 86vw); }
 }
 /* Membership page: light, student-friendly pricing hierarchy. */
 .package-membership {

@@ -5,6 +5,7 @@ namespace PRN222_FINAL.BLL;
 internal static partial class ChatGroundingPolicy
 {
     public const string GroundedAnswerStatus = "grounded_answer";
+    public const string PartialAnswerStatus = "partial_answer";
     public const string InsufficientEvidenceStatus = "insufficient_evidence";
     public const string ClarificationRequiredStatus = "clarification_required";
     public const string SmallTalkStatus = "small_talk";
