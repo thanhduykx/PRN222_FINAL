@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Admin.AiSettingsModel
 @{
     ViewData["Title"] = "Thiết lập trợ lý học tập";
@@ -247,9 +247,9 @@
 <section class="ops-page ai-settings-page">
     <header class="ops-page-heading">
         <div>
-            <span class="ops-eyebrow">Cách trợ lý đọc và trả lời</span>
-            <h1>Thiết lập trợ lý</h1>
-            <p>Chọn cách trợ lý đọc tài liệu và tạo câu trả lời cho người học.</p>
+            <span class="ops-eyebrow" data-i18n="admin.aiEyebrow">Cách trợ lý đọc và trả lời</span>
+            <h1 data-i18n="admin.aiSettingsTitle">Thiết lập trợ lý</h1>
+            <p data-i18n="admin.aiSettingsDesc">Chọn cách trợ lý đọc tài liệu và tạo câu trả lời cho người học.</p>
         </div>
     </header>
 
@@ -266,22 +266,22 @@
 
         <section class="ops-panel ai-settings-card">
             <div class="ops-panel-head">
-                <h2>Tạo câu trả lời</h2>
-                <p>Chọn dịch vụ và bộ máy dùng để hiểu câu hỏi, sau đó viết câu trả lời.</p>
+                <h2 data-i18n="admin.genAnswerTitle">Tạo câu trả lời</h2>
+                <p data-i18n="admin.genAnswerDesc">Chọn dịch vụ và bộ máy dùng để hiểu câu hỏi, sau đó viết câu trả lời.</p>
             </div>
             <label class="ops-field">
-                <span>Dịch vụ AI</span>
+                <span data-i18n="admin.aiService">Dịch vụ AI</span>
                 <select asp-for="Input.AnswerProvider" class="modern-input" data-chat-provider>
                     @foreach (var provider in Model.AnswerProviderOptions)
                     {
                         <option value="@provider" data-configured="@Model.IsProviderConfigured(provider).ToString().ToLowerInvariant()">@provider</option>
                     }
                 </select>
-                <small>Khóa kết nối được bảo vệ trong cấu hình máy chủ, không hiển thị trên trang.</small>
+                <small data-i18n="admin.apiKeyProtected">Khóa kết nối được bảo vệ trong cấu hình máy chủ, không hiển thị trên trang.</small>
                 <span asp-validation-for="Input.AnswerProvider" class="text-danger"></span>
             </label>
             <label class="ops-field">
-                <span>Bộ máy trả lời</span>
+                <span data-i18n="admin.answerEngine">Bộ máy trả lời</span>
                 <select asp-for="Input.AnswerModel" class="modern-input" data-chat-model>
                     @foreach (var providerModels in Model.AnswerModelsByProvider)
                     {
@@ -291,22 +291,22 @@
                         }
                     }
                 </select>
-                <small data-chat-model-hint>Gemini phù hợp mặc định; Groq là lựa chọn tốc độ cao cho sinh câu trả lời RAG.</small>
+                <small data-chat-model-hint data-i18n="admin.geminiDefaultGroqSpeed">Gemini phù hợp mặc định; Groq là lựa chọn tốc độ cao cho sinh câu trả lời RAG.</small>
                 <span asp-validation-for="Input.AnswerModel" class="text-danger"></span>
             </label>
             <div class="provider-status @(Model.IsSelectedProviderConfigured ? "is-configured" : "is-missing")" data-provider-status>
                 <span class="material-symbols-outlined" aria-hidden="true" data-provider-status-icon>@(Model.IsSelectedProviderConfigured ? "check_circle" : "key_off")</span>
-                <span data-provider-status-text>@(Model.IsSelectedProviderConfigured ? "Dịch vụ đã kết nối" : "Dịch vụ chưa có khóa kết nối")</span>
+                <span data-provider-status-text data-i18n="admin.provider.@(Model.IsSelectedProviderConfigured ? "configured" : "missing")">@(Model.IsSelectedProviderConfigured ? "Dịch vụ đã kết nối" : "Dịch vụ chưa có khóa kết nối")</span>
             </div>
         </section>
 
         <section class="ops-panel ai-settings-card">
             <div class="ops-panel-head">
-                <h2>Đọc tài liệu</h2>
-                <p>Chọn cách trợ lý ghi nhớ nội dung để tìm đúng đoạn liên quan khi có câu hỏi.</p>
+                <h2 data-i18n="admin.readDocTitle">Đọc tài liệu</h2>
+                <p data-i18n="admin.readDocDesc">Chọn cách trợ lý ghi nhớ nội dung để tìm đúng đoạn liên quan khi có câu hỏi.</p>
             </div>
             <label class="ops-field">
-                <span>Bộ máy đọc tài liệu</span>
+                <span data-i18n="admin.readEngine">Bộ máy đọc tài liệu</span>
                 <select asp-for="Input.ReadingModel" class="modern-input">
                     @foreach (var modelName in Model.ReadingModelOptions)
                     {
@@ -317,63 +317,63 @@
             </label>
 
             <label class="ops-field">
-                <span>Mức độ chi tiết khi ghi nhớ</span>
+                <span data-i18n="admin.detailLevel">Mức độ chi tiết khi ghi nhớ</span>
                 <div class="range-group">
                     <input type="range" id="detailSlider" min="128" max="4096" step="1" value="768" />
                     <input asp-for="Input.ReadingDetail" id="detailNumber" class="modern-input" type="number" min="128" max="4096" />
                 </div>
-                <small>Mặc định 768. Mức cao hơn giữ nhiều chi tiết nhưng cần thêm dung lượng và thời gian tìm kiếm.</small>
+                <small data-i18n="admin.detailLevelDesc">Mặc định 768. Mức cao hơn giữ nhiều chi tiết nhưng cần thêm dung lượng và thời gian tìm kiếm.</small>
                 <span asp-validation-for="Input.ReadingDetail" class="text-danger"></span>
             </label>
         </section>
 
         <section class="ops-panel ai-settings-card ai-settings-card--wide">
             <div class="ops-panel-head">
-                <h2>Chia tài liệu thành đoạn</h2>
-                <p>Khi upload file lớn, hệ thống sẽ cắt nhỏ file ra thành nhiều đoạn. Đoạn ngắn giúp tìm kiếm chính xác, đoạn dài giữ được nhiều ngữ cảnh.</p>
+                <h2 data-i18n="admin.chunkDocTitle">Chia tài liệu thành đoạn</h2>
+                <p data-i18n="admin.chunkDocDesc">Khi upload file lớn, hệ thống sẽ cắt nhỏ file ra thành nhiều đoạn. Đoạn ngắn giúp tìm kiếm chính xác, đoạn dài giữ được nhiều ngữ cảnh.</p>
             </div>
 
             <div class="ai-settings-fields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <label class="ops-field">
-                    <span>Độ dài tối đa mỗi đoạn (Ký tự)</span>
+                    <span data-i18n="admin.maxChunkLength">Độ dài tối đa mỗi đoạn (Ký tự)</span>
                     <div class="range-group">
                         <input type="range" id="lenSlider" min="300" max="4000" step="50" value="1000" />
                         <input asp-for="Input.SectionLength" id="lenNumber" class="modern-input" type="number" min="300" max="4000" />
                     </div>
-                    <small>Khuyến nghị: 800–1.200 ký tự.</small>
+                    <small data-i18n="admin.chunkLengthDesc">Khuyến nghị: 800–1.200 ký tự.</small>
                     <span asp-validation-for="Input.SectionLength" class="text-danger"></span>
                 </label>
 
                 <label class="ops-field">
-                    <span>Phần nội dung lặp lại giữa hai đoạn</span>
+                    <span data-i18n="admin.chunkOverlap">Phần nội dung lặp lại giữa hai đoạn</span>
                     <div class="range-group">
                         <input type="range" id="overlapSlider" min="0" max="500" step="10" value="100" />
                         <input asp-for="Input.SectionConnection" id="overlapNumber" class="modern-input" type="number" min="0" max="500" />
                     </div>
-                    <small>Giúp trợ lý không bỏ sót ý ở điểm cắt. Khuyến nghị khoảng 10% độ dài đoạn.</small>
+                    <small data-i18n="admin.chunkOverlapDesc">Giúp trợ lý không bỏ sót ý ở điểm cắt. Khuyến nghị khoảng 10% độ dài đoạn.</small>
                     <span asp-validation-for="Input.SectionConnection" class="text-danger"></span>
                 </label>
             </div>
 
             <div style="margin-top: 1.5rem;">
-                <span style="color: #6b7280; font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Mô phỏng tài liệu...</span>
+                <span style="color: #6b7280; font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;" data-i18n="admin.docSimulation">Mô phỏng tài liệu...</span>
                 <div class="chunk-visualizer" aria-hidden="true" style="margin-top: 0; margin-bottom: 1.5rem;">
-                    <div id="vis-chunk1" class="chunk-box">Đoạn 1</div>
-                    <div id="vis-overlap" class="chunk-overlap" title="Phần giao nhau (Overlap)"></div>
-                    <div id="vis-chunk2" class="chunk-box">Đoạn 2</div>
+                    <div id="vis-chunk1" class="chunk-box" data-i18n="admin.chunk1">Đoạn 1</div>
+                    <div id="vis-overlap" class="chunk-overlap" title="Phần giao nhau (Overlap)" data-i18n-title="admin.overlapTooltip"></div>
+                    <div id="vis-chunk2" class="chunk-box" data-i18n="admin.chunk2">Đoạn 2</div>
                 </div>
             </div>
 
             <div class="rbl-alert is-info">
                 <span class="material-symbols-outlined" aria-hidden="true">info</span>
-                <strong>Lưu ý:</strong> Khi bạn thay đổi thông số cắt tài liệu, các tài liệu đã được tải lên trước đây sẽ cần phải được xử lý (Embedding) lại để có tác dụng.
+                <strong data-i18n="admin.note">Lưu ý:</strong> <span data-i18n="admin.chunkWarning">Khi bạn thay đổi thông số cắt tài liệu, các tài liệu đã được tải lên trước đây sẽ cần phải được xử lý (Embedding) lại để có tác dụng.</span>
             </div>
         </section>
 
         <div class="ai-settings-actions">
             <button type="submit" class="ops-button ops-button--primary">
                 <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">save</span>
-                Lưu cấu hình hệ thống
+                <span data-i18n="admin.saveConfig">Lưu cấu hình hệ thống</span>
             </button>
         </div>
     </form>
@@ -408,9 +408,14 @@
                 }
 
                 if (modelHint) {
-                    modelHint.textContent = provider === 'Groq'
-                        ? 'Khuyến nghị llama-3.3-70b-versatile cho chất lượng hoặc llama-3.1-8b-instant cho tốc độ.'
-                        : 'Khuyến nghị gemini-3.5-flash cho tốc độ và chi phí cân bằng.';
+                    if (provider === 'Groq') {
+                        modelHint.setAttribute('data-i18n', 'admin.groqHint');
+                        modelHint.textContent = 'Khuyến nghị llama-3.3-70b-versatile cho chất lượng hoặc llama-3.1-8b-instant cho tốc độ.';
+                    } else {
+                        modelHint.setAttribute('data-i18n', 'admin.geminiHint');
+                        modelHint.textContent = 'Khuyến nghị gemini-3.5-flash cho tốc độ và chi phí cân bằng.';
+                    }
+                    if (window.applyTranslations) window.applyTranslations();
                 }
 
                 const selectedProviderOption = providerSelect.selectedOptions[0];
@@ -418,7 +423,16 @@
                 providerStatus?.classList.toggle('is-configured', isConfigured);
                 providerStatus?.classList.toggle('is-missing', !isConfigured);
                 if (providerStatusIcon) providerStatusIcon.textContent = isConfigured ? 'check_circle' : 'key_off';
-                if (providerStatusText) providerStatusText.textContent = isConfigured ? 'Dịch vụ đã kết nối' : 'Dịch vụ chưa có khóa kết nối';
+                if (providerStatusText) {
+                    if (isConfigured) {
+                        providerStatusText.setAttribute('data-i18n', 'admin.provider.configured');
+                        providerStatusText.textContent = 'Dịch vụ đã kết nối';
+                    } else {
+                        providerStatusText.setAttribute('data-i18n', 'admin.provider.missing');
+                        providerStatusText.textContent = 'Dịch vụ chưa có khóa kết nối';
+                    }
+                    if (window.applyTranslations) window.applyTranslations();
+                }
             }
 
             providerSelect?.addEventListener('change', () => syncProviderModels(true));
