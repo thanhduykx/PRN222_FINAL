@@ -4,6 +4,7 @@ using PRN222_FINAL.BLL.Security;
 using PRN222_FINAL.BLL.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using PRN222_FINAL.Web.Hubs;
 using PRN222_FINAL.Web.Security;
@@ -144,8 +145,18 @@ namespace PRN222_FINAL.Web
 
             var googleClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
             var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
+            var googlePublicOrigin = builder.Configuration["Authentication:Google:PublicOrigin"]?.Trim().TrimEnd('/');
             if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
             {
+                if (!string.IsNullOrWhiteSpace(googlePublicOrigin)
+                    && (!Uri.TryCreate(googlePublicOrigin, UriKind.Absolute, out var publicOriginUri)
+                        || (publicOriginUri.Scheme != Uri.UriSchemeHttp && publicOriginUri.Scheme != Uri.UriSchemeHttps)
+                        || publicOriginUri.PathAndQuery != "/"))
+                {
+                    throw new InvalidOperationException(
+                        "Authentication:Google:PublicOrigin must be an absolute HTTP(S) origin without a path, for example http://localhost:9999.");
+                }
+
                 authenticationBuilder.AddGoogle(options =>
                 {
                     options.ClientId = googleClientId;
@@ -153,6 +164,22 @@ namespace PRN222_FINAL.Web
                     options.CallbackPath = "/signin-google";
                     options.SignInScheme = "External";
                     options.SaveTokens = false;
+
+                    if (!string.IsNullOrWhiteSpace(googlePublicOrigin))
+                    {
+                        var callbackUri = $"{googlePublicOrigin}{options.CallbackPath}";
+                        options.Events.OnRedirectToAuthorizationEndpoint = context =>
+                        {
+                            var authorizationUri = new UriBuilder(context.RedirectUri);
+                            var query = QueryHelpers.ParseQuery(authorizationUri.Query)
+                                .ToDictionary(pair => pair.Key, pair => pair.Value.ToString());
+                            query["redirect_uri"] = callbackUri;
+                            authorizationUri.Query = QueryString.Create(
+                                query.Select(pair => new KeyValuePair<string, string?>(pair.Key, pair.Value))).Value;
+                            context.Response.Redirect(authorizationUri.Uri.AbsoluteUri);
+                            return Task.CompletedTask;
+                        };
+                    }
                 });
             }
 
