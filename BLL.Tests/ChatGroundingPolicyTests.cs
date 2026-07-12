@@ -46,4 +46,13 @@ public sealed class ChatGroundingPolicyTests
             expected,
             ChatGroundingPolicy.ResolveAnswerStatus(answerSource, needsClarification, citationCount));
     }
+
+    [Fact]
+    public void NormalizeSourceMarkers_FiltersAndRenumbersInFirstAppearanceOrder()
+    {
+        var result = ChatGroundingPolicy.NormalizeSourceMarkers("Ý A [3]. Ý B [1]. Ý C [3].");
+
+        Assert.Equal("Ý A [1]. Ý B [2]. Ý C [1].", result.Answer);
+        Assert.Equal([3, 1], result.OriginalSourceNumbers);
+    }
 }

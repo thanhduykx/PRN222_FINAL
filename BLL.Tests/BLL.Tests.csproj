@@ -18,4 +18,9 @@
   <ItemGroup>
     <ProjectReference Include="..\BLL\BLL.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Web\wwwroot\uploads\109df1bc75af406fb43f605ca85fadab.txt"
+          Link="TestData\DBA103-syllabus.txt"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
