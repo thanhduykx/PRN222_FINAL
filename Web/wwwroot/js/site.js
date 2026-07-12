@@ -1470,6 +1470,7 @@ function normalizeOnlineUsersPayload(payload) {
         email: item.email || "",
         role: item.role || "",
         initials: item.initials || "U",
+        isPremium: item.isPremium === true,
         connectionCount: Number(item.connectionCount || 0)
       }))
     : [];
@@ -1520,12 +1521,13 @@ function renderOnlineUsersSnapshot(snapshot) {
     const statusTitle = isCurrentUser ? t("onlineUsers.youAreOnline") : t("onlineUsers.online");
     const roleLabel = user.role ? "<span class=\"online-users-widget__role\">" + escapeHtml(user.role) + "</span>" : "";
     const connectionLabel = user.connectionCount > 1 ? "<span class=\"online-users-widget__connections\">" + escapeHtml(t("onlineUsers.tabs").replace("{count}", String(user.connectionCount))) + "</span>" : "";
+    const premiumClass = user.isPremium ? " has-premium-effect" : "";
 
     return [
-      "<li class=\"online-users-widget__item" + (isCurrentUser ? " is-current-user" : "") + "\">",
-      "  <span class=\"online-users-widget__avatar\">" + escapeHtml(user.initials) + "</span>",
+      "<li class=\"online-users-widget__item" + (isCurrentUser ? " is-current-user" : "") + (user.isPremium ? " is-premium-user" : "") + "\">",
+      "  <span class=\"online-users-widget__avatar" + premiumClass + "\">" + escapeHtml(user.initials) + "</span>",
       "  <span class=\"online-users-widget__identity\">",
-      "    <strong>" + escapeHtml(user.displayName) + "</strong>",
+      "    <strong class=\"" + (user.isPremium ? "premium-user-name" : "") + "\">" + escapeHtml(user.displayName) + "</strong>",
       "    <small>" + roleLabel + connectionLabel + "</small>",
       "  </span>",
       "  <span class=\"material-symbols-outlined online-users-widget__icon\" title=\"" + escapeHtml(statusTitle) + "\" aria-hidden=\"true\">" + statusIcon + "</span>",
@@ -2210,13 +2212,92 @@ function appendMessageTo(target, role, content, citations = []) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = content;
+  if (role === "assistant") renderAssistantContent(bubble, content);
+  else bubble.textContent = content;
 
   wrapper.appendChild(bubble);
   appendCitationsToMessage(wrapper, citations);
   target.appendChild(wrapper);
   target.scrollTop = target.scrollHeight;
   return wrapper;
+}
+
+function appendSafeInlineContent(target, text) {
+  const value = String(text || "");
+  const tokenPattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let cursor = 0;
+  for (const match of value.matchAll(tokenPattern)) {
+    if (match.index > cursor) target.appendChild(document.createTextNode(value.slice(cursor, match.index)));
+    const token = match[0];
+    const element = document.createElement(token.startsWith("**") ? "strong" : "code");
+    element.textContent = token.startsWith("**") ? token.slice(2, -2) : token.slice(1, -1);
+    target.appendChild(element);
+    cursor = match.index + token.length;
+  }
+  if (cursor < value.length) target.appendChild(document.createTextNode(value.slice(cursor)));
+}
+
+function renderAssistantContent(bubble, content) {
+  if (!bubble) return;
+  bubble.replaceChildren();
+  bubble.classList.add("chat-answer-prose");
+  const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
+  let list = null;
+  let codeBlock = null;
+  const closeList = () => { list = null; };
+
+  lines.forEach((rawLine) => {
+    const trimmed = rawLine.trim();
+    if (trimmed.startsWith("```")) {
+      closeList();
+      if (codeBlock) codeBlock = null;
+      else {
+        const pre = document.createElement("pre");
+        codeBlock = document.createElement("code");
+        pre.appendChild(codeBlock);
+        bubble.appendChild(pre);
+      }
+      return;
+    }
+    if (codeBlock) {
+      codeBlock.textContent += `${rawLine}\n`;
+      return;
+    }
+    if (!trimmed) {
+      closeList();
+      return;
+    }
+
+    const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const element = document.createElement(heading[1].length <= 2 ? "h3" : "h4");
+      appendSafeInlineContent(element, heading[2]);
+      bubble.appendChild(element);
+      return;
+    }
+    const unordered = trimmed.match(/^[-*•]\s+(.+)$/);
+    const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    if (unordered || ordered) {
+      const tagName = ordered ? "OL" : "UL";
+      if (!list || list.tagName !== tagName) {
+        list = document.createElement(tagName.toLowerCase());
+        bubble.appendChild(list);
+      }
+      const item = document.createElement("li");
+      appendSafeInlineContent(item, (unordered || ordered)[1]);
+      list.appendChild(item);
+      return;
+    }
+
+    closeList();
+    const quote = trimmed.match(/^>\s*(.+)$/);
+    const element = document.createElement(quote ? "blockquote" : "p");
+    appendSafeInlineContent(element, quote ? quote[1] : trimmed);
+    bubble.appendChild(element);
+  });
+
+  if (!bubble.childNodes.length) bubble.textContent = String(content || "");
 }
 
 async function appendAssistantAnswer(target, content, citations) {
@@ -2233,6 +2314,7 @@ async function appendAssistantAnswer(target, content, citations) {
     if (index % 32 === 0) target.scrollTop = target.scrollHeight;
     await new Promise((resolve) => window.setTimeout(resolve, 12));
   }
+  renderAssistantContent(bubble, content);
   appendCitationsToMessage(wrapper, citations);
   target.scrollTop = target.scrollHeight;
   return wrapper;
@@ -2261,7 +2343,7 @@ function appendCitationsToMessage(messageWrapper, citations) {
 
     seenSources.add(sourceKey);
     compactSources.push(citation);
-    if (compactSources.length === 3) {
+    if (compactSources.length === 5) {
       break;
     }
   }
@@ -2271,31 +2353,111 @@ function appendCitationsToMessage(messageWrapper, citations) {
   }
 
   const list = document.createElement("div");
-  list.className = "citations compact-citations";
-  list.setAttribute("aria-label", "Sources");
+  list.className = "citations citation-cards";
+  list.setAttribute("aria-label", getLanguage() === "vi" ? "Nguồn tham khảo" : "References");
 
   const label = document.createElement("span");
   label.className = "citation-label";
-  label.textContent = getLanguage() === "vi" ? "Nguồn:" : "Sources:";
+  label.textContent = getLanguage() === "vi"
+    ? `Nguồn tham khảo (${compactSources.length})`
+    : `References (${compactSources.length})`;
   list.appendChild(label);
 
-  compactSources.forEach((citation) => {
-    const item = document.createElement("span");
-    item.className = "citation citation-source";
+  compactSources.forEach((citation, index) => {
+    const item = document.createElement("details");
+    item.className = "citation-card";
+    if (index === 0) item.open = true;
     const fileName = citation.fileName || citation.FileName || "";
     const chunkIndex = citation.chunkIndex ?? citation.ChunkIndex;
+    const excerpt = citation.excerpt || citation.Excerpt || "";
+    const scoreValue = Number(citation.score ?? citation.Score);
     const metaValues = [
       citation.subject || citation.Subject,
-      citation.chapter || citation.Chapter
+      citation.chapter || citation.Chapter,
+      Number.isInteger(Number(chunkIndex)) ? `Đoạn ${chunkIndex}` : ""
     ].filter(Boolean);
     const safeSource = fileName || metaValues.join(" / ") || (getLanguage() === "vi" ? "Nguồn nội bộ" : "Internal source");
-    item.textContent = fileName && chunkIndex ? `${safeSource} / chunk ${chunkIndex}` : safeSource;
-    item.title = metaValues.join(" / ");
+
+    const summary = document.createElement("summary");
+    const order = document.createElement("span");
+    order.className = "citation-card__order";
+    order.textContent = String(index + 1).padStart(2, "0");
+    const identity = document.createElement("span");
+    identity.className = "citation-card__identity";
+    const title = document.createElement("strong");
+    title.textContent = safeSource;
+    const meta = document.createElement("small");
+    meta.textContent = metaValues.join(" · ");
+    identity.append(title, meta);
+    summary.append(order, identity);
+    if (Number.isFinite(scoreValue) && scoreValue > 0) {
+      const score = document.createElement("span");
+      score.className = "citation-card__score";
+      score.textContent = `${Math.round(Math.min(scoreValue, 1) * 100)}%`;
+      score.title = getLanguage() === "vi" ? "Độ liên quan" : "Relevance";
+      summary.appendChild(score);
+    }
+
+    const body = document.createElement("div");
+    body.className = "citation-card__body";
+    const bodyText = document.createElement("p");
+    bodyText.textContent = excerpt || (getLanguage() === "vi"
+      ? "Nguồn này đã được dùng để đối chiếu câu trả lời. Nội dung chi tiết phụ thuộc quyền truy cập tài liệu của bạn."
+      : "This source was used to verify the answer. Detailed content depends on your document access permissions.");
+    body.appendChild(bodyText);
+    item.append(summary, body);
 
     list.appendChild(item);
   });
 
   messageWrapper.appendChild(list);
+}
+
+function appendAnswerFeedback(messageWrapper) {
+  if (!messageWrapper || messageWrapper.querySelector(".chat-answer-feedback")) return;
+  const feedback = document.createElement("div");
+  feedback.className = "chat-answer-feedback";
+  feedback.setAttribute("aria-label", getLanguage() === "vi" ? "Đánh giá câu trả lời" : "Rate this answer");
+
+  const prompt = document.createElement("span");
+  prompt.textContent = getLanguage() === "vi" ? "Câu trả lời này có hữu ích không?" : "Was this answer helpful?";
+  const status = document.createElement("span");
+  status.className = "chat-answer-feedback__status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  feedback.append(prompt);
+
+  [["up", "thumb_up", "Hữu ích", "Helpful"], ["down", "thumb_down", "Chưa hữu ích", "Not helpful"]].forEach(([value, icon, vi, en]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chat-answer-feedback__button";
+    button.setAttribute("aria-pressed", "false");
+    button.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span><span>${getLanguage() === "vi" ? vi : en}</span>`;
+    button.addEventListener("click", () => {
+      feedback.querySelectorAll("button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      status.textContent = getLanguage() === "vi"
+        ? "Đã ghi nhận phản hồi trên thiết bị này."
+        : "Feedback saved on this device.";
+      try { localStorage.setItem(`chat-feedback-${getSessionId()}-${Date.now()}`, value); } catch { /* Storage is optional. */ }
+    });
+    feedback.appendChild(button);
+  });
+  feedback.appendChild(status);
+  messageWrapper.appendChild(feedback);
+}
+
+function appendRetryAction(messageWrapper, question) {
+  if (!messageWrapper || !question) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "chat-retry-button";
+  button.textContent = getLanguage() === "vi" ? "Thử lại câu hỏi" : "Retry question";
+  button.addEventListener("click", () => {
+    if (!questionInput || !chatForm) return;
+    questionInput.value = question;
+    chatForm.requestSubmit();
+  });
+  messageWrapper.appendChild(button);
 }
 
 function renderClarificationOptions(messageWrapper, options, originalQuestion) {
@@ -2363,7 +2525,8 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
     loadingMessage?.remove();
 
     if (!response.ok) {
-      appendMessageTo(messagesTarget, "assistant", payload.error || t("chat.requestError"));
+      const errorMessage = appendMessageTo(messagesTarget, "assistant", payload.error || t("chat.requestError"));
+      appendRetryAction(errorMessage, question);
       return false;
     }
 
@@ -2377,6 +2540,7 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
       activeSessionTitle.textContent = question.length <= 56 ? question : `${question.slice(0, 56)}...`;
     }
     const answerMessage = await appendAssistantAnswer(messagesTarget, payload.answer, payload.citations || []);
+    appendAnswerFeedback(answerMessage);
     if (payload.needsClarification && Array.isArray(payload.subjectOptions)) {
       renderClarificationOptions(answerMessage, payload.subjectOptions, question);
     }
@@ -2387,7 +2551,8 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
     return true;
   } catch {
     loadingMessage?.remove();
-    appendMessageTo(messagesTarget, "assistant", t("chat.connectionError"));
+    const errorMessage = appendMessageTo(messagesTarget, "assistant", t("chat.connectionError"));
+    appendRetryAction(errorMessage, question);
     return false;
   } finally {
     if (focusAfter) {

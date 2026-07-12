@@ -74,6 +74,7 @@ public static class BusinessServiceCollectionExtensions
         services.AddSingleton<IPaymentRepository>(_ => new PaymentRepository(connectionString));
         services.AddSingleton<ISubscriptionRepository>(_ => new SubscriptionRepository(connectionString));
         services.AddScoped<IPackageService, PackageService>();
+        services.AddScoped<IUserProvisioningService, UserProvisioningService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<ISubscriptionService, SubscriptionService>();
         services.AddSingleton<IMomoPaymentGateway, MomoPaymentGateway>();

@@ -85,6 +85,7 @@ public sealed class CurrentModel : PageModel
             {
                 PackageId = subscription.PackageId,
                 PackageName = subscription.PackageName,
+                PackageCode = subscription.PackageCode,
                 Status = subscription.Status.ToString(),
                 StartsAt = subscription.StartsAt,
                 EndsAt = subscription.EndsAt,

@@ -74,7 +74,7 @@ public sealed class PaymentService : IPaymentService
             payment.PaidAt = now;
             payment.CheckoutUrl = request.ReturnUrl;
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
-            await ActivateSubscriptionAsync(payment, package, false, cancellationToken);
+            await ActivateSubscriptionAsync(payment, package, cancellationToken);
             return ToCheckoutResult(payment, "Free package activated.");
         }
 
@@ -163,7 +163,7 @@ public sealed class PaymentService : IPaymentService
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = DateTimeOffset.UtcNow;
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
-            await ActivateSubscriptionAsync(payment, package, true, cancellationToken);
+            await ActivateSubscriptionAsync(payment, package, cancellationToken);
         }
         else
         {
@@ -181,6 +181,18 @@ public sealed class PaymentService : IPaymentService
             SubscriptionActivated = payment.Status == PaymentStatus.Paid,
             Message = result.Message
         };
+    }
+
+    public Task<PaymentWebhookResultDto> HandleSignedReturnAsync(
+        PaymentWebhookDto returnData,
+        CancellationToken cancellationToken = default)
+    {
+        if (returnData.Provider != PaymentProvider.MoMo)
+        {
+            throw new InvalidOperationException("Only signed MoMo return data can be processed directly.");
+        }
+
+        return HandleWebhookAsync(returnData, cancellationToken);
     }
 
     public async Task<PaymentReturnDto?> GetReturnStatusAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default)
@@ -266,7 +278,7 @@ public sealed class PaymentService : IPaymentService
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = DateTimeOffset.UtcNow;
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
-            await ActivateSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), true, cancellationToken);
+            await ActivateSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), cancellationToken);
         }
         else if (gatewayStatus.Status == PaymentStatus.Canceled)
         {
@@ -305,23 +317,31 @@ public sealed class PaymentService : IPaymentService
         }).ToList();
     }
 
-    private async Task ActivateSubscriptionAsync(Payment payment, Package package, bool idempotent, CancellationToken cancellationToken)
+    private async Task ActivateSubscriptionAsync(Payment payment, Package package, CancellationToken cancellationToken)
     {
-        if (idempotent && await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken) is not null)
+        var latestPaidPayment = (await _payments.GetByUserAsync(payment.UserId, 100, cancellationToken))
+            .FirstOrDefault(item => item.Status == PRN222_FINAL.DAL.Enums.PaymentStatus.Paid);
+        if (latestPaidPayment is not null && latestPaidPayment.Id != payment.Id)
         {
             return;
         }
 
-        var currentEntity = await _subscriptions.GetCurrentActiveAsync(payment.UserId, cancellationToken);
-        var current = currentEntity is null ? null : BillingDtoMapper.ToModel(currentEntity);
         var now = DateTimeOffset.UtcNow;
-        var startsAt = current is not null && current.EndsAt > now ? current.EndsAt : now;
-        var endsAt = package.IsLifetime
+        var existingEntity = await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken);
+        var existing = existingEntity is null ? null : BillingDtoMapper.ToModel(existingEntity);
+        var isAlreadyEffective = existing is not null
+            && existing.Status == SubscriptionStatus.Active
+            && existing.StartsAt <= now
+            && existing.EndsAt > now;
+        var startsAt = isAlreadyEffective ? existing!.StartsAt : now;
+        var endsAt = isAlreadyEffective
+            ? existing!.EndsAt
+            : package.IsLifetime
             ? new DateTimeOffset(9999, 12, 31, 23, 59, 59, TimeSpan.Zero)
             : startsAt.AddDays(Math.Max(1, package.DurationDays));
         var subscription = new Subscription
         {
-            Id = Guid.NewGuid(),
+            Id = existing?.Id ?? Guid.NewGuid(),
             PackageId = package.Id,
             UserId = payment.UserId,
             UserName = payment.UserName,
@@ -330,18 +350,15 @@ public sealed class PaymentService : IPaymentService
             StartsAt = startsAt,
             EndsAt = endsAt,
             PaymentId = payment.Id,
-            CreatedAt = now
+            CreatedAt = existing?.CreatedAt ?? now
         };
 
-        await _subscriptions.AddAsync(BillingDtoMapper.ToEntity(subscription), cancellationToken);
+        await _subscriptions.ActivateExclusiveAsync(BillingDtoMapper.ToEntity(subscription), now, cancellationToken);
     }
 
     private async Task EnsurePaidSubscriptionAsync(Payment payment, Package package, CancellationToken cancellationToken)
     {
-        if (await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken) is null)
-        {
-            await ActivateSubscriptionAsync(payment, package, true, cancellationToken);
-        }
+        await ActivateSubscriptionAsync(payment, package, cancellationToken);
     }
 
     private string BuildWebhookUrl(PaymentProvider provider)

@@ -7,6 +7,7 @@ public sealed class SubscriptionDto
     public Guid Id { get; set; }
     public Guid PackageId { get; set; }
     public string PackageName { get; set; } = string.Empty;
+    public string PackageCode { get; set; } = string.Empty;
     public Guid UserId { get; set; }
     public SubscriptionStatus Status { get; set; }
     public DateTimeOffset StartsAt { get; set; }

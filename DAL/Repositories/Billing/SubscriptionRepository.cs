@@ -59,6 +59,51 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             .ToListAsync(cancellationToken);
     }
 
+    public async Task ActivateExclusiveAsync(
+        KnowledgeSqlSubscription subscription,
+        DateTimeOffset activatedAt,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
+        var superseded = await context.Subscriptions
+            .Where(item => item.UserId == subscription.UserId
+                && item.Status == SubscriptionStatus.Active
+                && item.Id != subscription.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var item in superseded)
+        {
+            item.Status = SubscriptionStatus.Canceled;
+            if (item.StartsAt > activatedAt)
+            {
+                item.StartsAt = activatedAt;
+            }
+            item.EndsAt = item.EndsAt > activatedAt ? activatedAt : item.EndsAt;
+        }
+
+        var target = await context.Subscriptions
+            .FirstOrDefaultAsync(item => item.Id == subscription.Id, cancellationToken);
+        if (target is null)
+        {
+            context.Subscriptions.Add(subscription);
+        }
+        else
+        {
+            target.PackageId = subscription.PackageId;
+            target.UserId = subscription.UserId;
+            target.UserName = subscription.UserName;
+            target.UserEmail = subscription.UserEmail;
+            target.Status = SubscriptionStatus.Active;
+            target.StartsAt = subscription.StartsAt;
+            target.EndsAt = subscription.EndsAt;
+            target.PaymentId = subscription.PaymentId;
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(KnowledgeSqlSubscription subscription, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();

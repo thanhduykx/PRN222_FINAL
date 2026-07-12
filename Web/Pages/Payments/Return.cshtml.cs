@@ -31,6 +31,26 @@ public sealed class ReturnModel : PageModel
             return;
         }
 
+        if (parsedProvider == PaymentProvider.MoMo && !string.IsNullOrWhiteSpace(QueryValue("signature")))
+        {
+            try
+            {
+                await _payments.HandleSignedReturnAsync(new PaymentWebhookDto
+                {
+                    Provider = PaymentProvider.MoMo,
+                    RawBody = Request.QueryString.Value ?? string.Empty,
+                    Values = Request.Query.ToDictionary(
+                        pair => pair.Key,
+                        pair => pair.Value.ToString(),
+                        StringComparer.Ordinal)
+                }, cancellationToken);
+            }
+            catch (InvalidOperationException)
+            {
+                ErrorMessage = "Không thể xác minh kết quả trả về từ MoMo. Vui lòng kiểm tra lịch sử giao dịch hoặc liên hệ hỗ trợ.";
+            }
+        }
+
         Status = await _payments.GetReturnStatusAsync(parsedProvider, rawOrderCode, cancellationToken);
         ReturnStatusHint = ParseReturnStatusHint(parsedProvider);
         if (Status is null)

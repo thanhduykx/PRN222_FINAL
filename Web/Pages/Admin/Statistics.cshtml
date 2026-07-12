@@ -483,6 +483,7 @@
                 </div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
+                        <caption class="visually-hidden">Các tài liệu được tải lên gần đây</caption>
                         <thead><tr><th>Tài liệu</th><th>Môn học</th><th>Người upload</th><th>Trạng thái</th><th>Citation</th><th>Ngày upload</th></tr></thead>
                         <tbody>
                             @foreach (var document in Model.Dashboard.RecentDocuments)
@@ -513,6 +514,7 @@
                 <div class="ops-panel-head"><div><h2>Người dùng chat nhiều nhất</h2><p class="ops-muted mb-0">Admin biết nhóm sinh viên đang dùng chatbot tích cực.</p></div></div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
+                        <caption class="visually-hidden">Những người dùng sử dụng chatbot nhiều nhất</caption>
                         <thead><tr><th>Người dùng</th><th>Email</th><th>Câu hỏi</th><th>Phiên chat</th><th>Lần hỏi gần nhất</th></tr></thead>
                         <tbody>
                             @foreach (var user in Model.Dashboard.TopChatUsers)
@@ -539,6 +541,7 @@
                 </div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
+                        <caption class="visually-hidden">Tình trạng phụ trách môn học của giảng viên</caption>
                         <thead><tr><th>Người dùng</th><th>Vai trò</th><th>Môn phụ trách</th><th>Quyền upload</th><th>Trạng thái</th></tr></thead>
                         <tbody>
                             @foreach (var subject in Model.Dashboard.SubjectUsage)
@@ -675,6 +678,7 @@
                         </div>
                         <div class="ops-table-wrap">
                             <table class="ops-table ops-compact-table ops-subscription-table">
+                                <caption class="visually-hidden">Doanh thu và trạng thái giao dịch theo gói</caption>
                                 <thead>
                                     <tr>
                                         <th>Gói</th>
@@ -712,6 +716,7 @@
                         </div>
                         <div class="ops-table-wrap">
                             <table class="ops-table ops-compact-table">
+                                <caption class="visually-hidden">Các giao dịch thanh toán gần nhất</caption>
                                 <thead>
                                     <tr>
                                         <th>User</th>
@@ -764,8 +769,8 @@
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">workspace_premium</span><div class="ops-kpi-content"><span>Subscription active</span><strong>@Model.Dashboard.ActiveSubscriptionCount.ToString("N0")</strong><small>Gói đang hoạt động</small></div></article>
             </section>
             <div class="ops-stat-two-column">
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Thống kê mua gói</h2><p class="ops-muted mb-0">Doanh thu và trạng thái theo package.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><thead><tr><th>Gói</th><th>Paid</th><th>Pending</th><th>Failed</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var package in Model.Dashboard.PackagePurchases){<tr><td data-label="Gói"><strong>@package.PackageName</strong><small>@package.PackageCode</small></td><td data-label="Paid">@package.PaidCount</td><td data-label="Pending">@package.PendingCount</td><td data-label="Failed">@package.FailedCount</td><td data-label="Doanh thu">@package.RevenueVnd.ToString("N0") VND</td></tr>}</tbody></table></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giao dịch gần nhất</h2><p class="ops-muted mb-0">Bảng rút gọn để tránh cuộn ngang.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><thead><tr><th>User</th><th>Gói</th><th>Cổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody>@foreach (var payment in Model.Dashboard.RecentPayments){<tr><td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td><td data-label="Gói">@payment.PackageName</td><td data-label="Cổng">@payment.Provider</td><td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td><td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM")</td></tr>}</tbody></table></div></section>
+                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Thống kê mua gói</h2><p class="ops-muted mb-0">Doanh thu và trạng thái theo package.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><caption class="visually-hidden">Thống kê doanh thu và giao dịch theo gói</caption><thead><tr><th>Gói</th><th>Paid</th><th>Pending</th><th>Failed</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var package in Model.Dashboard.PackagePurchases){<tr><td data-label="Gói"><strong>@package.PackageName</strong><small>@package.PackageCode</small></td><td data-label="Paid">@package.PaidCount</td><td data-label="Pending">@package.PendingCount</td><td data-label="Failed">@package.FailedCount</td><td data-label="Doanh thu">@package.RevenueVnd.ToString("N0") VND</td></tr>}</tbody></table></div></section>
+                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giao dịch gần nhất</h2><p class="ops-muted mb-0">Bảng rút gọn để tránh cuộn ngang.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><caption class="visually-hidden">Danh sách giao dịch thanh toán gần nhất</caption><thead><tr><th>User</th><th>Gói</th><th>Cổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody>@foreach (var payment in Model.Dashboard.RecentPayments){<tr><td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td><td data-label="Gói">@payment.PackageName</td><td data-label="Cổng">@payment.Provider</td><td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td><td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM")</td></tr>}</tbody></table></div></section>
             </div>
         }
 

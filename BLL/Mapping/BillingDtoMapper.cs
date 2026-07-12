@@ -92,6 +92,7 @@ public static class BillingDtoMapper
             Id = subscription.Id,
             PackageId = subscription.PackageId,
             PackageName = package?.Name ?? string.Empty,
+            PackageCode = package?.Code ?? string.Empty,
             UserId = subscription.UserId,
             Status = subscription.Status,
             StartsAt = subscription.StartsAt,

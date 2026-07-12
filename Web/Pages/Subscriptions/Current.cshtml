@@ -17,6 +17,9 @@
     string StatusClass(string status) => status == "Paid" ? "is-success" : status == "Pending" ? "is-pending" : "is-error";
     string ProviderLogo(string provider) => provider.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
         ? "/img/payments/momo.svg" : "/img/payments/payos.svg";
+    var premiumCode = Model.Subscription?.PackageCode?.ToUpperInvariant() ?? string.Empty;
+    var hasPremiumEffects = premiumCode is "PRO" or "ANNUAL";
+    var profileInitial = string.IsNullOrWhiteSpace(Model.Profile.FullName) ? "U" : Model.Profile.FullName.Trim()[..1].ToUpperInvariant();
 }
 
 <section class="ops-page account-billing-page">
@@ -36,7 +39,7 @@
     }
 
     <div class="account-billing-grid">
-        <section class="current-plan-card @(Model.Subscription is null ? "is-empty" : "")">
+        <section class="current-plan-card @(Model.Subscription is null ? "is-empty" : "") @(hasPremiumEffects ? "is-premium" : "")">
             <div class="current-plan-card__heading"><span>Gói học tập hiện tại</span>@if (Model.Subscription is not null){<span class="current-plan-card__badge">Đang hoạt động</span>}</div>
             @if (Model.Subscription is null)
             {
@@ -50,6 +53,19 @@
                     <article><span>Bắt đầu</span><strong>@Model.Subscription.StartsAt.LocalDateTime.ToString("dd/MM/yyyy")</strong></article>
                     <article><span>Trạng thái</span><strong>Đang sử dụng</strong></article>
                 </div>
+                @if (hasPremiumEffects)
+                {
+                    <section class="premium-identity" aria-label="Đặc quyền hình ảnh của gói @Model.Subscription.PackageName">
+                        <div class="premium-identity__benefits">
+                            <div><span class="premium-benefit-icon" aria-hidden="true">☆</span><span>Toàn quyền của gói <strong>@Model.Subscription.PackageName</strong></span></div>
+                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span>Sở hữu hiệu ứng tên <strong class="premium-user-name">@Model.Profile.FullName</strong> đặc biệt</span></div>
+                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span>Sở hữu hiệu ứng avatar đặc biệt</span></div>
+                        </div>
+                        <div class="premium-avatar" aria-label="Avatar đặc quyền của @Model.Profile.FullName">
+                            <span aria-hidden="true">@profileInitial</span>
+                        </div>
+                    </section>
+                }
             }
         </section>
     </div>
