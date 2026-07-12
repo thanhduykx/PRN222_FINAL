@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using PRN222_FINAL.BLL.Models
 @model PRN222_FINAL.Web.Pages.Home.IndexModel
 @{
@@ -6,6 +6,7 @@
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "documents";
     ViewData["ShellTitle"] = "Kho tài liệu / Documents";
+    ViewData["ShellTitleI18n"] = "home.shellTitleDocs";
     ViewData["ShellTitleI18n"] = "documents.shellTitle";
 
     var documents = Model.Documents.OrderByDescending(item => item.UploadedAt).ToList();
@@ -85,7 +86,7 @@
     {
         if (document.Status == DocumentIndexStatus.Failed && !string.IsNullOrWhiteSpace(document.IndexError))
         {
-            return document.IndexError;
+            return "System error while processing document. Please check the file or try again.";
         }
 
         if (document.Status == DocumentIndexStatus.Indexed && document.IndexedAt.HasValue)
@@ -125,47 +126,51 @@
 
     @if (!isCatalogSection)
     {
-        <section class="ops-kpi-grid" aria-label="Document metrics">
-            <article class="ops-kpi">
+        <section class="ops-kpi-ribbon" aria-label="Document metrics">
+            <div class="ops-kpi-ribbon-item">
                 <span class="ops-kpi-icon is-blue material-symbols-outlined" aria-hidden="true">description</span>
-                <div class="ops-kpi-content">
-                <span data-i18n="documents.kpiTotal">Total</span>
-                <strong data-document-kpi="total">@totalDocuments</strong>
-                <small><span data-document-visible-count>@visibleDocuments</span> <span data-i18n="documents.showing">shown</span></small>
+                <div class="ops-kpi-info">
+                    <span class="ops-kpi-label" data-i18n="documents.kpiTotal">Tổng cộng</span>
+                    <strong class="ops-kpi-value" data-document-kpi="total">@totalDocuments</strong>
+                    <span class="ops-kpi-sub" data-document-visible-count>@visibleDocuments <span data-i18n="documents.showing">Hiển thị</span></span>
                 </div>
-            </article>
-            <article class="ops-kpi">
+            </div>
+            <div class="ops-kpi-ribbon-divider"></div>
+            <div class="ops-kpi-ribbon-item">
                 <span class="ops-kpi-icon is-green material-symbols-outlined" aria-hidden="true">check_circle</span>
-                <div class="ops-kpi-content">
-                <span data-i18n="documents.statsIndexed">Indexed</span>
-                <strong data-document-kpi="indexed">@Model.IndexedDocumentCount</strong>
-                <small>Ready for chat</small>
+                <div class="ops-kpi-info">
+                    <span class="ops-kpi-label" data-i18n="documents.statsIndexed">Đã index</span>
+                    <strong class="ops-kpi-value" data-document-kpi="indexed">@Model.IndexedDocumentCount</strong>
+                    <span class="ops-kpi-sub" data-i18n="documents.kpiIndexedSub">Sẵn sàng chat</span>
                 </div>
-            </article>
-            <article class="ops-kpi">
+            </div>
+            <div class="ops-kpi-ribbon-divider"></div>
+            <div class="ops-kpi-ribbon-item">
                 <span class="ops-kpi-icon is-indigo material-symbols-outlined" aria-hidden="true">schedule</span>
-                <div class="ops-kpi-content">
-                <span data-i18n="documents.statsProcessing">Processing</span>
-                <strong data-document-kpi="processing">@Model.ProcessingDocumentCount</strong>
-                <small>Queued or indexing</small>
+                <div class="ops-kpi-info">
+                    <span class="ops-kpi-label" data-i18n="documents.statsProcessing">Đang xử lý</span>
+                    <strong class="ops-kpi-value" data-document-kpi="processing">@Model.ProcessingDocumentCount</strong>
+                    <span class="ops-kpi-sub" data-i18n="documents.kpiProcessingSub">Đang chờ xử lý</span>
                 </div>
-            </article>
-            <article class="ops-kpi ops-kpi--danger">
+            </div>
+            <div class="ops-kpi-ribbon-divider"></div>
+            <div class="ops-kpi-ribbon-item">
                 <span class="ops-kpi-icon is-orange material-symbols-outlined" aria-hidden="true">warning</span>
-                <div class="ops-kpi-content">
-                <span data-i18n="documents.kpiFailed">Failed</span>
-                <strong data-document-kpi="failed">@Model.FailedDocumentCount</strong>
-                <small>Needs attention</small>
+                <div class="ops-kpi-info">
+                    <span class="ops-kpi-label" data-i18n="documents.kpiFailed">Thất bại</span>
+                    <strong class="ops-kpi-value" data-document-kpi="failed">@Model.FailedDocumentCount</strong>
+                    <span class="ops-kpi-sub" data-i18n="documents.kpiFailedSub">Cần kiểm tra</span>
                 </div>
-            </article>
-            <article class="ops-kpi">
+            </div>
+            <div class="ops-kpi-ribbon-divider"></div>
+            <div class="ops-kpi-ribbon-item">
                 <span class="ops-kpi-icon is-purple material-symbols-outlined" aria-hidden="true">inventory_2</span>
-                <div class="ops-kpi-content">
-                <span data-i18n="documents.storage">Storage</span>
-                <strong>@FormatBytes(Model.TotalUploadedBytes)</strong>
-                <small>@totalChunks chunks, avg @averageChunks.ToString("0.#")</small>
+                <div class="ops-kpi-info">
+                    <span class="ops-kpi-label" data-i18n="documents.storage">Lưu trữ</span>
+                    <strong class="ops-kpi-value">@FormatBytes(Model.TotalUploadedBytes)</strong>
+                    <span class="ops-kpi-sub">@Model.TotalChunkCount chunks, avg @(Model.TotalDocumentCount > 0 ? (Model.TotalChunkCount / Model.TotalDocumentCount) : 0)</span>
                 </div>
-            </article>
+            </div>
         </section>
     }
 
@@ -177,7 +182,7 @@
                 <input type="hidden" name="Language" value="vi" data-language-field />
 
                 <div class="ops-upload-file-card">
-                    <h2><span class="material-symbols-outlined" aria-hidden="true">description</span> <span data-i18n="documents.docInfo">Thông tin tài liệu</span></h2>
+                    <h2><span class="material-symbols-outlined" aria-hidden="true">description</span> <span data-i18n="documents.docInfo">Thông tin documents</span></h2>
                 <div class="ops-form-row">
                     <label class="ops-field">
                         <span data-i18n="documents.subject">Môn học</span>
@@ -316,7 +321,7 @@
                     @if (Model.IsLecturer)
                     {
                         <a class="ops-button ops-button--primary" asp-page="/Home/Index" asp-route-section="upload">
-                            <span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.uploadTitle">Tải tài liệu</span>
+                            <span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.uploadTitle">Tải documents</span>
                         </a>
                     }
                 </div>
@@ -328,12 +333,32 @@
                         <caption class="visually-hidden">Danh sách tài liệu theo bộ lọc hiện tại</caption>
                         <thead>
                             <tr>
-                                <th scope="col" data-i18n="documents.fileName">File</th>
-                                <th scope="col" data-i18n="documents.subjectChapter">Subject / Chapter</th>
-                                <th scope="col" data-i18n="documents.status">Status</th>
-                                <th scope="col" data-i18n="documents.chunksSize">Chunks / Size</th>
-                                <th scope="col" data-i18n="documents.uploadDate">Uploaded</th>
-                                <th scope="col" class="ops-actions-col" data-i18n="documents.actions">Actions</th>
+                                <th scope="col" class="i18n-dynamic-width" data-i18n="documents.fileName">Tên file</th>
+                                <th scope="col" class="i18n-auto-width">
+                                    <div class="i18n-auto-content" data-text-en="Subject / Chapter" data-text-vi="Môn học / Chương">
+                                        <span data-i18n="documents.subjectChapter">Subject / Chapter</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="i18n-auto-width">
+                                    <div class="i18n-auto-content" data-text-en="Status" data-text-vi="Trạng thái">
+                                        <span data-i18n="documents.status">Status</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="i18n-auto-width">
+                                    <div class="i18n-auto-content" data-text-en="Chunks / Size" data-text-vi="Số Chunk / Kích thước">
+                                        <span data-i18n="documents.chunksSize">Chunks / Size</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="i18n-auto-width">
+                                    <div class="i18n-auto-content" data-text-en="Upload Date" data-text-vi="Ngày Upload">
+                                        <span data-i18n="documents.uploadDate">Uploaded</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="ops-actions-col i18n-auto-width">
+                                    <div class="i18n-auto-content" data-text-en="Actions" data-text-vi="Thao tác">
+                                        <span data-i18n="documents.actions">Actions</span>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -358,7 +383,8 @@
                                     <td data-label="Status">
                                         <div class="ops-stack">
                                             <span class="rbl-status @StatusClass(document)" title="@StatusTitle(document)"
-                                                  data-document-status>@StatusLabel(document)</span>
+                                                  @(document.Status == DocumentIndexStatus.Failed ? "data-i18n-title=documents.failedTooltip" : "")
+                                                  data-document-status><span data-i18n="documents.status.@(document.Status?.ToLowerInvariant() ?? "unknown")">@StatusLabel(document)</span></span>
                                         </div>
                                     </td>
                                     <td data-label="Chunks / Size">
@@ -391,13 +417,13 @@
                                             {
                                                 <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id"><span data-i18n="documents.edit">Sửa</span></a>
                                                     <form asp-page-handler="ReindexDocument" method="post"
-                                                          data-confirm="Re-index tài liệu này?">
+                                                          data-confirm="Re-index tài liệu này?" data-confirm-i18n="documents.reindexConfirm">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
-                                                        <button type="submit" class="ops-mini-button"><span data-i18n="documents.reindex">Re-index</span></button>
+                                                        <button type="submit" class="ops-mini-button"><span data-i18n="documents.reindex">Re-Index</span></button>
                                                     </form>
                                                     <form asp-page-handler="DeleteDocument" method="post"
-                                                          data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.">
+                                                          data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác." data-confirm-i18n="documents.deleteConfirm">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@document.Id" />
                                                         <button type="submit" class="ops-mini-button ops-mini-button--danger"><span data-i18n="documents.delete">Xóa</span></button>
@@ -451,12 +477,12 @@
                                         <span class="material-symbols-outlined" aria-hidden="true">folder</span>
                                         <span class="ops-folder-main">
                                             <strong>@subject.DisplayName</strong>
-                                            <small>@(string.IsNullOrWhiteSpace(subject.Description) ? "Chưa có mô tả." :
+                                            <small>@(string.IsNullOrWhiteSpace(subject.Description) ? "No description yet." :
                                                                                                                                                                                 subject.Description)</small>
                                             </span>
                                             <span class="ops-chip">Owner: @PersonLabel(subject.OwnerName, "Unassigned")</span>
-                                            <span class="ops-chip">@subject.Chapters.Count chương</span>
-                                            <span class="ops-chip">@subject.DocumentCount tài liệu</span>
+                                            <span class="ops-chip">@subject.Chapters.Count chapters</span>
+                                            <span class="ops-chip">@subject.DocumentCount documents</span>
                                         </summary>
                                         <div class="ops-folder-subject-body">
                                             @if (isAdmin)
@@ -469,7 +495,7 @@
                                                     <button type="submit" class="ops-mini-button">Update</button>
                                                 </form>
                                                 <form asp-page-handler="DeleteSubject" method="post" class="ops-danger-form"
-                                                      data-confirm="Xóa môn này và toàn bộ chương bên trong? Thao tác này không thể hoàn tác.">
+                                                      data-confirm="Delete this subject and all its chapters? This cannot be undone." data-confirm-i18n="documents.deleteSubjectConfirm">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="id" value="@subject.SubjectId" />
                                                     <button type="submit" class="ops-mini-button ops-mini-button--danger">Delete
@@ -483,16 +509,16 @@
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="SubjectId" value="@subject.SubjectId" />
                                                         <label class="ops-field">
-                                                            <span>Thêm chương/mục trong @subject.Code</span>
-                                                            <input name="Title" placeholder="VD: Chapter 1 / Mục 1.1" />
+                                                            <span data-i18n="documents.addChapter">Thêm chương/mục trong</span> @subject.Code
+                                                            <input name="Title" placeholder="Ex: Chapter 1 / Mục 1.1" data-i18n-placeholder="documents.chapterTitlePlaceholder" />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>Thứ tự</span>
+                                                            <span data-i18n="documents.order">Thứ tự</span>
                                                             <input name="SortOrder" type="number" value="@(subject.Chapters.Count + 1)" />
                                                         </label>
                                                         <button type="submit" class="ops-mini-button">
                                                             <span class="material-symbols-outlined" aria-hidden="true">create_new_folder</span>
-                                                            Thêm mục
+                                                            <span data-i18n="documents.addChapterBtn">Thêm mục</span>
                                                         </button>
                                                     </form>
                                                 }
@@ -506,20 +532,20 @@
                                                         <input type="hidden" name="Subject" value="@subject.DisplayName" />
 
                                                         <label class="ops-field">
-                                                            <span>Chương/mục</span>
-                                                            <input name="Chapter" placeholder="VD: Chapter 1 / Mục 1.1" required />
+                                                            <span data-i18n="documents.chapterTitle">Chương/mục</span>
+                                                            <input name="Chapter" placeholder="Ex: Chapter 1 / Mục 1.1" data-i18n-placeholder="documents.chapterTitlePlaceholder" required />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>File tài liệu</span>
+                                                            <span>File documents</span>
                                                             <input name="File" type="file" accept=".pdf,.docx,.pptx,.txt" />
                                                         </label>
                                                         <label class="ops-field">
-                                                            <span>Hoặc URL bài giảng</span>
+                                                            <span data-i18n="documents.orUrl">Hoặc URL bài giảng</span>
                                                             <input name="SourceUrl" type="url" placeholder="https://example.com/lecture" />
                                                         </label>
                                                         <button type="submit" class="ops-button ops-button--primary">
                                                             <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
-                                                            Thêm tài liệu vào môn
+                                                            <span data-i18n="documents.addDocToSubject">Thêm tài liệu vào môn</span>
                                                         </button>
                                                     </form>
                                                 }
@@ -527,7 +553,7 @@
                                                 <div class="ops-folder-chapter-list">
                                                     @if (subject.Chapters.Count == 0)
                                                     {
-                                                        <p class="ops-muted">Môn này chưa có chương/mục.</p>
+                                                        <p class="ops-muted" data-i18n="documents.noChapters">Môn này chưa có chương/mục.</p>
                                                     }
                                                     @foreach (var chapter in subject.Chapters.OrderBy(item => item.SortOrder).ThenBy(item =>
                                         item.Title))
@@ -537,7 +563,7 @@
                                                                 <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
                                                                 <span class="ops-folder-main">
                                                                     <strong>@chapter.Title</strong>
-                                                                    <small>@chapter.Documents.Count tài liệu</small>
+                                                                    <small>@chapter.Documents.Count <span data-i18n="documents.documentsLower">tài liệu</span></small>
                                                                 </span>
                                                             </summary>
 
@@ -580,11 +606,11 @@
                                                                         <input type="hidden" name="Chapter" value="@chapter.Title" />
 
                                                                         <label class="ops-field">
-                                                                            <span>Thêm file vào @chapter.Title</span>
+                                                                            <span data-i18n="documents.addFileTo">Thêm file vào</span> @chapter.Title
                                                                             <input name="File" type="file" accept=".pdf,.docx,.pptx,.txt" />
                                                                         </label>
                                                                         <label class="ops-field">
-                                                                            <span>Hoặc URL bài giảng</span>
+                                                                            <span data-i18n="documents.orUrl">Hoặc URL bài giảng</span>
                                                                             <input name="SourceUrl" type="url"
                                                                                    placeholder="https://example.com/lecture" />
                                                                         </label>
@@ -598,7 +624,7 @@
 
                                                                 @if (chapter.Documents.Count == 0)
                                                                 {
-                                                                    <p class="ops-muted">Chưa có tài liệu trong chương/mục này.</p>
+                                                                    <p class="ops-muted" data-i18n="documents.noDocsInChapter">Chưa có tài liệu trong chương/mục này.</p>
                                                                 }
                                                                 else
                                                                 {
@@ -629,20 +655,20 @@
                                                                                         {
                                                                                             <button type="button" class="ops-mini-button"
                                                                                                     data-document-preview-action data-document-preview-label="Xem"
-                                                                                                    disabled title="@StatusTitle(document)">Xem</button>
+                                                                                                    disabled title="Unable to view">Xem</button>
                                                                                         }
                                                                                         @if (Model.CanEditDocumentMetadata(document, courseCatalog))
                                                                                         {
                                                                                             <a class="ops-mini-button" asp-page="/Home/EditDocument"
                                                                                                asp-route-id="@document.Id">Sửa</a>
                                                                                             <form asp-page-handler="ReindexDocument" method="post"
-                                                                                                  data-confirm="Re-index tài liệu này?">
+                                                                                                  data-confirm="Re-index this document?" data-confirm-i18n="documents.reindexConfirm">
                                                                                                 @Html.AntiForgeryToken()
                                                                                                 <input type="hidden" name="id" value="@document.Id" />
                                                                                                 <button type="submit" class="ops-mini-button">Re-index</button>
                                                                                             </form>
                                                                                             <form asp-page-handler="DeleteDocument" method="post"
-                                                                                                  data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.">
+                                                                                                  data-confirm="Delete this document from index? This cannot be undone." data-confirm-i18n="documents.deleteConfirm">
                                                                                                 @Html.AntiForgeryToken()
                                                                                                 <input type="hidden" name="id" value="@document.Id" />
                                                                                                 <button type="submit"

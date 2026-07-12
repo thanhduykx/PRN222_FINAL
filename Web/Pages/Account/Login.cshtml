@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Account.LoginModel
 @{
     ViewData["Title"] = "Đăng nhập";
@@ -8,9 +8,9 @@
 <section class="auth-page">
     <partial name="_AuthStars" />
     <div class="auth-panel">
-        <p class="eyebrow">Course Assistant</p>
-        <h1>Đăng nhập</h1>
-        <p class="subtitle">Truy cập kho tài liệu, quản lý nội dung đã index và tiếp tục phiên hỏi đáp theo nguồn.</p>
+        <p class="eyebrow" data-i18n="shell.title">Course Assistant</p>
+        <h1 data-i18n="account.loginTitle">Đăng nhập</h1>
+        <p class="subtitle" data-i18n="account.loginDesc">Truy cập kho tài liệu, quản lý nội dung đã index và tiếp tục phiên hỏi đáp theo nguồn.</p>
 
         @if (TempData["AuthError"] is string error)
         {
@@ -31,14 +31,14 @@
                 <span asp-validation-for="Email" class="text-danger"></span>
             </label>
             <label>
-                Mật khẩu
+                <span data-i18n="account.password">Mật khẩu</span>
                 <input asp-for="Password" class="form-control" autocomplete="current-password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </label>
-            <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            <button type="submit" class="btn btn-primary"><span data-i18n="account.loginTitle">Đăng nhập</span></button>
         </form>
 
-        <p class="auth-switch"><a asp-page="/Account/ForgotPassword">Quên mật khẩu?</a></p>
+        <p class="auth-switch"><a asp-page="/Account/ForgotPassword" data-i18n="account.forgotPasswordLink">Quên mật khẩu?</a></p>
 
         @if (Model.IsGoogleLoginEnabled)
         {
@@ -47,12 +47,12 @@
                 <input name="returnUrl" value="@Model.ReturnUrl" type="hidden" />
                 <button type="submit" class="btn btn-outline-dark google-button">
                     <img src="~/img/google-g.svg" alt="" class="google-icon" />
-                    <span>Đăng nhập với Google</span>
+                    <span data-i18n="account.loginGoogle">Đăng nhập với Google</span>
                 </button>
             </form>
         }
 
-        <p class="auth-switch">Chưa có tài khoản? Vui lòng liên hệ Nhà trường để xin cấp tài khoản.</p>
+        <p class="auth-switch" data-i18n="account.noAccountContact">Chưa có tài khoản? Vui lòng liên hệ Nhà trường để xin cấp tài khoản.</p>
         @if (!Model.IsGoogleLoginEnabled && !string.IsNullOrWhiteSpace(Model.GoogleLoginUnavailableMessage))
         {
             <div class="alert alert-warning">@Model.GoogleLoginUnavailableMessage</div>

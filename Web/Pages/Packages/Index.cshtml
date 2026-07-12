@@ -6,6 +6,7 @@
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
     ViewData["ShellTitle"] = "Gói dịch vụ";
+    ViewData["ShellTitleI18n"] = "packages.shellTitle";
 }
 
 <section class="ops-page package-membership">
@@ -15,11 +16,11 @@
             <span class="is-teal"><span class="material-symbols-outlined">workspace_premium</span></span>
             <span class="is-violet"><span class="material-symbols-outlined">diamond</span></span>
         </div>
-        <h1>Chọn gói học tập phù hợp</h1>
-        <p>Nâng cấp số lượt hỏi đáp để học hiệu quả hơn cùng tài liệu môn học.</p>
+        <h1 data-i18n="packages.title">Chọn gói học tập phù hợp</h1>
+        <p data-i18n="packages.desc">Nâng cấp số lượt hỏi đáp để học hiệu quả hơn cùng tài liệu môn học.</p>
         <a class="package-membership__current-link" asp-page="/Subscriptions/Current">
             <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
-            Xem gói hiện tại
+            <span data-i18n="packages.viewCurrent">Xem gói hiện tại</span>
         </a>
     </header>
 
@@ -30,14 +31,14 @@
 
     @if (Model.CurrentSubscription is not null)
     {
-        <section class="package-membership__active" aria-label="Gói đang sử dụng">
+        <section class="package-membership__active" aria-label="Current package" data-i18n-aria-label="packages.currentPackageAria">
             <span class="material-symbols-outlined" aria-hidden="true">verified</span>
             <div>
-                <span>Gói đang sử dụng</span>
+                <span data-i18n="packages.currentPackage">Gói đang sử dụng</span>
                 <strong>@Model.CurrentSubscription.PackageName</strong>
             </div>
-            <p>Có hiệu lực đến @Model.CurrentSubscription.ValidUntilLabel</p>
-            <span class="package-membership__active-badge">Đang hoạt động</span>
+            <p><span data-i18n="packages.validUntil">Có hiệu lực đến</span> @Model.CurrentSubscription.ValidUntilLabel</p>
+            <span class="package-membership__active-badge" data-i18n="packages.activeBadge">Đang hoạt động</span>
         </section>
     }
 
@@ -54,29 +55,51 @@
             <article class="package-membership__card @tone @(package.IsCurrentPackage ? "is-current" : "")">
                 @if (package.IsCurrentPackage)
                 {
-                    <span class="package-membership__featured">Đang sử dụng</span>
+                    <span class="package-membership__featured" data-i18n="packages.inUseBadge">Đang sử dụng</span>
                 }
                 else if (package.Code.Contains("STUDENT", StringComparison.OrdinalIgnoreCase))
                 {
-                    <span class="package-membership__featured">Phổ biến</span>
+                    <span class="package-membership__featured" data-i18n="packages.popularBadge">Phổ biến</span>
                 }
 
                 <div class="package-membership__icon" aria-hidden="true">
                     <span class="material-symbols-outlined">@(package.IsLifetime || package.Code.Contains("ANNUAL", StringComparison.OrdinalIgnoreCase) ? "diamond" : package.IsFree ? "school" : "workspace_premium")</span>
                 </div>
                 <span class="package-membership__code">@package.Code</span>
-                <h2>@package.Name</h2>
+                <h2 data-i18n="packages.name.@package.Code.ToLowerInvariant()">@package.Name</h2>
                 <div class="package-membership__price">
-                    <strong>@(package.IsFree ? "Miễn phí" : $"{package.PriceVnd:N0}đ")</strong>
-                    <span>@(package.IsFree ? "bắt đầu ngay" : package.IsLifetime ? "thanh toán một lần" : $"cho {package.DurationLabel}")</span>
+                    <strong>@(package.IsFree ? "Free" : $"{package.PriceVnd:N0}đ")</strong>
+                    <span>
+                        @if (package.IsFree)
+                        {
+                            <span data-i18n="packages.startNow">bắt đầu ngay</span>
+                        }
+                        else if (package.IsLifetime)
+                        {
+                            <span data-i18n="packages.oneTimePayment">thanh toán một lần</span>
+                        }
+                        else
+                        {
+                            <span data-i18n="packages.for">cho</span> @package.DurationDays <span data-i18n="packages.days">ngày</span>
+                        }
+                    </span>
                 </div>
-                <p class="package-membership__description">@package.Description</p>
+                <p class="package-membership__description" data-i18n="packages.desc.@package.Code.ToLowerInvariant()">@package.Description</p>
 
                 <ul class="package-membership__benefits">
-                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><strong>@package.MonthlyChatLimit.ToString("N0")</strong> câu hỏi mỗi tháng</span></li>
-                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Trả lời dựa trên tài liệu môn học</span></li>
-                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Lưu lịch sử và nguồn tham khảo</span></li>
-                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Thời hạn: <strong>@package.DurationLabel</strong></span></li>
+                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><strong>@package.MonthlyChatLimit.ToString("N0")</strong> <span data-i18n="packages.questionsPerMonth">câu hỏi mỗi tháng</span></span></li>
+                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span data-i18n="packages.answerBasedOnDocs">Trả lời dựa trên tài liệu môn học</span></li>
+                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span data-i18n="packages.saveHistory">Lưu lịch sử và nguồn tham khảo</span></li>
+                    <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><span data-i18n="packages.duration">Thời hạn:</span> <strong>
+                        @if (package.IsLifetime)
+                        {
+                            <span data-i18n="packages.lifetime">Vĩnh viễn</span>
+                        }
+                        else
+                        {
+                            @package.DurationDays <span data-i18n="packages.days">ngày</span>
+                        }
+                    </strong></span></li>
                 </ul>
 
                 <div class="package-membership__actions">
@@ -84,7 +107,7 @@
                     {
                         <a class="package-membership__button is-secondary" asp-page="/Subscriptions/Current">
                             <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-                            Xem gói hiện tại
+                            <span data-i18n="packages.viewCurrent">Xem gói hiện tại</span>
                         </a>
                     }
                     else if (package.IsFree)
@@ -95,7 +118,7 @@
                             <input type="hidden" name="provider" value="@PaymentProvider.MoMo" />
                             <button type="submit" class="package-membership__button">
                                 <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                                Kích hoạt ngay
+                                <span data-i18n="packages.activateNow">Kích hoạt ngay</span>
                             </button>
                         </form>
                     }
@@ -104,17 +127,17 @@
                         var paymentPanelId = $"payment-options-{package.Id:N}";
                         <button type="button" class="package-membership__button" data-payment-toggle="@paymentPanelId" aria-controls="@paymentPanelId" aria-expanded="false">
                             <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                            Chọn gói này
+                            <span data-i18n="packages.selectPackage">Chọn gói này</span>
                         </button>
                         <div id="@paymentPanelId" class="package-membership__payment-options" hidden>
-                            <p>Chọn phương thức thanh toán</p>
+                            <p data-i18n="packages.choosePayment">Chọn phương thức thanh toán</p>
                             <form method="post" asp-page-handler="Checkout">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="packageId" value="@package.Id" />
                                 <input type="hidden" name="provider" value="@PaymentProvider.MoMo" />
                                 <button type="submit" class="package-membership__payment-option is-momo">
                                     <img src="~/img/payments/momo.svg" alt="" />
-                                    <span><strong>Ví MoMo</strong><small>Thanh toán qua ứng dụng MoMo</small></span>
+                                    <span><strong>Ví MoMo</strong><small data-i18n="packages.payWithMomo">Thanh toán qua ứng dụng MoMo</small></span>
                                     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
                                 </button>
                             </form>
@@ -124,7 +147,7 @@
                                 <input type="hidden" name="provider" value="@PaymentProvider.PayOS" />
                                 <button type="submit" class="package-membership__payment-option is-payos">
                                     <img src="~/img/payments/payos.svg" alt="" />
-                                    <span><strong>PayOS</strong><small>Quét mã QR bằng ứng dụng ngân hàng</small></span>
+                                    <span><strong>PayOS</strong><small data-i18n="packages.payWithBanking">Quét mã QR bằng ứng dụng ngân hàng</small></span>
                                     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
                                 </button>
                             </form>
