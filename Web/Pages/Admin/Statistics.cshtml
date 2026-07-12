@@ -1,10 +1,11 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Admin.StatisticsModel
 @{
     ViewData["Title"] = "Báo cáo & Thống kê";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "reports";
     ViewData["ShellTitle"] = "Báo cáo & Thống kê";
+    ViewData["ShellTitleI18n"] = "admin.shellTitleStats";
     ViewData["ReportsSection"] = Model.Tab;
 
     var unansweredQuestions = Math.Max(0, Model.Dashboard.TotalChatQuestions - Model.Dashboard.TotalAssistantAnswers);
@@ -73,12 +74,14 @@
         new { Key = "subscription", Label = "Gói đăng ký" }
     };
 
-    string TabClass(string tab) => Model.Tab == tab ? "ops-tab is-active" : "ops-tab";
+
+
     string TabUrl(string tab) => Url.Page("/Admin/Statistics", new { tab, days = Model.Days }) ?? "#";
+    string TabClass(string tab) => $"ops-tab{(Model.Tab == tab ? " is-active" : "")}";
     string ReportDate(DateTimeOffset value) => value.ToLocalTime().ToString("dd/MM/yyyy");
     string ReportTimestamp(DateTimeOffset value) => value.ToLocalTime().ToString("HH:mm, dd/MM/yyyy");
     string PercentLabel(int numerator, int denominator) => denominator <= 0 ? "0%" : $"{Math.Min(100, (int)Math.Round(numerator * 100d / denominator))}%";
-    string MoneyVnd(decimal value) => value >= 1_000_000 ? $"{value / 1_000_000m:N1} triệu" : $"{value:N0}đ";
+    string MoneyVnd(decimal value) => value >= 1_000_000 ? $"{value / 1_000_000m:N1}M" : $"{value:N0}đ";
     string UserInitial(string value) => string.IsNullOrWhiteSpace(value) ? "U" : value.Trim()[..1].ToUpperInvariant();
     string ShortEmail(string value)
     {
@@ -111,8 +114,8 @@
 <section class="ops-page ops-statistics-page">
     <div class="ops-stat-header">
         <div>
-            <h1>Báo cáo &amp; Thống kê</h1>
-            <p>Phân tích hoạt động chatbot, tài liệu, người dùng và phân quyền trong hệ thống.</p>
+            <h1><span data-i18n="stat.title">Báo cáo &amp; Thống kê</span></h1>
+            <p data-i18n="stat.description">Phân tích hoạt động chatbot, tài liệu, người dùng và phân quyền trong hệ thống.</p>
         </div>
     </div>
 
@@ -205,17 +208,17 @@
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat_bubble</span>
                     <div class="ops-kpi-content">
-                        <span>Câu hỏi chat</span>
+                        <span data-i18n="admin.chatQuestions">Câu hỏi chat</span>
                         <strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong>
-                        <small>@Model.Days ngày gần nhất</small>
+                        <small>@Model.Days <span data-i18n="stat.lastDays">ngày gần nhất</span></small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">person</span>
                     <div class="ops-kpi-content">
-                        <span>Sinh viên hoạt động</span>
+                        <span data-i18n="admin.activeStudents">Sinh viên hoạt động</span>
                         <strong>@Model.Dashboard.ActiveChatUsers.ToString("N0")</strong>
-                        <small>@Model.StudentUsers.ToString("N0") sinh viên trong hệ thống</small>
+                        <small>@Model.StudentUsers.ToString("N0") <span data-i18n="stat.studentsInSystem">sinh viên trong hệ thống</span></small>
                     </div>
                 </article>
                 <article class="ops-kpi ops-stat-kpi">
@@ -229,9 +232,9 @@
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">check_circle</span>
                     <div class="ops-kpi-content">
-                        <span>Tỷ lệ trả lời được</span>
+                        <span><span data-i18n="stat.answerRate">Tỷ lệ trả lời được</span></span>
                         <strong>@answerRate%</strong>
-                        <small>Dựa trên câu trả lời assistant</small>
+                        <small>Dựa trên <span data-i18n="stat.answers">câu trả lời</span> assistant</small>
                     </div>
                 </article>
             </section>
@@ -240,17 +243,17 @@
                 <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span>
                     <div class="ops-kpi-content">
-                        <span>Chưa trả lời</span>
+                        <span><span data-i18n="stat.unanswered">Chưa trả lời</span></span>
                         <strong>@unansweredQuestions.ToString("N0")</strong>
-                        <small>Cần bổ sung nguồn học liệu</small>
+                        <small><span data-i18n="stat.needMoreSources">Cần bổ sung nguồn học liệu</span></small>
                     </div>
                 </article>
                 <article class="ops-stat-alert-card">
                     <span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">warning</span>
                     <div class="ops-kpi-content">
-                        <span>Lỗi tài liệu</span>
+                        <span><span data-i18n="stat.docErrors">Lỗi tài liệu</span></span>
                         <strong>@documentIssueCount.ToString("N0")</strong>
-                        <small>Index thất bại</small>
+                        <small><span data-i18n="stat.indexFailed">Index thất bại</span></small>
                     </div>
                 </article>
             </section>
@@ -259,15 +262,15 @@
                 <section class="ops-panel ops-stat-chart-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Sử dụng chat theo ngày</h2>
-                            <p class="ops-muted mb-0">Admin theo dõi ngày nào sinh viên hỏi nhiều để kịp bổ sung tài liệu.</p>
+                            <h2 data-i18n="stat.dailyChatUsage">Sử dụng chat theo ngày</h2>
+                            <p class="ops-muted mb-0" data-i18n="stat.dailyChatUsageDesc">Admin theo dõi ngày nào sinh viên hỏi nhiều để kịp bổ sung tài liệu.</p>
                         </div>
                         <span class="ops-panel-note">Câu hỏi chat</span>
                     </div>
                     @if (Model.Dashboard.DailyChatUsage.Count == 0)
                     {
                         <div class="ops-empty ops-stat-empty">
-                            <strong>Chưa có dữ liệu chat</strong>
+                            <strong data-i18n="stat.noChatData">Chưa có dữ liệu chat</strong>
                             <p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này. Thử đổi bộ lọc ngày hoặc kiểm tra dữ liệu chat.</p>
                         </div>
                     }
@@ -303,15 +306,15 @@
                 <section class="ops-panel ops-action-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Cần xử lý</h2>
-                            <p class="ops-muted mb-0">Các tín hiệu cần admin kiểm tra trước.</p>
+                            <h2 data-i18n="stat.needsAction">Cần xử lý</h2>
+                            <p class="ops-muted mb-0" data-i18n="stat.needsActionDesc">Các tín hiệu cần admin kiểm tra trước.</p>
                         </div>
                     </div>
                     <div class="ops-action-list">
-                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">help</span><strong>@unansweredQuestions</strong> câu hỏi chưa được chatbot trả lời</div>
-                        <div class="ops-action-item is-red"><span class="material-symbols-outlined" aria-hidden="true">error</span><strong>@Model.Dashboard.FailedDocuments</strong> tài liệu index thất bại</div>
-                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">folder_off</span><strong>@subjectsWithoutDocuments</strong> môn học chưa có tài liệu</div>
-                        <div class="ops-action-item is-blue"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><strong>@subjectsWithoutOwner</strong> môn học chưa có người phụ trách</div>
+                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">help</span><strong>@unansweredQuestions</strong> <span data-i18n="stat.unansweredQuestions">câu hỏi chưa được chatbot trả lời</span></div>
+                        <div class="ops-action-item is-red"><span class="material-symbols-outlined" aria-hidden="true">error</span><strong>@Model.Dashboard.FailedDocuments</strong> <span data-i18n="stat.docsIndexFailed">tài liệu index thất bại</span></div>
+                        <div class="ops-action-item is-orange"><span class="material-symbols-outlined" aria-hidden="true">folder_off</span><strong>@subjectsWithoutDocuments</strong> <span data-i18n="stat.subjectsNoDocs">môn học chưa có tài liệu</span></div>
+                        <div class="ops-action-item is-blue"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><strong>@subjectsWithoutOwner</strong> <span data-i18n="stat.subjectsNoLeader">môn học chưa có người phụ trách</span></div>
                     </div>
                     <a class="ops-button ops-button--secondary ms-auto" href="@TabUrl("documents")">
                         Xem chi tiết
@@ -324,8 +327,8 @@
                 <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Top môn học được hỏi nhiều</h2>
-                            <p class="ops-muted mb-0">Ưu tiên môn cần bổ sung học liệu hoặc người phụ trách.</p>
+                            <h2 data-i18n="stat.topSubjects">Top môn học được hỏi nhiều</h2>
+                            <p class="ops-muted mb-0" data-i18n="stat.topSubjectsDesc">Ưu tiên môn cần bổ sung học liệu hoặc người phụ trách.</p>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("documents")">Xem tất cả</a>
                     </div>
@@ -334,10 +337,10 @@
                             <caption class="visually-hidden">Các môn học có nhiều lượt trích dẫn trong chatbot</caption>
                             <thead>
                                 <tr>
-                                    <th>Môn học</th>
-                                    <th>Câu hỏi</th>
-                                    <th>Tài liệu</th>
-                                    <th>Tỷ lệ sẵn sàng</th>
+                                    <th data-i18n="stat.thSubject">Môn học</th>
+                                    <th data-i18n="stat.thQuestions">Câu hỏi</th>
+                                    <th data-i18n="stat.thDocs">Tài liệu</th>
+                                    <th data-i18n="stat.thReadiness">Tỷ lệ sẵn sàng</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -357,7 +360,7 @@
                                 {
                                     var readiness = subject.DocumentCount == 0 ? 0 : Math.Min(100, (int)Math.Round(subject.IndexedDocumentCount * 100d / subject.DocumentCount));
                                     <tr>
-                                        <td data-label="Môn học"><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></td>
+                                        <td data-label="Môn học"><div class="ops-stack"><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></div></td>
                                         <td data-label="Câu hỏi">@subject.ChatCitationCount.ToString("N0")</td>
                                         <td data-label="Tài liệu">@subject.DocumentCount.ToString("N0")</td>
                                         <td data-label="Tỷ lệ sẵn sàng">
@@ -376,8 +379,8 @@
                 <section class="ops-panel">
                     <div class="ops-panel-head">
                         <div>
-                            <h2>Người dùng chat nhiều nhất</h2>
-                            <p class="ops-muted mb-0">Theo số câu hỏi trong khoảng lọc.</p>
+                            <h2 data-i18n="stat.topChatUsers">Người dùng chat nhiều nhất</h2>
+                            <p class="ops-muted mb-0" data-i18n="stat.topChatUsersDesc">Theo số câu hỏi trong khoảng lọc.</p>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("users")">Xem tất cả</a>
                     </div>
@@ -397,8 +400,8 @@
                         @if (Model.Dashboard.TopChatUsers.Count == 0)
                         {
                             <div class="ops-empty ops-stat-empty">
-                                <strong>Chưa có dữ liệu chat</strong>
-                                <p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này.</p>
+                                <strong data-i18n="stat.noChatData">Chưa có dữ liệu chat</strong>
+                                <p data-i18n="stat.noChatDataDesc">Sinh viên chưa sử dụng chatbot trong khoảng thời gian này.</p>
                             </div>
                         }
                     </div>
@@ -406,17 +409,20 @@
             </div>
 
             <section class="ops-panel ops-insight-strip">
+                <div class="ops-insight-label">
+                    <strong data-i18n="stat.quickInsight">Insight nhanh</strong>
+                </div>
                 <div class="ops-insight-item">
                     <span class="material-symbols-outlined is-blue" aria-hidden="true">trending_up</span>
-                    <strong>@(topSubjects.FirstOrDefault()?.SubjectCode ?? "Môn học")</strong> đang có nhiều citation chat nhất trong khoảng lọc.
+                    <span><strong>@(topSubjects.FirstOrDefault()?.SubjectCode ?? "Môn học")</strong> <span data-i18n="stat.mostCitedSubject">đang có nhiều citation chat nhất trong khoảng lọc.</span></span>
                 </div>
                 <div class="ops-insight-item">
                     <span class="material-symbols-outlined is-orange" aria-hidden="true">priority_high</span>
-                    Có @unansweredQuestions.ToString("N0") câu hỏi cần kiểm tra nguồn trả lời.
+                    <span><span data-i18n="stat.thereAre">Có</span> <strong>@unansweredQuestions.ToString("N0")</strong> <span data-i18n="stat.questionsNeedChecking">câu hỏi cần kiểm tra nguồn trả lời.</span></span>
                 </div>
                 <div class="ops-insight-item">
                     <span class="material-symbols-outlined is-green" aria-hidden="true">article</span>
-                    @Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu đã sẵn sàng cho chatbot.
+                    <span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0")</strong> <span data-i18n="stat.docsReadyForChatbot">tài liệu đã sẵn sàng cho chatbot.</span></span>
                 </div>
             </section>
         }
@@ -424,9 +430,9 @@
         @if (Model.Tab == "chatbot")
         {
             <section class="ops-kpi-grid ops-stat-kpis">
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat</span><div class="ops-kpi-content"><span>Tổng câu hỏi</span><strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong><small>@Model.Days ngày gần nhất</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span><div class="ops-kpi-content"><span>Tổng phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") user hoạt động</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">task_alt</span><div class="ops-kpi-content"><span>Tỷ lệ trả lời được</span><strong>@answerRate%</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") phản hồi assistant</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat</span><div class="ops-kpi-content"><span>Tổng câu hỏi</span><strong>@Model.Dashboard.TotalChatQuestions.ToString("N0")</strong><small>@Model.Days <span data-i18n="stat.lastDays">ngày gần nhất</span></small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-indigo" aria-hidden="true">forum</span><div class="ops-kpi-content"><span>Tổng phiên chat</span><strong>@Model.Dashboard.TotalChatSessions.ToString("N0")</strong><small>@Model.Dashboard.ActiveChatUsers.ToString("N0") <span data-i18n="stat.activeUsersUnit">user hoạt động</span></small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">task_alt</span><div class="ops-kpi-content"><span><span data-i18n="stat.answerRate">Tỷ lệ trả lời được</span></span><strong>@answerRate%</strong><small>@Model.Dashboard.TotalAssistantAnswers.ToString("N0") <span data-i18n="stat.assistantResponsesUnit">phản hồi assistant</span></small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">help</span><div class="ops-kpi-content"><span>Câu hỏi chưa trả lời</span><strong>@unansweredQuestions.ToString("N0")</strong><small>Cần bổ sung dữ liệu</small></div></article>
             </section>
 
@@ -441,13 +447,13 @@
             <section class="ops-panel">
                 <div class="ops-panel-head">
                     <div>
-                        <h2>Sử dụng chat theo ngày</h2>
+                        <h2 data-i18n="stat.dailyChatUsage">Sử dụng chat theo ngày</h2>
                         <p class="ops-muted mb-0">Bảng gọn thay cho nhiều bảng dàn trải trên cùng một màn hình.</p>
                     </div>
                 </div>
                 @if (!hasChatData)
                 {
-                    <div class="ops-empty ops-stat-empty"><strong>Chưa có dữ liệu chat</strong><p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này. Thử đổi bộ lọc ngày hoặc kiểm tra dữ liệu chat.</p></div>
+                    <div class="ops-empty ops-stat-empty"><strong data-i18n="stat.noChatData">Chưa có dữ liệu chat</strong><p>Sinh viên chưa sử dụng chatbot trong khoảng thời gian này. Thử đổi bộ lọc ngày hoặc kiểm tra dữ liệu chat.</p></div>
                 }
                 else
                 {
@@ -471,15 +477,15 @@
         {
             <section class="ops-kpi-grid ops-stat-kpis">
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-purple" aria-hidden="true">description</span><div class="ops-kpi-content"><span>Tổng tài liệu</span><strong>@Model.Dashboard.TotalDocuments.ToString("N0")</strong><small>Trong toàn hệ thống</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span><div class="ops-kpi-content"><span>Đã index</span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong><small>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments)</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-green" aria-hidden="true">database</span><div class="ops-kpi-content"><span data-i18n="admin.indexed">Đã index</span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")</strong><small>@PercentLabel(Model.Dashboard.IndexedDocuments, Model.Dashboard.TotalDocuments)</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-orange" aria-hidden="true">pending</span><div class="ops-kpi-content"><span>Đang xử lý</span><strong>@Model.Dashboard.ProcessingDocuments.ToString("N0")</strong><small>Đang chunk/index</small></div></article>
-                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">error</span><div class="ops-kpi-content"><span>Index thất bại</span><strong>@Model.Dashboard.FailedDocuments.ToString("N0")</strong><small>Cần kiểm tra file</small></div></article>
+                <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-red" aria-hidden="true">error</span><div class="ops-kpi-content"><span><span data-i18n="stat.indexFailed">Index thất bại</span></span><strong>@Model.Dashboard.FailedDocuments.ToString("N0")</strong><small>Cần kiểm tra file</small></div></article>
                 <article class="ops-kpi ops-stat-kpi"><span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">folder_off</span><div class="ops-kpi-content"><span>Môn chưa có tài liệu</span><strong>@subjectsWithoutDocuments.ToString("N0")</strong><small>Cần bổ sung học liệu</small></div></article>
             </section>
 
             <section class="ops-panel">
                 <div class="ops-panel-head">
-                    <div><h2>Báo cáo tài liệu</h2><p class="ops-muted mb-0">Theo dõi tài liệu mới upload, trạng thái index và số lần được citation.</p></div>
+                    <div><h2 data-i18n="stat.documentsReport">Báo cáo tài liệu</h2><p class="ops-muted mb-0" data-i18n="stat.documentsReportDesc">Theo dõi tài liệu mới upload, trạng thái index và số lần được citation.</p></div>
                 </div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
@@ -511,7 +517,7 @@
             </div>
 
             <section class="ops-panel">
-                <div class="ops-panel-head"><div><h2>Người dùng chat nhiều nhất</h2><p class="ops-muted mb-0">Admin biết nhóm sinh viên đang dùng chatbot tích cực.</p></div></div>
+                <div class="ops-panel-head"><div><h2 data-i18n="stat.topChatUsers">Người dùng chat nhiều nhất</h2><p class="ops-muted mb-0">Admin biết nhóm sinh viên đang dùng chatbot tích cực.</p></div></div>
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-compact-table">
                         <caption class="visually-hidden">Những người dùng sử dụng chatbot nhiều nhất</caption>
@@ -536,7 +542,7 @@
             </section>
             <section class="ops-panel">
                 <div class="ops-panel-head">
-                    <div><h2>Báo cáo phân quyền</h2><p class="ops-muted mb-0">Theo dõi người phụ trách môn và quyền upload tài liệu.</p></div>
+                    <div><h2 data-i18n="stat.permissionsReport">Báo cáo phân quyền</h2><p class="ops-muted mb-0" data-i18n="stat.permissionsReportDesc">Theo dõi người phụ trách môn và quyền upload tài liệu.</p></div>
                     <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="lecturer-table">Gán giảng viên phụ trách</a>
                 </div>
                 <div class="ops-table-wrap">
@@ -564,7 +570,7 @@
                         <div class="ops-kpi-content">
                             <span>Tổng đăng ký</span>
                             <strong>@Model.Dashboard.TotalSubscriptionCount.ToString("N0")</strong>
-                            <small>@Model.Days ngày gần nhất</small>
+                            <small>@Model.Days <span data-i18n="stat.lastDays">ngày gần nhất</span></small>
                         </div>
                     </article>
                     <article class="ops-kpi ops-stat-kpi">

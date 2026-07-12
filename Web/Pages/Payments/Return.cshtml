@@ -6,6 +6,7 @@
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
     ViewData["ShellTitle"] = "Kết quả thanh toán";
+    ViewData["ShellTitleI18n"] = "payment.shellTitle";
 
     var status = Model.Status?.Status == PaymentStatus.Paid
         ? PaymentStatus.Paid
@@ -17,16 +18,16 @@
     var stateClass = isSuccess ? "is-success" : isFailure ? "is-error" : "is-pending";
     var stateIcon = isSuccess ? "check_circle" : isFailure ? "cancel" : "hourglass_top";
     var stateTitle = isSuccess
-        ? "Thanh toán thành công"
+        ? "Payment successful"
         : isFailure
-            ? "Thanh toán chưa thành công"
-            : "Đang xác nhận thanh toán";
+            ? "Payment unsuccessful"
+            : "Confirming payment";
     var stateMessage = isSuccess
-        ? "Gói học tập đã được kích hoạt hoặc gia hạn cho tài khoản của bạn."
+        ? "Your learning package has been activated or renewed."
         : isFailure
-            ? "Giao dịch chưa hoàn tất. Bạn chưa bị thay đổi gói và có thể thử lại bất cứ lúc nào."
-            : "Hệ thống đang nhận xác nhận từ cổng thanh toán. Quá trình này thường chỉ mất vài giây.";
-    var statusLabel = isSuccess ? "Thành công" : isFailure ? "Chưa thành công" : "Đang xử lý";
+            ? "Transaction incomplete. Your package has not changed."
+            : "The system is receiving confirmation from the payment gateway. This usually takes a few seconds.";
+    var statusLabel = isSuccess ? "Success" : isFailure ? "Unsuccessful" : "Processing";
     var providerName = Model.Status?.Provider.ToString() ?? string.Empty;
     var providerLogo = providerName.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
         ? "/img/payments/momo.svg"
@@ -38,9 +39,9 @@
         <div class="payment-result-hero__mark @stateClass">
             <span class="material-symbols-outlined" aria-hidden="true">@stateIcon</span>
         </div>
-        <span class="payment-result-hero__eyebrow">Kết quả giao dịch</span>
-        <h1>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateTitle : "Chưa tìm thấy giao dịch")</h1>
-        <p>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateMessage : "Thông tin trả về chưa đủ để xác định giao dịch của bạn.")</p>
+        <span class="payment-result-hero__eyebrow" data-i18n="payment.resultEyebrow">Kết quả giao dịch</span>
+        <h1>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateTitle : "Transaction not found")</h1>
+        <p>@(string.IsNullOrWhiteSpace(Model.ErrorMessage) ? stateMessage : "Insufficient information returned to identify your transaction.")</p>
     </header>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
@@ -48,11 +49,11 @@
         <section class="payment-result-card is-error" role="alert">
             <div class="payment-result-card__message">
                 <span class="material-symbols-outlined" aria-hidden="true">info</span>
-                <div><strong>Cần kiểm tra lại thông tin</strong><p>@Model.ErrorMessage</p></div>
+                <div><strong data-i18n="payment.checkInfo">Cần kiểm tra lại thông tin</strong><p>@Model.ErrorMessage</p></div>
             </div>
             <a class="payment-result-action is-primary" asp-page="/Packages/Index">
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-                Quay lại chọn gói
+                <span data-i18n="payment.backToPackages">Quay lại chọn gói</span>
             </a>
         </section>
     }
@@ -61,7 +62,7 @@
         <section class="payment-result-card @stateClass" aria-live="polite" aria-atomic="true">
             <div class="payment-result-card__heading">
                 <div>
-                    <span>Trạng thái</span>
+                    <span data-i18n="subscriptions.status">Trạng thái</span>
                     <h2>@stateTitle</h2>
                 </div>
                 <span class="payment-result-status">@statusLabel</span>
@@ -70,10 +71,10 @@
             <div class="payment-result-details">
                 <article class="payment-result-provider">
                     <img src="@providerLogo" alt="" />
-                    <div><span>Thanh toán qua</span><strong>@providerName</strong></div>
+                    <div><span data-i18n="payment.payVia">Thanh toán qua</span><strong>@providerName</strong></div>
                 </article>
-                <article><span>Mã đơn hàng</span><strong>@Model.Status.OrderCode</strong></article>
-                <article><span>Mã giao dịch</span><strong>@(string.IsNullOrWhiteSpace(Model.Status.ProviderTransactionId) ? "Chưa có" : Model.Status.ProviderTransactionId)</strong></article>
+                <article><span data-i18n="payment.orderCode">Mã đơn hàng</span><strong>@Model.Status.OrderCode</strong></article>
+                <article><span data-i18n="subscriptions.transactionId">Mã giao dịch</span><strong>@(string.IsNullOrWhiteSpace(Model.Status.ProviderTransactionId) ? "None" : Model.Status.ProviderTransactionId)</strong></article>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(Model.Status.Message))
@@ -86,22 +87,22 @@
                 {
                     <a class="payment-result-action is-primary" asp-page="/Subscriptions/Current">
                         <span class="material-symbols-outlined" aria-hidden="true">verified</span>
-                        Xem gói hiện tại
+                        <span data-i18n="packages.viewCurrent">Xem gói hiện tại</span>
                     </a>
                     <a class="payment-result-action" asp-page="/Home/Chat">
                         <span class="material-symbols-outlined" aria-hidden="true">chat</span>
-                        Bắt đầu hỏi đáp
+                        <span data-i18n="payment.startChat">Bắt đầu hỏi đáp</span>
                     </a>
                 }
                 else
                 {
                     <a class="payment-result-action is-primary" asp-page="/Packages/Index">
                         <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
-                        Chọn lại phương thức
+                        <span data-i18n="payment.reselectMethod">Chọn lại phương thức</span>
                     </a>
                     <a class="payment-result-action" asp-page="/Subscriptions/Current">
                         <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
-                        Kiểm tra gói hiện tại
+                        <span data-i18n="payment.checkCurrentPackage">Kiểm tra gói hiện tại</span>
                     </a>
                 }
             </div>

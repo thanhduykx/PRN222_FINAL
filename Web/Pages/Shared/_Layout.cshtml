@@ -161,7 +161,7 @@
                     {
                     <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-                        <span>Gói dịch vụ</span>
+                        <span data-i18n="nav.billing">Gói dịch vụ</span>
                     </a>
                     }
                     @if (canManageUsers)
@@ -243,17 +243,17 @@
                                         <span class="@accountAvatarClass is-large">@userInitial</span>
                                         <div><strong class="@(hasPremiumIdentity ? "premium-user-name" : null)">@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div>
                                     </div>
-                                    <nav aria-label="Tài khoản">
+                                    <nav aria-label="Account" data-i18n-aria-label="shell.accountNav">
                                         @if (currentRole == AppRoles.Student)
                                         {
-                                            <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
-                                            <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
+                                            <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong data-i18n="account.profile">Thông tin người dùng</strong><small data-i18n="account.profileDesc">Chỉnh sửa tên hiển thị</small></span></a>
+                                            <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong data-i18n="account.history">Lịch sử giao dịch</strong><small data-i18n="account.historyDesc">Xem và in biên nhận</small></span></a>
                                         }
-                                        <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
+                                        <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong data-i18n="account.changePassword">Đổi mật khẩu</strong><small data-i18n="account.changePasswordDesc">Bảo vệ tài khoản</small></span></a>
                                     </nav>
                                     <form asp-page="/Account/Logout" method="post">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Đăng xuất</button>
+                                        <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span data-i18n="account.logout">Đăng xuất</span></button>
                                     </form>
                                 </div>
                             </details>
@@ -285,7 +285,7 @@
                                 </div>
                             </section>
                             <section class="learning-footer__session" aria-label="Current session">
-                                <div class="learning-footer__session-line">Đang đăng nhập với tên @displayName</div>
+                                <div class="learning-footer__session-line"><span data-i18n="shell.loggedInAs">Đang đăng nhập với tên</span> @displayName</div>
                             </section>
                         </footer>
                     }
@@ -332,7 +332,7 @@
                             @if (isAuthenticated && currentRole == AppRoles.Student)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index">Gói dịch vụ</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index" data-i18n="shell.packages">Gói dịch vụ</a>
                                 </li>
                             }
                             @if (canManageUsers)
@@ -341,7 +341,7 @@
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Index">Users</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Statistics">Thống kê</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Statistics" data-i18n="shell.statistics">Thống kê</a>
                                 </li>
                             }
                         </ul>
@@ -362,12 +362,12 @@
                                             <nav aria-label="Tài khoản">
                                                 @if (currentRole == AppRoles.Student)
                                                 {
-                                                    <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
-                                                    <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
+                                                    <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong data-i18n="account.profile">Thông tin người dùng</strong><small data-i18n="account.profileDesc">Chỉnh sửa tên hiển thị</small></span></a>
+                                                    <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong data-i18n="account.history">Lịch sử giao dịch</strong><small data-i18n="account.historyDesc">Xem và in biên nhận</small></span></a>
                                                 }
-                                                <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
+                                                <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong data-i18n="account.changePassword">Đổi mật khẩu</strong><small data-i18n="account.changePasswordDesc">Bảo vệ tài khoản</small></span></a>
                                             </nav>
-                                            <form asp-page="/Account/Logout" method="post">@Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Đăng xuất</button></form>
+                                            <form asp-page="/Account/Logout" method="post">@Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined" aria-hidden="true">logout</span><span data-i18n="account.logout">Đăng xuất</span></button></form>
                                         </div>
                                     </details>
                                 </li>
@@ -401,7 +401,7 @@
                             </div>
                         </section>
                         <section class="learning-footer__session" aria-label="Current session">
-                            <div class="learning-footer__session-line">Đang đăng nhập với tên @displayName</div>
+                            <div class="learning-footer__session-line"><span data-i18n="shell.loggedInAs">Đang đăng nhập với tên</span> @displayName</div>
                         </section>
                     </footer>
                 }

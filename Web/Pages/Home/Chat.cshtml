@@ -1,10 +1,11 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Home.ChatModel
 @{
     ViewData["Title"] = "Chatbot";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "chat";
     ViewData["ShellTitle"] = "Chatbot tài liệu";
+    ViewData["ShellTitleI18n"] = "home.shellTitleChat";
     ViewData["ShellTitleI18n"] = "chat.title";
     ViewData["HideAssistantLauncher"] = true;
 
@@ -16,9 +17,9 @@
     var suggestedQuestions = subjectOptions.Count == 0
         ? new (string En, string Vi, string Subject)[]
         {
-            ("Which subjects have ready documents?", "Hiện có những môn nào đã có tài liệu sẵn sàng?", string.Empty),
-            ("Summarize the available documents.", "Tóm tắt các tài liệu hiện có.", string.Empty),
-            ("What can I ask from the document repository?", "Tôi có thể hỏi gì từ kho tài liệu?", string.Empty)
+            ("Which subjects have ready documents?", "Which subjects have ready documents?", string.Empty),
+            ("Summarize the available documents.", "Summarize the available documents.", string.Empty),
+            ("What can I ask from the document repository?", "What can I ask from the document repository?", string.Empty)
         }
         : subjectOptions
             .Take(6)
@@ -123,26 +124,42 @@
         </form>
         @if (User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student))
         {
-            <section class="chat-preferences" aria-label="Tùy chọn trả lời">
+            <section class="chat-preferences" aria-label="Reply preferences" data-i18n-aria-label="chat.replyPrefsAria">
                 <label>
-                    <span>Tốc độ</span>
-                    <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời">
-                        <option value="fast">Nhanh</option>
-                        <option value="comfortable" selected>Dễ theo dõi</option>
+                    <span data-i18n="chat.speed">Tốc độ</span>
+                    <select id="responsePace" aria-label="Tốc độ hiển thị câu trả lời" data-i18n-aria-label="chat.responsePaceAria">
+                        <option value="fast" data-i18n="chat.paceFast">Nhanh</option>
+                        <option value="comfortable" selected data-i18n="chat.paceComfortable">Dễ theo dõi</option>
                     </select>
                 </label>
                 <label>
-                    <span>Trả lời</span>
-                    <select id="answerDepth" aria-label="Mức độ hỗ trợ">
-                        <option value="concise">Tóm tắt</option>
-                        <option value="balanced" selected>Cân bằng</option>
-                        <option value="deep">Phân tích kỹ</option>
+                    <span data-i18n="chat.replyMode">Trả lời</span>
+                    <select id="answerDepth" aria-label="Mức độ hỗ trợ" data-i18n-aria-label="chat.answerDepthAria">
+                        <option value="concise" data-i18n="chat.depthConcise">Tóm tắt</option>
+                        <option value="balanced" selected data-i18n="chat.depthBalanced">Cân bằng</option>
+                        <option value="deep" data-i18n="chat.depthDeep">Phân tích kỹ</option>
                     </select>
                 </label>
                 <div class="chat-usage" aria-live="polite">
-                    <span>Còn lại</span>
-                    <strong id="questionsRemaining">@(Model.Usage.Remaining?.ToString("N0") ?? "Không giới hạn")</strong>
-                    <small>@Model.Usage.PlanName</small>
+                    <span data-i18n="chat.remaining">Còn lại</span>
+                    @if (Model.Usage.Remaining.HasValue)
+                    {
+                        <strong id="questionsRemaining">@Model.Usage.Remaining.Value.ToString("N0")</strong>
+                    }
+                    else
+                    {
+                        <strong id="questionsRemaining" data-i18n="chat.unlimited">Không giới hạn</strong>
+                    }
+                    @{
+                        var planKey = Model.Usage.PlanName switch {
+                            "Free" => "packages.name.free",
+                            "Student" => "packages.name.student",
+                            "Pro" => "packages.name.pro",
+                            "12 tháng" => "packages.name.annual",
+                            _ => "packages.name.none"
+                        };
+                    }
+                    <small data-i18n="@planKey">@Model.Usage.PlanName</small>
                 </div>
             </section>
         }
