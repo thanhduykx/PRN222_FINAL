@@ -29,7 +29,10 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
 
     public int Dimensions => NormalizeDimensions(_options.EmbeddingDimensions);
 
-    public async Task<Dictionary<int, double>> EmbedAsync(string text, CancellationToken cancellationToken = default)
+    public async Task<Dictionary<int, double>> EmbedAsync(
+        string text,
+        EmbeddingInputType inputType,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -46,7 +49,7 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         {
             try
             {
-                var request = CreateEmbeddingRequest(text);
+                var request = CreateEmbeddingRequest(text, inputType);
                 var response = await _http.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -114,11 +117,11 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         return $"{baseUrl}/models/{model}:embedContent";
     }
 
-    private HttpRequestData CreateEmbeddingRequest(string text)
+    private HttpRequestData CreateEmbeddingRequest(string text, EmbeddingInputType inputType)
     {
         var body = JsonSerializer.Serialize(new GeminiEmbeddingRequest(
             $"models/{ModelName.Trim().TrimStart('/')}",
-            new GeminiContent([new GeminiPart(PrepareRetrievalText(text))]), Dimensions), JsonOptions);
+            new GeminiContent([new GeminiPart(PrepareRetrievalText(text, inputType))]), Dimensions), JsonOptions);
         return new HttpRequestData("POST", ResolveEmbeddingUrl(), body,
             Headers: new Dictionary<string,string> { ["x-goog-api-key"] = _options.ApiKey.Trim() });
     }
@@ -198,10 +201,12 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         return nestedVectors.Count == 0 ? Array.Empty<double>() : nestedVectors[0];
     }
 
-    private static string PrepareRetrievalText(string text)
+    private static string PrepareRetrievalText(string text, EmbeddingInputType inputType)
     {
         var normalized = string.Join(" ", text.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-        return $"task: search result | query: {normalized}";
+        return inputType == EmbeddingInputType.SearchQuery
+            ? $"task: search result | query: {normalized}"
+            : $"title: none | text: {normalized}";
     }
 
     private static int NormalizeDimensions(int dimensions)

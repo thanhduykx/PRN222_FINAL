@@ -214,7 +214,10 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
                 SectionTitle = chunk.SectionTitle,
                 CharStart = chunk.CharStart,
                 CharEnd = chunk.CharEnd,
-                Embedding = await _embeddingService.EmbedAsync(embeddingInput.EmbeddingText, cancellationToken)
+                Embedding = await _embeddingService.EmbedAsync(
+                    embeddingInput.EmbeddingText,
+                    EmbeddingInputType.Document,
+                    cancellationToken)
             });
 
             if (chunk.ChunkIndex == chunkTexts.Count || chunk.ChunkIndex % progressStep == 0)

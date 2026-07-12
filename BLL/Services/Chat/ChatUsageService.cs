@@ -28,7 +28,9 @@ public sealed class ChatUsageService : IChatUsageService
     {
         var subscription = await _subscriptions.GetCurrentSubscriptionAsync(userId, cancellationToken);
         if (subscription is null)
-            return new ChatUsage(null, 0, null, "Chưa có gói");
+        {
+            return new ChatUsage(0, 0, 0, "Chưa có gói");
+        }
 
         var now = DateTimeOffset.UtcNow;
         var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);

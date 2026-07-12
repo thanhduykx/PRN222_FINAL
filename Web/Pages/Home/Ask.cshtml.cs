@@ -62,7 +62,11 @@ public sealed class AskModel : HomePageModelBase
                 if (usageBefore.IsExhausted)
                 {
                     Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    return new JsonResult(new { error = "Bạn đã dùng hết số câu hỏi trong tháng. Hãy xem các gói dịch vụ để tiếp tục." });
+                    return new JsonResult(new
+                    {
+                        error = "Bạn chưa có gói hoạt động hoặc đã dùng hết số câu hỏi trong tháng. Hãy xem các gói dịch vụ để tiếp tục.",
+                        answerStatus = "quota_exhausted"
+                    });
                 }
             }
             var chatScope = BuildDocumentAccessScope(DocumentAccessMode.Chat);
@@ -97,11 +101,12 @@ public sealed class AskModel : HomePageModelBase
             {
                 sessionId,
                 answer = answer.Answer,
-                citations = RedactCitationsForCurrentRole(answer.Citations),
+                citations = answer.Citations,
                 resolvedSubject = answer.ResolvedSubject,
                 needsClarification = answer.NeedsClarification,
                 subjectOptions = answer.SubjectOptions,
                 answerSource = answer.AnswerSource,
+                answerStatus = answer.AnswerStatus,
                 hasDirectCitation = answer.HasDirectCitation,
                 fallbackModel = answer.FallbackModel,
                 questionsRemaining = usage?.Remaining
@@ -110,31 +115,23 @@ public sealed class AskModel : HomePageModelBase
         catch (Exception ex) when (IsDataAccessTimeout(ex))
         {
             Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-            return new JsonResult(new { error = "Database unavailable/timeout. Vui long thu lai sau vai giay." });
+            return new JsonResult(new
+            {
+                error = "Database unavailable/timeout. Vui long thu lai sau vai giay.",
+                answerStatus = "technical_error"
+            });
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Chat request could not be completed.");
-            Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new JsonResult(new { error = "Chưa thể trả lời câu hỏi này. Vui lòng kiểm tra nội dung và thử lại." });
-        }
-    }
-
-    private object RedactCitationsForCurrentRole(IReadOnlyList<SourceCitation> citations)
-    {
-        if (CurrentRole() != AppRoles.Student)
-        {
-            return citations;
-        }
-
-        return citations
-            .Select(citation => new
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return new JsonResult(new
             {
-                subject = citation.Subject,
-                chapter = citation.Chapter,
-                score = citation.Score
-            })
-            .ToList();
+                error = "Hệ thống tạm thời chưa thể xử lý câu hỏi. Vui lòng thử lại sau ít phút.",
+                answerStatus = "technical_error"
+            });
+        }
     }
+
 }
 
