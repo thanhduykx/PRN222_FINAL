@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -27,7 +27,13 @@ public sealed class AiSettingsModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid) return Page();
+        if (!ModelState.IsValid)
+        {
+            var providerVal = ModelState["Input.AnswerProvider"]?.AttemptedValue ?? "null";
+            var modelVal = ModelState["Input.AnswerModel"]?.AttemptedValue ?? "null";
+            Console.WriteLine($"[AiSettings] Validation Failed! AnswerProvider='{providerVal}', AnswerModel='{modelVal}'");
+            return Page();
+        }
         try
         {
             if (!_settings.IsChatProviderConfigured(Input.AnswerProvider))
@@ -64,9 +70,9 @@ public sealed class AiSettingsModel : PageModel
 
     public sealed class InputModel
     {
-        [Required, StringLength(32, MinimumLength = 3)] public string AnswerProvider { get; set; } = ChatProviders.Gemini;
-        [Required, StringLength(120, MinimumLength = 3)] public string AnswerModel { get; set; } = string.Empty;
-        [Required, StringLength(120, MinimumLength = 3)] public string ReadingModel { get; set; } = string.Empty;
+        [Required, StringLength(32)] public string AnswerProvider { get; set; } = ChatProviders.Gemini;
+        [Required, StringLength(120)] public string AnswerModel { get; set; } = string.Empty;
+        [Required, StringLength(120)] public string ReadingModel { get; set; } = string.Empty;
         [Range(128, 4096)] public int ReadingDetail { get; set; }
         [Range(300, 4000)] public int SectionLength { get; set; }
         [Range(0, 500)] public int SectionConnection { get; set; }
