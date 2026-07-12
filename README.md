@@ -294,7 +294,7 @@ TestData/qa-test-50-vi-q-a.txt
 - Sau khi đổi model embedding hoặc số chiều embedding, nên re-index tài liệu cũ để tránh lệch vector.
 - Metadata như mã môn, chương, tên file chỉ hỗ trợ lọc/tăng hạng retrieval; không nên xem là bằng chứng trả lời nếu nội dung chunk không có dữ kiện.
 - Câu trả lời học thuật phải có citation. Nếu không có chunk đủ căn cứ, hệ thống nên từ chối hoặc yêu cầu bổ sung tài liệu.
-- Với Google OAuth, callback mặc định là `/signin-google`; cần cấu hình đúng redirect URI trên Google Cloud Console.
+- Với Google OAuth, origin công khai được cấu hình tại `Authentication:Google:PublicOrigin`. Khi chạy local, hãy đăng ký chính xác `http://localhost:9999/signin-google` trong **Authorized redirect URIs** của Google Cloud Console. Không đăng ký `/Account/GoogleCallback`: đây chỉ là trang xử lý nội bộ sau khi middleware Google hoàn tất callback.
 - Google sign-in bị ẩn khi truy cập bằng private IP LAN để tránh lỗi OAuth redirect không hợp lệ.
 - SQL schema được tạo bằng `EnsureCreated` và các câu lệnh bổ sung cột/index. Nếu deploy production nghiêm túc, nên chuyển sang migration có kiểm soát.
 - User account hiện được lưu trong bảng `app_users`, còn dữ liệu RAG dùng các bảng `rag_*`.
