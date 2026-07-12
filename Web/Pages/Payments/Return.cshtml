@@ -1,11 +1,11 @@
-﻿@page
+@page
 @using PRN222_FINAL.BLL.Models
 @model PRN222_FINAL.Web.Pages.Payments.ReturnModel
 @{
-    ViewData["Title"] = "Kết quả thanh toán";
+    ViewData["Title"] = "Payment Result";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Kết quả thanh toán";
+    ViewData["ShellTitle"] = "Payment Result";
     ViewData["ShellTitleI18n"] = "payment.shellTitle";
 
     var status = Model.Status?.Status == PaymentStatus.Paid
