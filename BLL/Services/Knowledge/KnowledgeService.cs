@@ -46,6 +46,7 @@ public interface IKnowledgeService
     Task DeleteChapterAsync(Guid chapterId, CancellationToken cancellationToken = default);
     Task RemoveSubjectLecturerAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Guid>> GetSubjectStudentIdsAsync(Guid subjectId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetSubjectStudentAssignmentsAsync(CancellationToken cancellationToken = default);
     Task AddSubjectStudentAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default);
     Task RemoveSubjectStudentAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default);
     Task SetSubjectActiveStatusAsync(Guid subjectId, bool isActive, CancellationToken cancellationToken = default);
@@ -104,6 +105,7 @@ public sealed class KnowledgeService : IKnowledgeService
     public Task DeleteChapterAsync(Guid chapterId, CancellationToken cancellationToken = default) => _repository.DeleteChapterAsync(chapterId, cancellationToken);
     public Task RemoveSubjectLecturerAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default) => _repository.RemoveSubjectLecturerAsync(subjectId, userId, cancellationToken);
     public Task<IReadOnlyList<Guid>> GetSubjectStudentIdsAsync(Guid subjectId, CancellationToken cancellationToken = default) => _repository.GetSubjectStudentIdsAsync(subjectId, cancellationToken);
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetSubjectStudentAssignmentsAsync(CancellationToken cancellationToken = default) => _repository.GetSubjectStudentAssignmentsAsync(cancellationToken);
     public Task AddSubjectStudentAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default) => _repository.AddSubjectStudentAsync(subjectId, userId, cancellationToken);
     public Task RemoveSubjectStudentAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default) => _repository.RemoveSubjectStudentAsync(subjectId, userId, cancellationToken);
     public Task SetSubjectActiveStatusAsync(Guid subjectId, bool isActive, CancellationToken cancellationToken = default) => _repository.SetSubjectActiveStatusAsync(subjectId, isActive, cancellationToken);

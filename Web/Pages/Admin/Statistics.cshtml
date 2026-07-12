@@ -114,18 +114,6 @@
             <h1>Báo cáo &amp; Thống kê</h1>
             <p>Phân tích hoạt động chatbot, tài liệu, người dùng và phân quyền trong hệ thống.</p>
         </div>
-        <form method="get" class="ops-stat-toolbar">
-            <input type="hidden" name="tab" value="@Model.Tab" />
-            <label class="ops-inline-field">
-                <span>Khoảng ngày</span>
-                <select asp-for="Days" onchange="this.form.submit()">
-                    <option value="7">7 ngày</option>
-                    <option value="30">30 ngày</option>
-                    <option value="90">90 ngày</option>
-                    <option value="180">180 ngày</option>
-                </select>
-            </label>
-        </form>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
@@ -141,7 +129,8 @@
             }
         </nav>
 
-        <section class="ops-report-scope" aria-label="Phạm vi dữ liệu báo cáo">
+        <form method="get" class="ops-report-scope" aria-label="Chọn phạm vi dữ liệu báo cáo">
+            <input type="hidden" name="tab" value="@Model.Tab" />
             <div class="ops-report-scope__main">
                 <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
                 <div>
@@ -149,6 +138,15 @@
                     <span>Tất cả môn học · Tất cả người dùng · Múi giờ địa phương</span>
                 </div>
             </div>
+            <label class="ops-report-period-control">
+                <span>Thời gian</span>
+                <select asp-for="Days" onchange="this.form.submit()" aria-label="Chọn khoảng thời gian báo cáo">
+                    <option value="7">7 ngày gần nhất</option>
+                    <option value="30">30 ngày gần nhất</option>
+                    <option value="90">90 ngày gần nhất</option>
+                    <option value="180">180 ngày gần nhất</option>
+                </select>
+            </label>
             <div class="ops-report-scope__freshness" title="Thời điểm hệ thống tổng hợp dữ liệu báo cáo">
                 <span class="ops-data-status" aria-hidden="true"></span>
                 Cập nhật @ReportTimestamp(Model.Dashboard.GeneratedAt)
@@ -157,10 +155,52 @@
             {
                 <a class="ops-report-scope__reset" asp-page="/Admin/Statistics" asp-route-tab="@Model.Tab" asp-route-days="30">Đặt lại 30 ngày</a>
             }
-        </section>
+        </form>
 
         @if (Model.Tab == "overview")
         {
+            <section class="analytics-assistant" aria-labelledby="analyticsAssistantTitle">
+                <div class="analytics-assistant__head">
+                    <div class="analytics-assistant__title">
+                        <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                        <div>
+                            <h2 id="analyticsAssistantTitle">Trợ lý phân tích</h2>
+                            <p>Đọc các chỉ số trong phạm vi đang chọn và đề xuất việc nên ưu tiên.</p>
+                        </div>
+                    </div>
+                    <form method="post" asp-page-handler="GenerateRecommendations">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Days" value="@Model.Days" />
+                        <input type="hidden" name="Tab" value="overview" />
+                        <button type="submit" class="ops-button ops-button--primary">
+                            <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
+                            Phân tích và đề xuất
+                        </button>
+                    </form>
+                </div>
+                @if (Model.AiRecommendations.Count == 0)
+                {
+                    <div class="analytics-assistant__empty">
+                        <span class="material-symbols-outlined" aria-hidden="true">tips_and_updates</span>
+                        <p>Nhấn nút để nhận tối đa 4 đề xuất dựa trên câu hỏi, học liệu, người dùng và thanh toán.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="analytics-recommendation-grid">
+                        @foreach (var recommendation in Model.AiRecommendations)
+                        {
+                            <article class="analytics-recommendation is-@recommendation.Priority">
+                                <div><span>@(recommendation.Priority == "high" ? "Ưu tiên cao" : recommendation.Priority == "low" ? "Theo dõi" : "Nên xử lý")</span><small>@(recommendation.GeneratedByAi ? "AI phân tích" : "Quy tắc thống kê")</small></div>
+                                <h3>@recommendation.Title</h3>
+                                <p>@recommendation.Reason</p>
+                                <strong>@recommendation.Action</strong>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+
             <section class="ops-kpi-grid ops-stat-kpis" aria-label="Chỉ số tổng quan">
                 <article class="ops-kpi ops-stat-kpi">
                     <span class="material-symbols-outlined ops-kpi-icon is-blue" aria-hidden="true">chat_bubble</span>

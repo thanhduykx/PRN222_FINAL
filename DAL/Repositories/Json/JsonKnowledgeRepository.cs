@@ -734,6 +734,12 @@ public sealed class JsonKnowledgeRepository : IKnowledgeRepository
         return Task.FromResult<IReadOnlyList<Guid>>(Array.Empty<Guid>());
     }
 
+    public Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetSubjectStudentAssignmentsAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> empty = new Dictionary<Guid, IReadOnlyList<Guid>>();
+        return Task.FromResult(empty);
+    }
+
     public Task SetSubjectActiveStatusAsync(Guid subjectId, bool isActive, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;

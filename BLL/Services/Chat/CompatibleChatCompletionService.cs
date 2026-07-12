@@ -236,6 +236,33 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
             cancellationToken);
     }
 
+    public async Task<string?> GenerateAnalyticsRecommendationsAsync(
+        string analyticsSummary,
+        string language,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsEnabled || string.IsNullOrWhiteSpace(analyticsSummary))
+        {
+            return null;
+        }
+
+        return await CallChatAsync(
+            "You are a careful education product analytics assistant. Use only the supplied metrics. Return valid JSON only.",
+            $$"""
+            Analyze the following system metrics and propose 2 to 4 specific actions for an administrator.
+            Do not invent causes, trends, percentages, or user behavior not present in the metrics.
+            UI language: {{language}}
+            Return JSON only in this shape:
+            {"recommendations":[{"priority":"high","title":"short title","reason":"evidence from metrics","action":"specific next step"}]}
+
+            Metrics:
+            {{analyticsSummary.Trim()}}
+            """,
+            0.1,
+            900,
+            cancellationToken);
+    }
+
     private async Task<string?> CallChatAsync(
         string system,
         string prompt,

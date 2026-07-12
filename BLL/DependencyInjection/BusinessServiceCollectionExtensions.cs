@@ -83,6 +83,7 @@ public static class BusinessServiceCollectionExtensions
             () => provider.GetRequiredService<ChatGenerationOptions>().CurrentCompatibleOptions));
         services.AddSingleton<IAnalyticsRepository>(_ => new AnalyticsRepository(connectionString));
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IAnalyticsRecommendationService, AnalyticsRecommendationService>();
         services.AddScoped<IChatUsageService, ChatUsageService>();
 
         return services;

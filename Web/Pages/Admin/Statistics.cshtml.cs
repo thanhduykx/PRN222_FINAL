@@ -19,12 +19,16 @@ public sealed class StatisticsModel : PageModel
     private readonly IAnalyticsService _analytics;
     private readonly IUserAccountService _users;
     private readonly IPackageService _packages;
+    private readonly IAnalyticsRecommendationService _recommendations;
+    private AdminAnalyticsDashboardDto? _analyticsSnapshot;
 
-    public StatisticsModel(IAnalyticsService analytics, IUserAccountService users, IPackageService packages)
+    public StatisticsModel(IAnalyticsService analytics, IUserAccountService users, IPackageService packages,
+        IAnalyticsRecommendationService recommendations)
     {
         _analytics = analytics;
         _users = users;
         _packages = packages;
+        _recommendations = recommendations;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -40,8 +44,36 @@ public sealed class StatisticsModel : PageModel
     public int AdminUsers { get; private set; }
     public string ErrorMessage { get; private set; } = string.Empty;
     public IReadOnlyList<PackageDto> Packages { get; private set; } = Array.Empty<PackageDto>();
+    public IReadOnlyList<AnalyticsRecommendationDto> AiRecommendations { get; private set; } = Array.Empty<AnalyticsRecommendationDto>();
 
-    public async Task OnGetAsync(CancellationToken cancellationToken)
+    public Task OnGetAsync(CancellationToken cancellationToken) => LoadDashboardAsync(cancellationToken);
+
+    public async Task<IActionResult> OnPostGenerateRecommendationsAsync(CancellationToken cancellationToken)
+    {
+        await LoadDashboardAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            try
+            {
+                AiRecommendations = await _recommendations.GenerateAdminRecommendationsAsync(
+                    _analyticsSnapshot ?? throw new InvalidOperationException("Analytics snapshot is unavailable."),
+                    "vi",
+                    cancellationToken);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                ErrorMessage = "Trợ lý phân tích phản hồi quá chậm. Vui lòng thử lại.";
+            }
+            catch (Exception)
+            {
+                ErrorMessage = "Chưa thể tạo đề xuất lúc này. Dữ liệu báo cáo vẫn được giữ nguyên.";
+            }
+        }
+
+        return Page();
+    }
+
+    private async Task LoadDashboardAsync(CancellationToken cancellationToken)
     {
         ViewData["AdminSection"] = "statistics";
         ViewData["ActiveNav"] = "reports";
@@ -51,7 +83,8 @@ public sealed class StatisticsModel : PageModel
 
         try
         {
-            Dashboard = Map(await _analytics.GetAdminDashboardAsync(Days, cancellationToken));
+            _analyticsSnapshot = await _analytics.GetAdminDashboardAsync(Days, cancellationToken);
+            Dashboard = Map(_analyticsSnapshot);
             Packages = await _packages.GetActivePackagesAsync(cancellationToken);
             var users = await _users.GetAllAsync(cancellationToken);
             TotalUsers = users.Count;
@@ -59,9 +92,13 @@ public sealed class StatisticsModel : PageModel
             LecturerUsers = users.Count(user => user.Role == AppRoles.Lecturer);
             AdminUsers = users.Count(user => user.Role == AppRoles.Admin);
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            ErrorMessage = ex.Message;
+            ErrorMessage = "Dữ liệu phản hồi quá chậm. Hãy thử phạm vi ngắn hơn hoặc tải lại trang.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Không thể tải báo cáo lúc này. Vui lòng thử lại sau.";
         }
     }
 
