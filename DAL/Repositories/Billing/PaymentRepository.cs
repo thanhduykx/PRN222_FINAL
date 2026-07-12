@@ -63,7 +63,24 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.Provider == provider && item.OrderCode == normalizedOrderCode, cancellationToken);
 
-        return entity;
+        if (entity is not null
+            || provider != PaymentProvider.PayOS
+            || normalizedOrderCode.Length is < 1 or > 15
+            || !normalizedOrderCode.All(char.IsDigit))
+        {
+            return entity;
+        }
+
+        // Compatibility for payments created before PayOS and internal order codes
+        // were aligned. The old integration sent the last 15 digits to PayOS.
+        var legacyMatches = await context.Payments
+            .AsNoTracking()
+            .Where(item => item.Provider == provider && item.OrderCode.EndsWith(normalizedOrderCode))
+            .OrderByDescending(item => item.CreatedAt)
+            .Take(2)
+            .ToListAsync(cancellationToken);
+
+        return legacyMatches.Count == 1 ? legacyMatches[0] : null;
     }
 
     public async Task<IReadOnlyList<KnowledgeSqlPayment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default)

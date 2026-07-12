@@ -68,6 +68,48 @@ public sealed class PayOsPaymentGateway : IPayOsPaymentGateway
         };
     }
 
+    public async Task<PaymentGatewayStatusResult> GetStatusAsync(long orderCode, CancellationToken cancellationToken = default)
+    {
+        var payos = _options.PayOS;
+        EnsureConfigured(payos.ClientId, payos.ApiKey, payos.ChecksumKey, payos.Endpoint, "PayOS");
+        if (orderCode <= 0)
+        {
+            throw new InvalidOperationException("PayOS order code is invalid.");
+        }
+
+        var endpoint = $"{payos.Endpoint.TrimEnd('/')}/{orderCode}";
+        var response = await _http.SendAsync(new HttpRequestData("GET", endpoint, Headers:
+            new Dictionary<string, string> { ["x-client-id"] = payos.ClientId, ["x-api-key"] = payos.ApiKey }), cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"PayOS status lookup failed: {response.StatusCode} {response.ReasonPhrase}");
+        }
+
+        using var json = JsonDocument.Parse(response.Body);
+        var root = json.RootElement;
+        var code = ReadString(root, "code");
+        if (!string.Equals(code, "00", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(ReadString(root, "desc", "PayOS refused status lookup."));
+        }
+
+        var data = root.TryGetProperty("data", out var dataElement) ? dataElement : root;
+        var rawStatus = ReadString(data, "status");
+        return new PaymentGatewayStatusResult
+        {
+            OrderCode = ReadString(data, "orderCode"),
+            ProviderTransactionId = ReadString(data, "paymentLinkId", ReadString(data, "reference")),
+            Status = rawStatus.ToUpperInvariant() switch
+            {
+                "PAID" => PaymentStatus.Paid,
+                "CANCELLED" or "CANCELED" => PaymentStatus.Canceled,
+                _ => PaymentStatus.Pending
+            },
+            AmountVnd = decimal.TryParse(ReadString(data, "amount"), out var amount) ? amount : null,
+            Message = ReadString(data, "desc", rawStatus)
+        };
+    }
+
     public PaymentGatewayWebhookResult VerifyWebhook(PaymentWebhookDto webhook)
     {
         var payos = _options.PayOS;
