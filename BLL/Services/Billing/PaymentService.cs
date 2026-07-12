@@ -141,13 +141,14 @@ public sealed class PaymentService : IPaymentService
 
         if (payment.Status == PaymentStatus.Paid)
         {
+            await EnsurePaidSubscriptionAsync(payment, package, cancellationToken);
             return new PaymentWebhookResultDto
             {
                 PaymentId = payment.Id,
                 OrderCode = payment.OrderCode,
                 Status = payment.Status,
                 IsDuplicate = true,
-                SubscriptionActivated = await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken) is not null,
+                SubscriptionActivated = true,
                 Message = "Webhook already processed."
             };
         }
@@ -191,6 +192,20 @@ public sealed class PaymentService : IPaymentService
 
         var paymentEntity = await _payments.GetByOrderCodeAsync((DalPaymentProvider)provider, orderCode, cancellationToken);
         var payment = paymentEntity is null ? null : BillingDtoMapper.ToModel(paymentEntity);
+        if (payment is not null && payment.Provider == PaymentProvider.PayOS && payment.Status == PaymentStatus.Pending)
+        {
+            payment = await ReconcilePayOsPaymentAsync(payment, cancellationToken);
+        }
+
+        if (payment is not null && payment.Status == PaymentStatus.Paid)
+        {
+            var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken);
+            if (packageEntity is not null)
+            {
+                await EnsurePaidSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), cancellationToken);
+            }
+        }
+
         return payment is null
             ? null
             : new PaymentReturnDto
@@ -207,6 +222,61 @@ public sealed class PaymentService : IPaymentService
                     _ => payment.FailureReason
                 }
             };
+    }
+
+    private async Task<Payment> ReconcilePayOsPaymentAsync(Payment payment, CancellationToken cancellationToken)
+    {
+        PaymentGatewayStatusResult gatewayStatus;
+        try
+        {
+            gatewayStatus = await _payOsGateway.GetStatusAsync(BuildPayOsOrderCode(payment.OrderCode), cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return payment;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return payment;
+        }
+        catch (InvalidOperationException)
+        {
+            return payment;
+        }
+
+        var expectedGatewayOrderCode = BuildPayOsOrderCode(payment.OrderCode).ToString();
+        if (!string.Equals(gatewayStatus.OrderCode, expectedGatewayOrderCode, StringComparison.Ordinal)
+            || (gatewayStatus.AmountVnd.HasValue && gatewayStatus.AmountVnd.Value != payment.AmountVnd))
+        {
+            return payment;
+        }
+
+        payment.ProviderTransactionId = string.IsNullOrWhiteSpace(gatewayStatus.ProviderTransactionId)
+            ? payment.ProviderTransactionId
+            : gatewayStatus.ProviderTransactionId;
+
+        if (gatewayStatus.Status == PaymentStatus.Paid)
+        {
+            var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken);
+            if (packageEntity is null)
+            {
+                return payment;
+            }
+
+            payment.Status = PaymentStatus.Paid;
+            payment.PaidAt = DateTimeOffset.UtcNow;
+            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
+            await ActivateSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), true, cancellationToken);
+        }
+        else if (gatewayStatus.Status == PaymentStatus.Canceled)
+        {
+            payment.Status = PaymentStatus.Canceled;
+            payment.FailedAt = DateTimeOffset.UtcNow;
+            payment.FailureReason = Normalize(gatewayStatus.Message, 1000);
+            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
+        }
+
+        return payment;
     }
 
     public async Task<IReadOnlyList<PaymentHistoryItemDto>> GetPaymentsForUserAsync(Guid userId, int limit = 20, CancellationToken cancellationToken = default)
@@ -266,6 +336,14 @@ public sealed class PaymentService : IPaymentService
         await _subscriptions.AddAsync(BillingDtoMapper.ToEntity(subscription), cancellationToken);
     }
 
+    private async Task EnsurePaidSubscriptionAsync(Payment payment, Package package, CancellationToken cancellationToken)
+    {
+        if (await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken) is null)
+        {
+            await ActivateSubscriptionAsync(payment, package, true, cancellationToken);
+        }
+    }
+
     private string BuildWebhookUrl(PaymentProvider provider)
     {
         var baseUrl = _options.BaseReturnUrl.TrimEnd('/');
@@ -298,8 +376,14 @@ public sealed class PaymentService : IPaymentService
 
     private static string GenerateOrderCode(PaymentProvider provider)
     {
-        var prefix = provider == PaymentProvider.PayOS ? "9" : "8";
-        return $"{prefix}{DateTimeOffset.UtcNow:yyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+        if (provider == PaymentProvider.PayOS)
+        {
+            // PayOS accepts a numeric order code with at most 15 digits. Keeping the
+            // persisted and provider order codes identical makes Return/Webhook lookup exact.
+            return $"{DateTimeOffset.UtcNow:yyMMddHHmmss}{Random.Shared.Next(100, 999)}";
+        }
+
+        return $"8{DateTimeOffset.UtcNow:yyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
     }
 
     private static PaymentCheckoutResultDto ToCheckoutResult(Payment payment, string message) => new()

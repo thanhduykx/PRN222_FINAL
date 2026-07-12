@@ -33,3 +33,12 @@ public sealed class PaymentGatewayWebhookResult
     public string Message { get; set; } = string.Empty;
     public decimal? AmountVnd { get; set; }
 }
+
+public sealed class PaymentGatewayStatusResult
+{
+    public string OrderCode { get; set; } = string.Empty;
+    public string ProviderTransactionId { get; set; } = string.Empty;
+    public PaymentStatus Status { get; set; }
+    public decimal? AmountVnd { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
