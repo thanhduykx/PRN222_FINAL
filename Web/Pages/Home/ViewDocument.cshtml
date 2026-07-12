@@ -71,11 +71,12 @@
         <h1>Syllabus Details</h1>
 
         <table class="flm-syllabus-table">
+            <caption class="visually-hidden">Thông tin chi tiết đề cương môn học</caption>
             <tbody>
                 @foreach (var row in rows)
                 {
                     <tr>
-                        <th>@row.Label:</th>
+                        <th scope="row">@row.Label:</th>
                         <td>
                             @foreach (var value in row.Values.Where(value => !string.IsNullOrWhiteSpace(value)))
                             {
@@ -85,11 +86,11 @@
                     </tr>
                 }
                 <tr>
-                    <th>Source:</th>
+                    <th scope="row">Source:</th>
                     <td>@document.Chapter</td>
                 </tr>
                 <tr>
-                    <th>UploadedDate:</th>
+                    <th scope="row">UploadedDate:</th>
                     <td>@document.UploadedAt.ToLocalTime().ToString("M/d/yyyy HH:mm")</td>
                 </tr>
             </tbody>

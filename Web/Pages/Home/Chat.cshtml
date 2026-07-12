@@ -74,7 +74,7 @@
         <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))">Xem môn học</a>
     </section>
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
-        <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages">
+        <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Nội dung hội thoại">
             <div class="chat-empty-state rbl-chat-empty">
                 <span class="rbl-bot-mark">AI</span>
                 <h3 data-i18n="chat.emptyTitle">Bắt đầu bằng một câu hỏi cụ thể</h3>

@@ -24,17 +24,20 @@ namespace PRN222_FINAL.Web.Pages.Admin;
 public sealed class IndexModel : PageModel
 {
     private readonly IUserAccountService _users;
+    private readonly IUserProvisioningService _provisioning;
     private readonly IKnowledgeService _knowledge;
     private readonly IAccountEmailService _emailSender;
     private readonly ILogger<IndexModel> _logger;
 
     public IndexModel(
         IUserAccountService users,
+        IUserProvisioningService provisioning,
         IKnowledgeService knowledge,
         IAccountEmailService emailSender,
         ILogger<IndexModel> logger)
     {
         _users = users;
+        _provisioning = provisioning;
         _knowledge = knowledge;
         _emailSender = emailSender;
         _logger = logger;
@@ -101,7 +104,7 @@ public sealed class IndexModel : PageModel
         {
             var role = AppRoles.Normalize(model.Role);
             var selectedSubjects = await ResolveSubjectsForNewUserAsync(role, model.SubjectIds, cancellationToken);
-            var user = await _users.CreateLocalForAdminAsync(
+            var user = await _provisioning.CreateLocalForAdminAsync(
                 model.FullName,
                 model.Email,
                 model.Password,
@@ -202,7 +205,7 @@ public sealed class IndexModel : PageModel
                 var temporaryPassword = "12345678";
                 try
                 {
-                    var user = await _users.CreateLocalForAdminAsync(
+                    var user = await _provisioning.CreateLocalForAdminAsync(
                         draft.FullName,
                         draft.Email,
                         temporaryPassword,

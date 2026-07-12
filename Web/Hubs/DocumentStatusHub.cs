@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
+using PRN222_FINAL.BLL.Services.Billing;
 
 namespace PRN222_FINAL.Web.Hubs;
 
@@ -18,10 +19,12 @@ public sealed class DocumentStatusHub : Hub
     public const string AdminGroup = "documents:admins";
 
     private readonly IOnlineUserPresenceTracker _onlineUserPresenceTracker;
+    private readonly ISubscriptionService _subscriptions;
 
-    public DocumentStatusHub(IOnlineUserPresenceTracker onlineUserPresenceTracker)
+    public DocumentStatusHub(IOnlineUserPresenceTracker onlineUserPresenceTracker, ISubscriptionService subscriptions)
     {
         _onlineUserPresenceTracker = onlineUserPresenceTracker;
+        _subscriptions = subscriptions;
     }
 
     public override async Task OnConnectedAsync()
@@ -53,7 +56,22 @@ public sealed class DocumentStatusHub : Hub
             await Task.WhenAll(groupTasks);
         }
 
-        var snapshot = _onlineUserPresenceTracker.RegisterConnection(Context.ConnectionId, Context.User);
+        var isPremium = false;
+        if (role == AppRoles.Student
+            && Guid.TryParse(Context.User?.FindFirstValue(ClaimTypes.NameIdentifier), out var subscriptionUserId))
+        {
+            try
+            {
+                var subscription = await _subscriptions.GetCurrentSubscriptionAsync(subscriptionUserId, Context.ConnectionAborted);
+                isPremium = subscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
+            }
+            catch (Exception) when (!Context.ConnectionAborted.IsCancellationRequested)
+            {
+                isPremium = false;
+            }
+        }
+
+        var snapshot = _onlineUserPresenceTracker.RegisterConnection(Context.ConnectionId, Context.User, isPremium);
         await Clients.All.SendAsync(OnlineUsersChangedEvent, snapshot);
 
         await base.OnConnectedAsync();

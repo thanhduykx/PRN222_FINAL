@@ -12,6 +12,7 @@ public sealed record OnlineUserSummaryPayload(
     string Email,
     string Role,
     string Initials,
+    bool IsPremium,
     int ConnectionCount);
 
 public sealed record OnlineUsersChangedPayload(
@@ -22,7 +23,7 @@ public sealed record OnlineUsersChangedPayload(
 
 public interface IOnlineUserPresenceTracker
 {
-    OnlineUsersChangedPayload RegisterConnection(string connectionId, ClaimsPrincipal? user);
+    OnlineUsersChangedPayload RegisterConnection(string connectionId, ClaimsPrincipal? user, bool isPremium = false);
     OnlineUsersChangedPayload UnregisterConnection(string connectionId);
     OnlineUsersChangedPayload GetSnapshot();
 }
@@ -33,9 +34,9 @@ public sealed class InMemoryOnlineUserPresenceTracker : IOnlineUserPresenceTrack
 
     private readonly ConcurrentDictionary<string, OnlineConnectionPresence> _connections = new(StringComparer.Ordinal);
 
-    public OnlineUsersChangedPayload RegisterConnection(string connectionId, ClaimsPrincipal? user)
+    public OnlineUsersChangedPayload RegisterConnection(string connectionId, ClaimsPrincipal? user, bool isPremium = false)
     {
-        var presence = OnlineConnectionPresence.From(connectionId, user);
+        var presence = OnlineConnectionPresence.From(connectionId, user, isPremium);
         _connections[connectionId] = presence;
         return BuildSnapshot();
     }
@@ -65,6 +66,7 @@ public sealed class InMemoryOnlineUserPresenceTracker : IOnlineUserPresenceTrack
                     first.Email,
                     first.Role,
                     first.Initials,
+                    group.Any(item => item.IsPremium),
                     group.Count());
             })
             .OrderByDescending(item => RoleRank(item.Role))
@@ -96,9 +98,10 @@ public sealed class InMemoryOnlineUserPresenceTracker : IOnlineUserPresenceTrack
         string DisplayName,
         string Email,
         string Role,
-        string Initials)
+        string Initials,
+        bool IsPremium)
     {
-        public static OnlineConnectionPresence From(string connectionId, ClaimsPrincipal? user)
+        public static OnlineConnectionPresence From(string connectionId, ClaimsPrincipal? user, bool isPremium)
         {
             var rawUserId = user?.FindFirstValue(ClaimTypes.NameIdentifier)?.Trim() ?? string.Empty;
             var email = user?.FindFirstValue(ClaimTypes.Email)?.Trim() ?? string.Empty;
@@ -124,7 +127,8 @@ public sealed class InMemoryOnlineUserPresenceTracker : IOnlineUserPresenceTrack
                 displayName,
                 email,
                 role,
-                BuildInitials(displayName));
+                BuildInitials(displayName),
+                isPremium);
         }
 
         private static string BuildInitials(string displayName)

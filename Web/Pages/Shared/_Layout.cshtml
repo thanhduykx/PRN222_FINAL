@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject PRN222_FINAL.BLL.Services.Billing.ISubscriptionService SubscriptionService
 @{
     var useRblShell = ViewData["UseRblShell"] as bool? ?? false;
     var activeNav = (ViewData["ActiveNav"] as string ?? string.Empty).ToLowerInvariant();
@@ -20,6 +21,21 @@
     var canManageUsers = currentRole == AppRoles.Admin;
     var showLearningFooter = currentRole == AppRoles.Student || currentRole == AppRoles.Lecturer;
     var homePage = currentRole == AppRoles.Student ? "/Home/Chat" : "/Home/Index";
+    var hasPremiumIdentity = false;
+    if (isAuthenticated && currentRole == AppRoles.Student && Guid.TryParse(currentUserId, out var subscriptionUserId))
+    {
+        try
+        {
+            var currentSubscription = await SubscriptionService.GetCurrentSubscriptionAsync(subscriptionUserId, Context.RequestAborted);
+            hasPremiumIdentity = currentSubscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
+        }
+        catch
+        {
+            // Account navigation remains available when billing data is temporarily unavailable.
+        }
+    }
+    var accountAvatarClass = hasPremiumIdentity ? "rbl-user-avatar has-premium-effect" : "rbl-user-avatar";
+    var accountNameClass = hasPremiumIdentity ? "rbl-account-menu__name has-premium-effect" : "rbl-account-menu__name";
     
     var hideAssistantLauncher = ViewData["HideAssistantLauncher"] as bool? ?? false;
     var hideSidebarOnlineUsers = ViewData["HideSidebarOnlineUsers"] as bool? ?? false;
@@ -218,14 +234,14 @@
                         {
                             <details class="rbl-account-menu" data-account-menu>
                                 <summary aria-label="Mở menu tài khoản">
-                                    <span class="rbl-user-avatar">@userInitial</span>
-                                    <span class="rbl-account-menu__name">@displayName</span>
+                                    <span class="@accountAvatarClass">@userInitial</span>
+                                    <span class="@accountNameClass">@displayName</span>
                                     <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
                                 </summary>
                                 <div class="rbl-account-menu__panel">
                                     <div class="rbl-account-menu__identity">
-                                        <span class="rbl-user-avatar is-large">@userInitial</span>
-                                        <div><strong>@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div>
+                                        <span class="@accountAvatarClass is-large">@userInitial</span>
+                                        <div><strong class="@(hasPremiumIdentity ? "premium-user-name" : null)">@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div>
                                     </div>
                                     <nav aria-label="Tài khoản">
                                         @if (currentRole == AppRoles.Student)
@@ -340,9 +356,9 @@
                             {
                                 <li class="nav-item">
                                     <details class="rbl-account-menu" data-account-menu>
-                                        <summary><span class="rbl-user-avatar">@userInitial</span><span class="rbl-account-menu__name">@displayName</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+                                        <summary><span class="@accountAvatarClass">@userInitial</span><span class="@accountNameClass">@displayName</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
                                         <div class="rbl-account-menu__panel">
-                                            <div class="rbl-account-menu__identity"><span class="rbl-user-avatar is-large">@userInitial</span><div><strong>@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div></div>
+                                            <div class="rbl-account-menu__identity"><span class="@accountAvatarClass is-large">@userInitial</span><div><strong class="@(hasPremiumIdentity ? "premium-user-name" : null)">@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div></div>
                                             <nav aria-label="Tài khoản">
                                                 @if (currentRole == AppRoles.Student)
                                                 {
