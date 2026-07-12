@@ -33,6 +33,28 @@ internal static partial class ChatGroundingPolicy
         return string.IsNullOrEmpty(answer) ? string.Empty : SourceMarkerRegex().Replace(answer, " ");
     }
 
+    public static NormalizedSourceMarkers NormalizeSourceMarkers(string answer)
+    {
+        var sourceAnswer = answer ?? string.Empty;
+        var sourceNumbers = SourceMarkerRegex()
+            .Matches(sourceAnswer)
+            .Select(match => int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture))
+            .Distinct()
+            .ToList();
+        if (sourceNumbers.Count == 0)
+        {
+            return new NormalizedSourceMarkers(sourceAnswer, Array.Empty<int>());
+        }
+
+        var numberMap = sourceNumbers
+            .Select((sourceNumber, index) => new { sourceNumber, normalizedNumber = index + 1 })
+            .ToDictionary(item => item.sourceNumber, item => item.normalizedNumber);
+        var normalizedAnswer = SourceMarkerRegex().Replace(
+            sourceAnswer,
+            match => $"[{numberMap[int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)]}]");
+        return new NormalizedSourceMarkers(normalizedAnswer, sourceNumbers);
+    }
+
     public static string ResolveAnswerStatus(
         string answerSource,
         bool needsClarification,
@@ -77,3 +99,5 @@ internal static partial class ChatGroundingPolicy
         }
     }
 }
+
+internal sealed record NormalizedSourceMarkers(string Answer, IReadOnlyList<int> OriginalSourceNumbers);

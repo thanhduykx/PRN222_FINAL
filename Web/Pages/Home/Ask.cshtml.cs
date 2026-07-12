@@ -56,9 +56,13 @@ public sealed class AskModel : HomePageModelBase
         try
         {
             var currentUser = await GetCurrentUserAccountAsync(cancellationToken);
-            if (currentUser is not null && CurrentRole() == AppRoles.Student)
+            var isStudentRequest = currentUser is not null && CurrentRole() == AppRoles.Student;
+            await using var usageLock = isStudentRequest
+                ? await _chatUsage.AcquireUserLockAsync(currentUser!.Id, cancellationToken)
+                : null;
+            if (isStudentRequest)
             {
-                var usageBefore = await _chatUsage.GetAsync(currentUser.Id, cancellationToken);
+                var usageBefore = await _chatUsage.GetAsync(currentUser!.Id, cancellationToken);
                 if (usageBefore.IsExhausted)
                 {
                     Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -94,8 +98,8 @@ public sealed class AskModel : HomePageModelBase
                 request.AnswerDepth,
                 cancellationToken);
 
-            var usage = currentUser is not null && CurrentRole() == AppRoles.Student
-                ? await _chatUsage.GetAsync(currentUser.Id, cancellationToken)
+            var usage = isStudentRequest
+                ? await _chatUsage.GetAsync(currentUser!.Id, cancellationToken)
                 : null;
             return new JsonResult(new
             {

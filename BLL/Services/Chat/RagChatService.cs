@@ -365,9 +365,27 @@ public sealed class RagChatService : IRagChatService
             }
         }
 
+        var exactFactIntent = DetectExactFactIntent(retrievalQuestion);
         if (TryBuildExactFactAnswer(retrievalQuestion, scopedChunks, responseLanguage) is { } exactFactAnswer)
         {
             return exactFactAnswer with { ResolvedSubject = route.SelectedSubject ?? exactFactAnswer.ResolvedSubject };
+        }
+
+        if (exactFactIntent != ExactFactIntent.None)
+        {
+            return await BuildInsufficientAnswerAsync(
+                question,
+                route.SelectedSubject ?? subjectFilter,
+                historyBeforeQuestion,
+                Array.Empty<DocumentChunk>(),
+                allowedSubjects,
+                responseLanguage,
+                cancellationToken);
+        }
+
+        if (TryBuildSubjectSkillsAnswer(retrievalQuestion, scopedChunks, responseLanguage) is { } skillsAnswer)
+        {
+            return skillsAnswer with { ResolvedSubject = route.SelectedSubject ?? skillsAnswer.ResolvedSubject };
         }
 
         if (TryBuildSubjectOverviewAnswer(retrievalQuestion, scopedChunks, responseLanguage) is { } subjectOverviewAnswer)
@@ -447,7 +465,7 @@ public sealed class RagChatService : IRagChatService
             cancellationToken);
         var answer = string.IsNullOrWhiteSpace(generatedAnswer)
                      || (!IsInsufficientDataAnswer(generatedAnswer) && !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, matchedChunks.Count))
-            ? BuildGroundedAnswer(queryTerms, matchedChunks, responseLanguage)
+            ? BuildGroundedAnswer(contentTerms, matchedChunks, responseLanguage)
             : generatedAnswer.Trim();
 
         if (IsInsufficientDataAnswer(answer))
@@ -474,7 +492,16 @@ public sealed class RagChatService : IRagChatService
                 cancellationToken);
         }
 
-        return new SingleQuestionAnswer(question, answer, citations, resolvedSubject);
+        var normalizedSources = ChatGroundingPolicy.NormalizeSourceMarkers(answer);
+        var referencedCitations = normalizedSources.OriginalSourceNumbers
+            .Where(sourceNumber => sourceNumber >= 1 && sourceNumber <= citations.Count)
+            .Select(sourceNumber => citations[sourceNumber - 1])
+            .ToList();
+        return new SingleQuestionAnswer(
+            question,
+            normalizedSources.Answer,
+            referencedCitations,
+            resolvedSubject);
     }
 
     private static string ApplyAnswerDepth(string question, string? answerDepth, string language)
@@ -504,13 +531,32 @@ public sealed class RagChatService : IRagChatService
 
         if (accessScope is not null)
         {
-            return (await _repository.GetChunksAsync(KnowledgeModelMapper.ToData(accessScope), normalizedAllowedSubjects, cancellationToken)).Select(KnowledgeModelMapper.ToModel).ToList();
+            var scopedChunks = (await _repository.GetChunksAsync(
+                    KnowledgeModelMapper.ToData(accessScope),
+                    normalizedAllowedSubjects,
+                    cancellationToken))
+                .Select(KnowledgeModelMapper.ToModel)
+                .ToList();
+            return DeduplicateChunks(scopedChunks);
         }
 
         var chunks = await _repository.GetChunksAsync(cancellationToken);
 
-        return chunks.Select(KnowledgeModelMapper.ToModel)
+        var allowedChunks = chunks.Select(KnowledgeModelMapper.ToModel)
             .Where(chunk => normalizedAllowedSubjects.Any(subject => SubjectMatches(chunk.Subject, subject)))
+            .ToList();
+        return DeduplicateChunks(allowedChunks);
+    }
+
+    private static IReadOnlyList<DocumentChunk> DeduplicateChunks(IReadOnlyList<DocumentChunk> chunks)
+    {
+        return chunks
+            .GroupBy(chunk => string.Join(
+                '\u001F',
+                NormalizeQuestion(chunk.Subject),
+                NormalizeQuestion(chunk.Chapter),
+                TextEncodingHelper.NormalizeForIndexing(chunk.Text)), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
             .ToList();
     }
 
@@ -607,13 +653,19 @@ public sealed class RagChatService : IRagChatService
             return null;
         }
 
+        var fallbackCitations = BuildCitations(fallbackChunks, 0.74);
+        var normalizedSources = ChatGroundingPolicy.NormalizeSourceMarkers(answer);
+        var referencedCitations = normalizedSources.OriginalSourceNumbers
+            .Where(sourceNumber => sourceNumber >= 1 && sourceNumber <= fallbackCitations.Count)
+            .Select(sourceNumber => fallbackCitations[sourceNumber - 1])
+            .ToList();
         return new SingleQuestionAnswer(
             question,
-            answer,
-            BuildCitations(fallbackChunks, 0.74),
+            normalizedSources.Answer,
+            referencedCitations,
             resolvedSubject,
             AnswerSource: "Rag",
-            HasDirectCitation: true);
+            HasDirectCitation: referencedCitations.Count > 0);
     }
 
     private static SingleQuestionAnswer? TryBuildIndexedPartsAnswer(
@@ -1037,6 +1089,16 @@ public sealed class RagChatService : IRagChatService
         string language)
     {
         var factIntent = DetectExactFactIntent(question);
+        if (factIntent == ExactFactIntent.LecturerName)
+        {
+            return TryBuildLecturerNameAnswer(question, chunks, language);
+        }
+
+        if (factIntent == ExactFactIntent.AttendancePercentage)
+        {
+            return TryBuildAttendanceAnswer(question, chunks, language);
+        }
+
         if (factIntent != ExactFactIntent.Credits)
         {
             return null;
@@ -1078,6 +1140,104 @@ public sealed class RagChatService : IRagChatService
         };
 
         return new SingleQuestionAnswer(question, answer, citations, ResolveSubject(new[] { evidence.Chunk }));
+    }
+
+    private static SingleQuestionAnswer? TryBuildLecturerNameAnswer(
+        string question,
+        IReadOnlyList<DocumentChunk> chunks,
+        string language)
+    {
+        foreach (var chunk in chunks.OrderBy(item => item.ChunkIndex))
+        {
+            var chunkText = chunk.Text ?? string.Empty;
+            var match = Regex.Match(
+                chunkText,
+                @"(?i)\b(?:Giảng\s+viên(?:\s+phụ\s+trách)?|Lecturer|Instructor|Teacher)\s*:\s*(?<name>.+?)(?=\s+(?:Số\s+tín\s+chỉ|Credits?|Mã\s+môn|Tên\s+môn|Subject|Chapter)\s*:|\s*=+|$)",
+                RegexOptions.CultureInvariant);
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            var lecturerName = match.Groups["name"].Value.Trim();
+            if (string.IsNullOrWhiteSpace(lecturerName))
+            {
+                continue;
+            }
+
+            var courseLabel = ResolveFactCourseLabel(question, chunk);
+            var answer = language == "vi"
+                ? $"Theo tài liệu, giảng viên phụ trách {courseLabel} là {lecturerName}."
+                : $"According to the document, the lecturer for {courseLabel} is {lecturerName}.";
+            return new SingleQuestionAnswer(
+                question,
+                answer,
+                [new SourceCitation
+                {
+                    DocumentId = chunk.DocumentId,
+                    FileName = chunk.FileName,
+                    Subject = chunk.Subject,
+                    Chapter = chunk.Chapter,
+                    ChunkIndex = chunk.ChunkIndex,
+                    Score = 0.99,
+                    Excerpt = CreateFactExcerpt(chunkText, match.Value.Trim())
+                }],
+                ResolveSubject([chunk]));
+        }
+
+        return null;
+    }
+
+    private static SingleQuestionAnswer? TryBuildAttendanceAnswer(
+        string question,
+        IReadOnlyList<DocumentChunk> chunks,
+        string language)
+    {
+        var patterns = new[]
+        {
+            @"(?i)\bTham\s+dự\s+(?:tối\s+thiểu|ít\s+nhất)\s+(?<value>\d+(?:[.,]\d+)?)\s*%",
+            @"(?i)\b(?:minimum\s+attendance|attend\s+at\s+least)\s*(?:is|:)?\s*(?<value>\d+(?:[.,]\d+)?)\s*%"
+        };
+
+        foreach (var chunk in chunks.OrderBy(item => item.ChunkIndex))
+        {
+            var chunkText = chunk.Text ?? string.Empty;
+            var match = patterns
+                .Select(pattern => Regex.Match(chunkText, pattern, RegexOptions.CultureInvariant))
+                .FirstOrDefault(candidate => candidate.Success);
+            if (match is null || !match.Success)
+            {
+                continue;
+            }
+
+            var rawValue = match.Groups["value"].Value.Replace(',', '.');
+            if (!double.TryParse(rawValue, NumberStyles.Number, CultureInfo.InvariantCulture, out var percentage))
+            {
+                continue;
+            }
+
+            var courseLabel = ResolveFactCourseLabel(question, chunk);
+            var formattedPercentage = FormatCreditValue(percentage);
+            var answer = language == "vi"
+                ? $"Theo tài liệu, sinh viên {courseLabel} cần tham dự tối thiểu {formattedPercentage}% thời lượng môn học."
+                : $"According to the document, {courseLabel} students must attend at least {formattedPercentage}% of the course.";
+            return new SingleQuestionAnswer(
+                question,
+                answer,
+                [new SourceCitation
+                {
+                    DocumentId = chunk.DocumentId,
+                    FileName = chunk.FileName,
+                    Subject = chunk.Subject,
+                    Chapter = chunk.Chapter,
+                    ChunkIndex = chunk.ChunkIndex,
+                    Score = 0.99,
+                    Excerpt = CreateFactExcerpt(chunkText, match.Value.Trim())
+                }],
+                ResolveSubject([chunk]));
+        }
+
+        return null;
     }
 
     private static SingleQuestionAnswer? TryBuildSubjectOverviewAnswer(
@@ -1132,22 +1292,109 @@ public sealed class RagChatService : IRagChatService
         return new SingleQuestionAnswer(question, answer, citations, subject);
     }
 
+    private static SingleQuestionAnswer? TryBuildSubjectSkillsAnswer(
+        string question,
+        IReadOnlyList<DocumentChunk> chunks,
+        string language)
+    {
+        var normalizedQuestion = NormalizeQuestion(question);
+        var asksForSkills = normalizedQuestion.Contains("ky nang", StringComparison.Ordinal)
+                            || normalizedQuestion.Contains("skill", StringComparison.Ordinal)
+                            || (normalizedQuestion.Contains("phat trien", StringComparison.Ordinal)
+                                && normalizedQuestion.Contains("sinh vien", StringComparison.Ordinal));
+        if (!asksForSkills)
+        {
+            return null;
+        }
+
+        foreach (var chunk in chunks.OrderBy(item => item.ChunkIndex))
+        {
+            var chunkText = chunk.Text ?? string.Empty;
+            var section = Regex.Match(
+                chunkText,
+                @"(?i)KỸ\s+NĂNG\s+MỀM\s+VÀ\s+PHÁT\s+TRIỂN\s+CÁ\s+NHÂN\s*=+\s*(?<body>.+?)(?=\s*=+\s*[\p{L}\p{N}\s]+\s*=+|$)",
+                RegexOptions.CultureInvariant);
+            if (!section.Success)
+            {
+                continue;
+            }
+
+            var body = section.Groups["body"].Value.Trim();
+            var colonIndex = body.IndexOf(':');
+            if (colonIndex >= 0 && colonIndex + 1 < body.Length)
+            {
+                body = body[(colonIndex + 1)..].Trim();
+            }
+
+            var skills = body
+                .Split(" - ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim().Trim('-', '*', ' ').TrimEnd('.'))
+                .Where(item => item.Length is > 5 and <= 240)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(6)
+                .ToList();
+            if (skills.Count == 0)
+            {
+                continue;
+            }
+
+            var courseLabel = ResolveFactCourseLabel(question, chunk);
+            var answer = language == "vi"
+                ? $"Theo tài liệu, {courseLabel} giúp sinh viên phát triển:\n" + string.Join("\n", skills.Select(item => $"- {item}."))
+                : $"According to the document, {courseLabel} helps students develop:\n" + string.Join("\n", skills.Select(item => $"- {item}."));
+            return new SingleQuestionAnswer(
+                question,
+                answer,
+                [new SourceCitation
+                {
+                    DocumentId = chunk.DocumentId,
+                    FileName = chunk.FileName,
+                    Subject = chunk.Subject,
+                    Chapter = chunk.Chapter,
+                    ChunkIndex = chunk.ChunkIndex,
+                    Score = 0.98,
+                    Excerpt = CreateExcerpt(section.Value)
+                }],
+                ResolveSubject([chunk]));
+        }
+
+        return null;
+    }
+
     private static bool IsSubjectOverviewQuestion(string question)
     {
         var normalized = NormalizeQuestion(question);
-        return normalized.Contains(" la gi", StringComparison.Ordinal)
-               || normalized.EndsWith(" la mon gi", StringComparison.Ordinal)
-               || normalized.Contains(" mon gi", StringComparison.Ordinal)
-               || normalized.Contains("about", StringComparison.Ordinal)
-               || normalized.StartsWith("what is ", StringComparison.Ordinal);
+        var normalizedCourseCodes = ExtractCourseCodes(question)
+            .Select(NormalizeQuestion)
+            .ToList();
+        return normalizedCourseCodes.Any(code =>
+                   normalized.EndsWith($"{code} la gi", StringComparison.Ordinal)
+                   || normalized.EndsWith($"{code} la mon gi", StringComparison.Ordinal)
+                   || normalized.Equals($"what is {code}", StringComparison.Ordinal)
+                   || normalized.Equals($"what is course {code}", StringComparison.Ordinal)
+                   || normalized.Equals($"tell me about {code}", StringComparison.Ordinal))
+               || (normalized.StartsWith("mon ", StringComparison.Ordinal)
+                   && normalized.EndsWith(" la mon gi", StringComparison.Ordinal));
     }
 
     private static string ResolveSubjectName(string subject, string text)
     {
-        var syllabusName = Regex.Match(text ?? string.Empty, @"(?im)^\s*Syllabus\s*Name\s*:\s*(?<name>.+?)\s*$", RegexOptions.CultureInvariant);
+        var syllabusName = Regex.Match(
+            text ?? string.Empty,
+            @"(?i)\bSyllabus\s*Name\s*:\s*(?<name>.+?)(?=\s+(?:Subject|Course|Credits?|No\s*Credit|Chapter)\s*:|\s*=+|$)",
+            RegexOptions.CultureInvariant);
         if (syllabusName.Success)
         {
             return syllabusName.Groups["name"].Value.Trim();
+        }
+
+        var vietnameseName = Regex.Match(
+            text ?? string.Empty,
+            @"(?i)\bTên\s+môn\s*:\s*(?<name>.+?)(?=\s+(?:Tên\s+tiếng\s+Anh|Mã\s+môn|Số\s+tín\s+chỉ|Trình\s+độ)\s*:|\s*=+|$)",
+            RegexOptions.CultureInvariant);
+        if (vietnameseName.Success)
+        {
+            return vietnameseName.Groups["name"].Value.Trim();
         }
 
         var separatorIndex = subject.IndexOf('-', StringComparison.Ordinal);
@@ -1166,6 +1413,32 @@ public sealed class RagChatService : IRagChatService
             return ExactFactIntent.Credits;
         }
 
+        var asksForPersonName = normalized.Contains("ten", StringComparison.Ordinal)
+                                || normalized.Contains("who", StringComparison.Ordinal)
+                                || Regex.IsMatch(normalized, @"\bai\b", RegexOptions.CultureInvariant);
+        var asksForLecturer = normalized.Contains("giang vien", StringComparison.Ordinal)
+                             || normalized.Contains("lecturer", StringComparison.Ordinal)
+                             || normalized.Contains("instructor", StringComparison.Ordinal)
+                             || normalized.Contains("teacher", StringComparison.Ordinal);
+        if (asksForPersonName && asksForLecturer)
+        {
+            return ExactFactIntent.LecturerName;
+        }
+
+        var asksForAttendance = normalized.Contains("tham du", StringComparison.Ordinal)
+                                || normalized.Contains("chuyen can", StringComparison.Ordinal)
+                                || normalized.Contains("attendance", StringComparison.Ordinal)
+                                || normalized.Contains("attend", StringComparison.Ordinal);
+        var asksForThreshold = normalized.Contains("phan tram", StringComparison.Ordinal)
+                               || normalized.Contains("percent", StringComparison.Ordinal)
+                               || normalized.Contains("toi thieu", StringComparison.Ordinal)
+                               || normalized.Contains("it nhat", StringComparison.Ordinal)
+                               || question.Contains('%');
+        if (asksForAttendance && asksForThreshold)
+        {
+            return ExactFactIntent.AttendancePercentage;
+        }
+
         return ExactFactIntent.None;
     }
 
@@ -1178,11 +1451,11 @@ public sealed class RagChatService : IRagChatService
 
         var patterns = new[]
         {
-            @"(?im)^\s*No\s*Credit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*NoCredit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*(?:Credits?|Credit)\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*(?:So|S[oố])\s*t[ií]n\s*ch[iỉ]\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b.*$",
-            @"(?im)^\s*(?<value>\d+(?:[.,]\d+)?)\s*(?:t[ií]n\s*ch[iỉ]|credits?)\b.*$"
+            @"(?i)\bNo\s*Credit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b",
+            @"(?i)\bNoCredit\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b",
+            @"(?i)\b(?:Credits?|Credit)\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b",
+            @"(?i)\b(?:So|S[oố])\s*t[ií]n\s*ch[iỉ]\s*:\s*(?<value>\d+(?:[.,]\d+)?)\b",
+            @"(?i)\b(?<value>\d+(?:[.,]\d+)?)\s*(?:t[ií]n\s*ch[iỉ]|credits?)\b"
         };
 
         foreach (var pattern in patterns)
@@ -1495,7 +1768,9 @@ public sealed class RagChatService : IRagChatService
     private enum ExactFactIntent
     {
         None,
-        Credits
+        Credits,
+        LecturerName,
+        AttendancePercentage
     }
 
     private sealed record CreditFact(double Value, string EvidenceText);
@@ -1947,6 +2222,7 @@ public sealed class RagChatService : IRagChatService
 
     private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks, string language)
     {
+        var minimumSharedTerms = queryTerms.Count >= 4 ? 2 : 1;
         var selectedSentences = chunks
             .SelectMany((chunk, sourceIndex) => SplitSentences(chunk.Text).Select(sentence => new
             {
@@ -1954,11 +2230,13 @@ public sealed class RagChatService : IRagChatService
                 SourceNumber = sourceIndex + 1,
                 SharedTerms = CountSharedTerms(queryTerms, sentence)
             }))
-            .Where(item => item.Text.Length > 8 && item.SharedTerms > 0)
+            .Where(item => item.Text.Length is > 8 and <= 500
+                           && item.SharedTerms >= minimumSharedTerms
+                           && !IsLowValueFallbackSentence(item.Text))
             .OrderByDescending(item => item.SharedTerms)
             .GroupBy(item => item.Text, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
-            .Take(6)
+            .Take(3)
             .ToList();
 
         if (selectedSentences.Count == 0)
@@ -1974,6 +2252,16 @@ public sealed class RagChatService : IRagChatService
 
         return "Summary from the documents:\n\n" +
                string.Join("\n", selectedSentences.Select(item => $"- {item.Text} [{item.SourceNumber}]"));
+    }
+
+    private static bool IsLowValueFallbackSentence(string sentence)
+    {
+        var normalized = NormalizeQuestion(sentence);
+        return normalized.StartsWith("nguon ", StringComparison.Ordinal)
+               || normalized.StartsWith("source ", StringComparison.Ordinal)
+               || normalized.Contains("http ", StringComparison.Ordinal)
+               || normalized.Contains("https ", StringComparison.Ordinal)
+               || normalized.Contains("url ", StringComparison.Ordinal);
     }
 
     private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks)
