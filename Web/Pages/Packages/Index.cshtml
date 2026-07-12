@@ -52,14 +52,20 @@
                         ? "is-violet"
                         : "is-teal";
             <article class="package-membership__card @tone @(package.IsCurrentPackage ? "is-current" : "")">
-                @if (package.IsCurrentPackage)
-                {
-                    <span class="package-membership__featured">Đang sử dụng</span>
-                }
-                else if (package.Code.Contains("STUDENT", StringComparison.OrdinalIgnoreCase))
-                {
-                    <span class="package-membership__featured">Phổ biến</span>
-                }
+                <div class="package-membership__badges">
+                    @if (package.DiscountPercent > 0)
+                    {
+                        <span class="package-membership__discount">Giảm @package.DiscountPercent%</span>
+                    }
+                    @if (package.IsCurrentPackage)
+                    {
+                        <span class="package-membership__featured">Đang sử dụng</span>
+                    }
+                    else if (package.IsStudent)
+                    {
+                        <span class="package-membership__featured">Phổ biến</span>
+                    }
+                </div>
 
                 <div class="package-membership__icon" aria-hidden="true">
                     <span class="material-symbols-outlined">@(package.IsLifetime || package.Code.Contains("ANNUAL", StringComparison.OrdinalIgnoreCase) ? "diamond" : package.IsFree ? "school" : "workspace_premium")</span>
@@ -76,6 +82,11 @@
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><strong>@package.MonthlyChatLimit.ToString("N0")</strong> câu hỏi mỗi tháng</span></li>
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Trả lời dựa trên tài liệu môn học</span></li>
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Lưu lịch sử và nguồn tham khảo</span></li>
+                    @if (package.IsStudent)
+                    {
+                        <li><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Sở hữu hiệu ứng hồ sơ đặc biệt</span></li>
+                        <li><span class="material-symbols-outlined" aria-hidden="true">support_agent</span><span>Hỗ trợ ưu tiên, phản hồi nhanh hơn</span></li>
+                    }
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>Thời hạn: <strong>@package.DurationLabel</strong></span></li>
                 </ul>
 
