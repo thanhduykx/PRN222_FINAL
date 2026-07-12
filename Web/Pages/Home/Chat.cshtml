@@ -1,11 +1,10 @@
 @page
 @model PRN222_FINAL.Web.Pages.Home.ChatModel
 @{
-    ViewData["Title"] = "Chatbot";
+    ViewData["Title"] = "Chat tài liệu";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "chat";
-    ViewData["ShellTitle"] = "Chatbot tài liệu";
-    ViewData["ShellTitleI18n"] = "home.shellTitleChat";
+    ViewData["ShellTitle"] = "Chat tài liệu";
     ViewData["ShellTitleI18n"] = "chat.title";
     ViewData["HideAssistantLauncher"] = true;
 
@@ -55,6 +54,12 @@
         .Select((item, index) => new { id = $"subject-{index}", subject = item.Item3, en = item.Item1, vi = item.Item2 })
         .ToArray();
     var initialRelatedQuestions = relatedQuestions.Take(8).ToArray();
+    var readyDataCount = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student)
+        ? subjectOptions.Count
+        : Model.Documents.Count;
+    var readyDataUnit = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student)
+        ? "môn có dữ liệu"
+        : "tài liệu đã index";
 }
 
 <section class="rbl-chat-page"
@@ -66,8 +71,12 @@
     {
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
+    <header class="chat-page-heading">
+        <h1>Chat tài liệu</h1>
+        <p>Hỏi đáp thông minh dựa trên tài liệu đã index của bạn</p>
+    </header>
     <section class="chat-source-scope" aria-label="Phạm vi nguồn trả lời" data-i18n-aria-label="chat.scopeAria" data-chat-subject-count="@subjectOptions.Count">
-        <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+        <span class="chat-ai-mark" aria-hidden="true">AI</span>
         <div>
             <strong data-i18n="chat.scopeTitle">Trả lời dựa trên tài liệu đã index</strong>
             <span data-chat-scope-label>
@@ -81,14 +90,20 @@
                 }
             </span>
         </div>
-        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))" data-i18n="chat.viewCourses">Xem môn học</a>
+        <div class="chat-source-ready">
+            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+            <strong>Dữ liệu sẵn sàng</strong>
+            <small>@readyDataCount @readyDataUnit</small>
+        </div>
+        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))" data-i18n="chat.viewCourses">Xem môn học <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
     </section>
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Nội dung hội thoại" data-i18n-aria-label="chat.messagesAria">
             <div class="chat-empty-state rbl-chat-empty">
-                <span class="rbl-bot-mark">AI</span>
-                <h3 data-i18n="chat.emptyTitle">Bắt đầu bằng một câu hỏi cụ thể</h3>
-                <p data-i18n="chat.emptyText">Chọn gợi ý bên dưới hoặc nhập câu hỏi về tài liệu môn học.</p>
+                <span class="rbl-bot-mark">smart_toy</span>
+                <h3 data-i18n="chat.emptyTitle">Xin chào Lecturer! 👋</h3>
+                <p data-i18n="chat.emptyText">Tôi có thể giúp gì cho bạn hôm nay?</p>
+                <p>Bạn có thể hỏi về nội dung môn học, khái niệm, bài tập hoặc bất kỳ thông tin nào trong tài liệu đã index.</p>
                 <div class="suggestion-grid rbl-suggestion-grid" aria-label="Question suggestions" data-i18n-aria-label="chat.suggestionsAria">
                     @foreach (var question in suggestedQuestions)
                     {
