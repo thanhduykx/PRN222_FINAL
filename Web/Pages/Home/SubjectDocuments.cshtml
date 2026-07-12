@@ -6,6 +6,7 @@
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "documents";
     ViewData["ShellTitle"] = "Chi ti&#7871;t m&#244;n h&#7885;c";
+    ViewData["ShellTitleI18n"] = "home.shellTitleSubjectDocs";
     ViewData["ShellTitleI18n"] = "documents.shellTitle";
 
     string FormatBytes(long bytes)
@@ -43,7 +44,7 @@
     {
         if (document.Status == DocumentIndexStatus.Failed && !string.IsNullOrWhiteSpace(document.IndexError))
         {
-            return document.IndexError;
+            return "System error while processing document. Please check the file or try again.";
         }
 
         if (document.Status == DocumentIndexStatus.Indexed && document.IndexedAt.HasValue)
@@ -98,7 +99,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="Id" value="@Model.Subject.SubjectId" />
                 </form>
-                <form asp-page-handler="DeleteSubject" method="post" id="deleteSubjectForm" data-confirm-i18n="documents.deleteSubjectConfirm" data-confirm="Xóa môn này và toàn bộ chương bên trong? Thao tác này không thể hoàn tác." style="display:none;">
+                <form asp-page-handler="DeleteSubject" method="post" id="deleteSubjectForm" data-confirm-i18n="documents.deleteSubjectConfirm" data-confirm="Delete this subject and all its chapters? This cannot be undone." style="display:none;">
                     @Html.AntiForgeryToken()
                 </form>
 
@@ -223,7 +224,7 @@
                                 </form>
                                 @if (chapter.ChapterId.HasValue)
                                 {
-                                    <form asp-page-handler="DeleteChapter" method="post" data-confirm-i18n="documents.deleteChapterConfirm" data-confirm="Xóa chương/mục này? Thao tác này không thể hoàn tác.">
+                                    <form asp-page-handler="DeleteChapter" method="post" data-confirm-i18n="documents.deleteChapterConfirm" data-confirm="Delete this chapter? This cannot be undone.">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="chapterId" value="@chapter.ChapterId" />
                                         <button type="submit" class="ops-mini-button ops-mini-button--danger" data-i18n="documents.deleteBtn">Delete</button>
@@ -267,7 +268,7 @@
                                             <span class="material-symbols-outlined" aria-hidden="true">description</span>
                                             <div class="ops-tree-document-main">
                                                 <strong title="@document.FileName">@document.FileName</strong>
-                                                <small data-document-tree-meta>@StatusLabel(document) - @document.ChunkCount chunks - @FormatBytes(document.FileSizeBytes)</small>
+                                                <small data-document-tree-meta><span data-i18n="documents.status.@(document.Status?.ToLowerInvariant() ?? "unknown")">@StatusLabel(document)</span> - @document.ChunkCount chunks - @FormatBytes(document.FileSizeBytes)</small>
                                             </div>
                                             <div class="ops-row-actions" data-document-actions>
                                                 @if (document.Status == DocumentIndexStatus.Indexed)
@@ -276,17 +277,17 @@
                                                 }
                                                 else
                                                 {
-                                                    <button type="button" class="ops-mini-button" data-document-preview-action data-document-preview-label="documents.previewBtn" disabled title="@StatusTitle(document)" data-i18n="documents.previewBtn">Xem</button>
+                                                    <button type="button" class="ops-mini-button" data-document-preview-action data-document-preview-label="documents.previewBtn" disabled title="Unable to view" data-i18n="documents.previewBtn">Xem</button>
                                                 }
                                                 @if (Model.CanManageDocumentAction(document, Model.Subject))
                                                 {
                                                     <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id" data-i18n="documents.editBtn">Sửa</a>
-                                                    <form asp-page-handler="ReindexDocument" method="post" data-confirm-i18n="documents.reindexConfirm" data-confirm="Re-index tài liệu này?">
+                                                    <form asp-page-handler="ReindexDocument" method="post" data-confirm-i18n="documents.reindexConfirm" data-confirm="Re-index this document?">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="documentId" value="@document.Id" />
                                                     <button type="submit" class="ops-mini-button" data-i18n="documents.reindexBtn">Re-index</button>
                                                 </form>
-                                                <form asp-page-handler="DeleteDocument" method="post" data-confirm-i18n="documents.deleteConfirm" data-confirm="Xóa tài liệu này khỏi kho index? Thao tác này không thể hoàn tác.">
+                                                <form asp-page-handler="DeleteDocument" method="post" data-confirm-i18n="documents.deleteConfirm" data-confirm="Delete this document from index? This cannot be undone.">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="documentId" value="@document.Id" />
                                                     <button type="submit" class="ops-mini-button ops-mini-button--danger" data-i18n="documents.deleteDocBtn">Xóa</button>

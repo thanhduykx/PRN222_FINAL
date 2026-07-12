@@ -1,10 +1,11 @@
-﻿@page "{section?}"
+@page "{section?}"
 @model PRN222_FINAL.Web.Pages.Admin.IndexModel
 @{
     ViewData["Title"] = "Users";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "admin";
     ViewData["ShellTitle"] = "Users";
+    ViewData["ShellTitleI18n"] = "admin.shellTitleUsers";
     ViewData["ShellTitleI18n"] = "admin.usersTitle";
 
     var section = Model.CurrentSection;
@@ -566,22 +567,22 @@
 
     <header class="ops-page-header ops-admin-heading">
         <div>
-            <span class="ops-eyebrow">Quản trị hệ thống</span>
-            <h1>Người dùng &amp; phân công</h1>
-            <p>Quản lý tài khoản, vai trò và phân công môn học tại một nơi.</p>
+            <span class="ops-eyebrow" data-i18n="admin.eyebrow">Quản trị hệ thống</span>
+            <h1 data-i18n="admin.usersAndAssignment">Người dùng &amp; phân công</h1>
+            <p data-i18n="admin.usersDesc">Quản lý tài khoản, vai trò và phân công môn học tại một nơi.</p>
         </div>
         <a class="ops-button ops-button--primary" asp-page="/Admin/Index" asp-route-section="create-account">
             <span class="material-symbols-outlined" aria-hidden="true">person_add</span>
-            Thêm tài khoản
+            <span data-i18n="admin.addAccount">Thêm tài khoản</span>
         </a>
     </header>
 
-    <nav class="ops-tabs ops-admin-tabs" aria-label="Quản trị người dùng và môn học">
-        <a class="@AdminTabClass(IndexModel.AdminSection.Directory)" asp-page="/Admin/Index" asp-route-section="directory" aria-current="@(isDirectory ? "page" : null)">Danh sách</a>
-        <a class="@AdminTabClass(IndexModel.AdminSection.LecturerTable)" asp-page="/Admin/Index" asp-route-section="lecturer-table" aria-current="@(isLecturerTable ? "page" : null)">Phân công giảng viên</a>
-        <a class="@AdminTabClass(IndexModel.AdminSection.CreateAccount)" asp-page="/Admin/Index" asp-route-section="create-account" aria-current="@(isCreateAccount ? "page" : null)">Thêm tài khoản</a>
-        <a class="@AdminTabClass(IndexModel.AdminSection.BulkImport)" asp-page="/Admin/Index" asp-route-section="bulk-import" aria-current="@(isBulkImport ? "page" : null)">Nhập Excel</a>
-        <a class="@AdminTabClass(IndexModel.AdminSection.CreateSubject)" asp-page="/Admin/Index" asp-route-section="create-subject" aria-current="@(isCreateSubject ? "page" : null)">Môn học</a>
+    <nav class="ops-tabs ops-admin-tabs" aria-label="Quản trị người dùng và môn học" data-i18n-aria-label="admin.tabsAria">
+        <a class="@AdminTabClass(IndexModel.AdminSection.Directory)" asp-page="/Admin/Index" asp-route-section="directory" aria-current="@(isDirectory ? "page" : null)"><span data-i18n="admin.tabList">Danh sách</span></a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.LecturerTable)" asp-page="/Admin/Index" asp-route-section="lecturer-table" aria-current="@(isLecturerTable ? "page" : null)"><span data-i18n="admin.tabLecturers">Phân công giảng viên</span></a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.CreateAccount)" asp-page="/Admin/Index" asp-route-section="create-account" aria-current="@(isCreateAccount ? "page" : null)"><span data-i18n="admin.tabCreateAccount">Thêm tài khoản</span></a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.BulkImport)" asp-page="/Admin/Index" asp-route-section="bulk-import" aria-current="@(isBulkImport ? "page" : null)"><span data-i18n="admin.tabImportExcel">Nhập Excel</span></a>
+        <a class="@AdminTabClass(IndexModel.AdminSection.CreateSubject)" asp-page="/Admin/Index" asp-route-section="create-subject" aria-current="@(isCreateSubject ? "page" : null)"><span data-i18n="admin.tabSubjects">Môn học</span></a>
     </nav>
 
     @if (isDirectory)
@@ -589,70 +590,70 @@
         @* === DIRECTORY: Bảng người dùng / User table === *@
         <section class="ops-kpi-grid ops-admin-kpis" aria-label="User metrics">
             <article class="ops-kpi">
-                <span>Tổng người dùng</span>
+                <span data-i18n="admin.kpiTotalUsers">Tổng người dùng</span>
                 <strong>@Model.TotalUserCount</strong>
-                <small>Đang hiển thị @users.Count</small>
+                <small><span data-i18n="admin.showing">Đang hiển thị</span> @users.Count</small>
             </article>
             <article class="ops-kpi">
-                <span>Giảng viên</span>
+                <span data-i18n="admin.kpiLecturers">Giảng viên</span>
                 <strong>@Model.LecturerUserCount</strong>
-                <small>Quản lý môn được phân công</small>
+                <small data-i18n="admin.kpiLecturersDesc">Quản lý môn được phân công</small>
             </article>
             <article class="ops-kpi">
-                <span>Sinh viên</span>
+                <span data-i18n="admin.kpiStudents">Sinh viên</span>
                 <strong>@Model.StudentUserCount</strong>
-                <small>Được sử dụng trợ lý học tập</small>
+                <small data-i18n="admin.kpiStudentsDesc">Được sử dụng trợ lý học tập</small>
             </article>
             <article class="ops-kpi">
-                <span>Có thể xóa</span>
+                <span data-i18n="admin.kpiDeletable">Có thể xóa</span>
                 <strong>@deletionEligibleUsers</strong>
-                <small>Không phụ trách môn và ngưng hoạt động trên 3 tháng</small>
+                <small data-i18n="admin.kpiDeletableDesc">Không phụ trách môn và ngưng hoạt động trên 3 tháng</small>
             </article>
         </section>
 
         <section class="ops-panel">
             <div class="ops-panel-head">
                 <div>
-                    <span class="ops-eyebrow">Danh sách tài khoản</span>
-                    <h2>Người dùng trong hệ thống</h2>
+                    <span class="ops-eyebrow" data-i18n="admin.userListEyebrow">Danh sách tài khoản</span>
+                    <h2 data-i18n="admin.userListTitle">Người dùng trong hệ thống</h2>
                 </div>
                 <span class="ops-panel-note">@users.Count/@Model.TotalUserCount <span data-i18n="admin.usersUnit">users</span></span>
             </div>
 
             <form asp-page="/Admin/Index" method="get" class="ops-filter-bar ops-admin-filter" asp-route-section="directory">
                 <label class="ops-field ops-field--search">
-                    <span>Tìm kiếm</span>
-                    <input name="q" value="@Model.Query" placeholder="Tên, email hoặc môn học..." />
+                    <span data-i18n="admin.search">Tìm kiếm</span>
+                    <input name="q" value="@Model.Query" placeholder="Tên, email hoặc môn học..." data-i18n-placeholder="admin.searchPlaceholder" />
                 </label>
                 <label class="ops-field">
-                    <span>Vai trò</span>
+                    <span data-i18n="admin.role">Vai trò</span>
                     <select name="roleFilter">
                         @if (string.IsNullOrWhiteSpace(Model.RoleFilter))
                         {
-                            <option value="" selected>Tất cả vai trò</option>
+                            <option value="" selected data-i18n="admin.allRoles">Tất cả vai trò</option>
                         }
                         else
                         {
-                            <option value="">Tất cả vai trò</option>
+                            <option value="" data-i18n="admin.allRoles">Tất cả vai trò</option>
                         }
                         @foreach (var role in Model.Roles)
                         {
                             if (role.Equals(Model.RoleFilter, StringComparison.OrdinalIgnoreCase))
                             {
-                                <option value="@role" selected>@RoleLabel(role)</option>
+                                <option value="@role" selected data-i18n="admin.role.@role.ToLowerInvariant()">@RoleLabel(role)</option>
                             }
                             else
                             {
-                                <option value="@role">@RoleLabel(role)</option>
+                                <option value="@role" data-i18n="admin.role.@role.ToLowerInvariant()">@RoleLabel(role)</option>
                             }
                         }
                     </select>
                 </label>
                 <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding-bottom: 2px;">
-                    <button type="submit" class="ops-button ops-button--secondary">Áp dụng</button>
+                    <button type="submit" class="ops-button ops-button--secondary" data-i18n="admin.apply">Áp dụng</button>
                     @if (hasActiveFilters)
                     {
-                        <a class="ops-button ops-button--ghost" asp-page="/Admin/Index" asp-route-section="directory">Xóa bộ lọc</a>
+                        <a class="ops-button ops-button--ghost" asp-page="/Admin/Index" asp-route-section="directory" data-i18n="admin.clearFilters">Xóa bộ lọc</a>
                     }
                 </div>
             </form>
@@ -668,21 +669,21 @@
             {
                 <div class="ops-table-wrap">
                     <table class="ops-table ops-user-table">
-                        <caption class="visually-hidden">Danh sách người dùng theo bộ lọc hiện tại</caption>
+                        <caption class="visually-hidden" data-i18n="admin.tableCaption">Danh sách người dùng theo bộ lọc hiện tại</caption>
                         <thead>
                             <tr>
-                                <th scope="col">Người dùng</th>
-                                <th scope="col">Hoạt động gần nhất</th>
-                                <th scope="col">Vai trò</th>
-                                <th scope="col">Môn học</th>
-                                <th scope="col" style="text-align: right;">Thao tác</th>
+                                <th scope="col" data-i18n="admin.thUser">Người dùng</th>
+                                <th scope="col" data-i18n="admin.thLastActive">Hoạt động gần nhất</th>
+                                <th scope="col" data-i18n="admin.thRole">Vai trò</th>
+                                <th scope="col" data-i18n="admin.thSubjects">Môn học</th>
+                                <th scope="col" style="text-align: right;" data-i18n="admin.thActions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var user in users)
                             {
                                 <tr>
-                                    <td data-label="User">
+                                    <td data-label="User" data-i18n-data-label="admin.thUser">
                                         <div class="ops-user-cell">
                                             <span class="ops-avatar">@Initials(user)</span>
                                             <div class="ops-user-identity">
@@ -691,15 +692,15 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td data-label="Last active">
+                                    <td data-label="Last active" data-i18n-data-label="admin.thLastActive">
                                         <span style="color: var(--admin-text-muted); font-size: 0.875rem;" title='Ngày tạo: @user.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")'>
                                             @((user.LastActiveAt ?? user.CreatedAt).LocalDateTime.ToString("yyyy-MM-dd HH:mm"))
                                         </span>
                                     </td>
-                                    <td data-label="Role / Vai trò">
-                                        <span class="ops-role-badge">@RoleLabel(user.Role)</span>
+                                    <td data-label="Role" data-i18n-data-label="admin.thRole">
+                                        <span class="ops-role-badge" data-i18n="admin.role.@user.Role.ToLowerInvariant()">@RoleLabel(user.Role)</span>
                                     </td>
-                                    <td data-label="Subjects">
+                                    <td data-label="Subjects" data-i18n-data-label="admin.thSubjects">
                                         @if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Lecturer)
                                         {
                                             <div class="ops-subject-cell">
@@ -712,7 +713,7 @@
                                                     {
                                                         foreach (var subject in user.AssignedSubjectDetails)
                                                         {
-                                                            <span class="ops-chip" title="Đã assign - không thể gỡ">
+                                                            <span class="ops-chip" title="Đã assign - không thể gỡ" data-i18n-title="admin.assignedTooltip">
                                                                 <span>@subject.DisplayName</span>
                                                             </span>
                                                         }
@@ -722,38 +723,35 @@
                                         }
                                         else if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Student)
                                         {
-                                            <span class="ops-chip">Được dùng trợ lý học tập</span>
+                                            <span class="ops-chip" data-i18n="admin.studentAllowed">Được dùng trợ lý học tập</span>
                                         }
                                         else
                                         {
-                                            <span class="ops-chip ops-chip--muted">Không áp dụng</span>
+                                            <span class="ops-chip ops-chip--muted" data-i18n="admin.notApplicable">Không áp dụng</span>
                                         }
                                     </td>
-                                    <td data-label="Actions" style="text-align: right;">
+                                    <td data-label="Actions" style="text-align: right;" data-i18n-data-label="admin.thActions">
                                         @{
                                             var deleteDisabled = user.IsLastAdmin
                                             || user.IsCurrentUser
                                             || user.HasAssignedSubjects
                                             || !user.MeetsInactivePeriod
                                             || (user.Role != PRN222_FINAL.BLL.Security.AppRoles.Student && user.Role != PRN222_FINAL.BLL.Security.AppRoles.Lecturer);
-                                            var deleteTitle = user.IsCurrentUser
-                                            ? "Cannot delete your own active account"
-                                            : user.IsLastAdmin
-                                            ? "Cannot delete the last admin"
-                                            : user.HasAssignedSubjects
-                                            ? "Phải gỡ toàn bộ môn đang đảm nhận trước khi xóa"
-                                            : !user.MeetsInactivePeriod
-                                            ? "Chỉ được xóa khi người dùng đã không hoạt động trên 3 tháng"
-                                            : "Delete user";
+                                            
+                                            var deleteTitleI18n = user.IsCurrentUser ? "admin.delErrSelf"
+                                            : user.IsLastAdmin ? "admin.delErrLastAdmin"
+                                            : user.HasAssignedSubjects ? "admin.delErrAssigned"
+                                            : !user.MeetsInactivePeriod ? "admin.delErrActive"
+                                            : "admin.delOk";
                                         }
-                                        <form asp-page-handler="DeleteUser" method="post" class="ops-danger-form" data-confirm="Xóa người dùng này? Thao tác này không thể hoàn tác." style="display: inline-block;">
+                                        <form asp-page-handler="DeleteUser" method="post" class="ops-danger-form" data-confirm-i18n="admin.deleteConfirm" style="display: inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="UserId" value="@user.Id" />
                                             <button type="submit"
                                                     class="ops-mini-button ops-mini-button--danger"
                                                     disabled="@deleteDisabled"
-                                                    title="@deleteTitle">
-                                                <span>Xóa</span>
+                                                    data-i18n-title="@deleteTitleI18n">
+                                                <span data-i18n="admin.delete">Xóa</span>
                                             </button>
                                         </form>
                                     </td>
@@ -780,15 +778,15 @@
                 @Html.AntiForgeryToken()
                 <label class="ops-field">
                     <span data-i18n="admin.fullName">Full name</span>
-                    <input name="FullName" maxlength="120" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A" />
+                    <input name="FullName" maxlength="120" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A" data-i18n-placeholder="admin.namePlaceholder" />
                 </label>
                 <label class="ops-field">
                     <span data-i18n="admin.email">Email</span>
-                    <input name="Email" type="email" autocomplete="email" placeholder="example@domain.com" />
+                    <input name="Email" type="email" autocomplete="email" placeholder="example@domain.com" data-i18n-placeholder="admin.emailPlaceholder" />
                 </label>
                 <label class="ops-field">
                     <span data-i18n="admin.password">Password</span>
-                    <input name="Password" type="password" minlength="8" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" />
+                    <input name="Password" type="password" minlength="8" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" data-i18n-placeholder="admin.passwordPlaceholder" />
                 </label>
                 <label class="ops-field">
                     <span data-i18n="admin.role">Role</span>
@@ -844,7 +842,7 @@
                     <h2 data-i18n="admin.importExcelTitle">Import from Excel</h2>
                 </div>
             </div>
-            <form asp-page-handler="ImportUsers" method="post" enctype="multipart/form-data" class="ops-stacked-form" data-admin-user-role-subject-form data-confirm-en="Create these users in bulk and send welcome emails?" data-confirm-vi="Tạo người dùng hàng loạt và gửi email chào mừng?">
+            <form asp-page-handler="ImportUsers" method="post" enctype="multipart/form-data" class="ops-stacked-form" data-admin-user-role-subject-form data-confirm-i18n="admin.bulkImportConfirm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Role" value="@PRN222_FINAL.BLL.Security.AppRoles.Student" />
                 <label class="ops-field">
@@ -888,7 +886,7 @@
             {
                 <div class="ops-table-wrap">
                     <table class="ops-table" style="min-width: 600px;">
-                        <caption class="visually-hidden">Phân công môn học cho giảng viên</caption>
+                        <caption class="visually-hidden" data-i18n="admin.lecturerTableCaption">Phân công môn học cho giảng viên</caption>
                         <thead>
                             <tr>
                                 <th style="width: 260px;" data-i18n="admin.thName">NAME</th>
@@ -906,7 +904,7 @@
                                 .ToList();
 
                                 <tr>
-                                    <td data-label="NAME" style="width: 260px;">
+                                    <td data-label="NAME" style="width: 260px;" data-i18n-data-label="admin.thName">
                                         <div class="ops-user-cell" style="min-width: 0;">
                                             <span class="ops-avatar">@Initials(lecturer)</span>
                                             <div class="ops-user-identity">
@@ -915,7 +913,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td data-label="Subjects">
+                                    <td data-label="Subjects" data-i18n-data-label="admin.thSubjects">
                                         <div class="ops-subject-cell" style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
                                             <div class="ops-chip-list">
                                                 @if (lecturer.AssignedSubjectDetails.Count == 0)
@@ -926,14 +924,14 @@
                                                 {
                                                     foreach (var subject in lecturer.AssignedSubjectDetails)
                                                     {
-                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ">
+                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
                                                             <span>@subject.DisplayName@(subject.IsLeader? Html.Raw("<span data-i18n=\"admin.subjectLeaderSuffix\"> (Trưởng bộ môn)</span>") : Html.Raw(""))</span>
 
-                                                            <form asp-page-handler="UnregisterLecturerSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm="Gỡ môn @subject.DisplayName khỏi @DisplayName(lecturer)?">
+                                                            <form asp-page-handler="UnregisterLecturerSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(lecturer)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(lecturer)?">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="UserId" value="@lecturer.Id" />
                                                                 <input type="hidden" name="SubjectId" value="@subject.Id" />
-                                                                <button type="submit" title="Gỡ môn" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
+                                                                <button type="submit" title="Gỡ môn" data-i18n-title="admin.unassignButton" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
                                                                     &times;
                                                                 </button>
                                                             </form>
@@ -941,7 +939,7 @@
                                                     }
                                                 }
                                             </div>
-                                            <form asp-page-handler="RegisterLecturerSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm="Đăng ký môn đã chọn cho @DisplayName(lecturer)?">
+                                            <form asp-page-handler="RegisterLecturerSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm-en="Assign selected subject to @DisplayName(lecturer)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(lecturer)?">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="UserId" value="@lecturer.Id" />
                                                 <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(lecturer)" style="padding: 0.35rem 0.5rem; border: 1px solid var(--admin-border); border-radius: 6px; font-size: 0.75rem;">
@@ -997,7 +995,7 @@
             {
                 <div class="ops-table-wrap">
                     <table class="ops-table" style="min-width: 600px;">
-                        <caption class="visually-hidden">Đăng ký môn học cho sinh viên</caption>
+                        <caption class="visually-hidden" data-i18n="admin.studentTableCaption">Đăng ký môn học cho sinh viên</caption>
                         <thead>
                             <tr>
                                 <th style="width: 260px;" data-i18n="admin.thName">NAME</th>
@@ -1015,7 +1013,7 @@
                                 .ToList();
 
                                 <tr>
-                                    <td data-label="NAME" style="width: 260px;">
+                                    <td data-label="NAME" style="width: 260px;" data-i18n-data-label="admin.thName">
                                         <div class="ops-user-cell" style="min-width: 0;">
                                             <span class="ops-avatar">@Initials(student)</span>
                                             <div class="ops-user-identity">
@@ -1024,7 +1022,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td data-label="Subjects">
+                                    <td data-label="Subjects" data-i18n-data-label="admin.thSubjects">
                                         <div class="ops-subject-cell" style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
                                             <div class="ops-chip-list">
                                                 @if (student.AssignedSubjectDetails.Count == 0)
@@ -1035,13 +1033,13 @@
                                                 {
                                                     foreach (var subject in student.AssignedSubjectDetails)
                                                     {
-                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ">
+                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
                                                             <span>@subject.DisplayName</span>
-                                                            <form asp-page-handler="UnregisterStudentSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm="Gỡ môn @subject.DisplayName khỏi @DisplayName(student)?">
+                                                            <form asp-page-handler="UnregisterStudentSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(student)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(student)?">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="UserId" value="@student.Id" />
                                                                 <input type="hidden" name="SubjectId" value="@subject.Id" />
-                                                                <button type="submit" title="Gỡ môn" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
+                                                                <button type="submit" title="Gỡ môn" data-i18n-title="admin.unassignButton" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
                                                                     &times;
                                                                 </button>
                                                             </form>
@@ -1049,7 +1047,7 @@
                                                     }
                                                 }
                                             </div>
-                                            <form asp-page-handler="RegisterStudentSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm="Đăng ký môn đã chọn cho @DisplayName(student)?">
+                                            <form asp-page-handler="RegisterStudentSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm-en="Assign selected subject to @DisplayName(student)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(student)?">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="UserId" value="@student.Id" />
                                                 <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(student)" style="padding: 0.35rem 0.5rem; border: 1px solid var(--admin-border); border-radius: 6px; font-size: 0.75rem;">
@@ -1093,7 +1091,7 @@
                 @Html.AntiForgeryToken()
                 <label class="ops-field">
                     <span data-i18n="admin.subjectCode">Subject code</span>
-                    <input name="Code" maxlength="32" placeholder="VD: IOT102" autocomplete="off" />
+                    <input name="Code" maxlength="32" placeholder="VD: IOT102" data-i18n-placeholder="admin.subjectCodePlaceholder" autocomplete="off" />
                 </label>
                 <label class="ops-field">
                     <span data-i18n="admin.description">Description</span>
@@ -1108,7 +1106,7 @@
 
             <div class="ops-panel-head" style="border-top: 1px solid var(--admin-border); margin-top: 1rem;">
                 <div>
-                    <span class="ops-eyebrow">Overview</span>
+                    <span class="ops-eyebrow" data-i18n="admin.overview">Overview</span>
                     <h2 data-i18n="admin.subjectList">Subject List / Danh sách môn học</h2>
                 </div>
                 <span class="ops-panel-note">@Model.SubjectOptions.Count <span data-i18n="admin.subjectsUnit">subjects</span></span>
@@ -1125,7 +1123,7 @@
             {
                 <div class="ops-table-wrap">
                     <table class="ops-table">
-                        <caption class="visually-hidden">Danh sách môn học và người phụ trách</caption>
+                        <caption class="visually-hidden" data-i18n="admin.subjectTableCaption">Danh sách môn học và người phụ trách</caption>
                         <thead>
                             <tr>
                                 <th data-i18n="admin.thSubject">SUBJECT</th>
@@ -1137,10 +1135,10 @@
                             @foreach (var subject in Model.SubjectOptions)
                             {
                                 <tr class="@(subject.IsActive ? "" : "ops-muted-row")" style="@(!subject.IsActive ? "opacity: 0.6;" : "")">
-                                    <td data-label="SUBJECT">
+                                    <td data-label="SUBJECT" data-i18n-data-label="admin.thSubject">
                                         <strong style="color: var(--admin-text-main); font-size: 0.95rem;">@subject.DisplayName</strong>
                                     </td>
-                                    <td data-label="LEADER">
+                                    <td data-label="LEADER" data-i18n-data-label="admin.thLeader">
                                         @if (string.IsNullOrWhiteSpace(subject.OwnerName))
                                         {
                                             <span style="color: var(--admin-text-muted); font-size: 0.875rem;" data-i18n="admin.noneLeader">None</span>
@@ -1153,7 +1151,7 @@
                                             </div>
                                         }
                                     </td>
-                                    <td data-label="STATUS">
+                                    <td data-label="STATUS" data-i18n-data-label="admin.thStatus">
                                         @if (subject.IsActive)
                                         {
                                             <span class="ops-chip" style="background-color: #ecfdf5; color: #065f46;" data-i18n="admin.active">Active</span>

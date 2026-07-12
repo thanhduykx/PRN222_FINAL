@@ -1,7 +1,7 @@
-﻿@page "{id:guid?}"
+@page "{id:guid?}"
 @model PRN222_FINAL.Web.Pages.Home.EditDocumentModel
 @{
-    ViewData["Title"] = "Sửa tài liệu";
+    ViewData["Title"] = "Edit document";
     var subjectOptions = Model.CourseCatalog.Count > 0
         ? Model.CourseCatalog.Select(subject => subject.DisplayName).ToList()
         : new List<string> { Model.Subject };
@@ -31,7 +31,7 @@
 <section class="rbl-detail-page">
     <a class="rbl-back-link" asp-page="/Home/Index">
         <span class="material-symbols-outlined">arrow_back</span>
-        Quay lại kho tài liệu
+        <span data-i18n="documents.backToRepo">Quay lại kho tài liệu</span>
     </a>
 
     @if (TempData["Error"] is string error)
@@ -43,27 +43,27 @@
         <div class="rbl-panel-header">
             <div>
                 <span class="rbl-section-label">Document CRUD</span>
-                <h2>Sửa thông tin tài liệu</h2>
+                <h2 data-i18n="documents.editInfoTitle">Sửa thông tin tài liệu</h2>
             </div>
             <span class="rbl-table-meta">@Model.ChunkCount chunks</span>
         </div>
 
         <div class="rbl-document-edit-summary">
             <article>
-                <span>Loại file</span>
+                <span data-i18n="documents.fileType">Loại file</span>
                 <strong>@Model.ContentType</strong>
             </article>
             <article>
-                <span>Dung lượng</span>
+                <span data-i18n="documents.fileSize">Dung lượng</span>
                 <strong>@FormatBytes(Model.FileSizeBytes)</strong>
             </article>
             <article>
-                <span>Ngày upload</span>
+                <span data-i18n="documents.uploadDate">Ngày upload</span>
                 <strong>@Model.UploadedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</strong>
             </article>
             <article>
-                <span>Người upload</span>
-                <strong title="@Model.UploadedByEmail">@(string.IsNullOrWhiteSpace(Model.UploadedByName) ? "Không rõ" : Model.UploadedByName)</strong>
+                <span data-i18n="documents.uploader">Người upload</span>
+                <strong title="@Model.UploadedByEmail">@(string.IsNullOrWhiteSpace(Model.UploadedByName) ? "Unknown" : Model.UploadedByName)</strong>
             </article>
         </div>
 
@@ -72,9 +72,9 @@
             <input asp-for="Id" type="hidden" />
 
             <label class="rbl-field">
-                <span>Tên hiển thị</span>
+                <span data-i18n="documents.displayName">Tên hiển thị</span>
                 <input asp-for="FileName" />
-                <small>Không đổi file vật lý; chỉ đổi tên hiển thị và citation về sau.</small>
+                <small data-i18n="documents.displayNameDesc">Không đổi file vật lý; chỉ đổi tên hiển thị và citation về sau.</small>
             </label>
 
             <div class="rbl-form-grid">
@@ -102,8 +102,8 @@
             </datalist>
 
             <div class="rbl-form-actions">
-                <button type="submit" class="rbl-submit-button">Lưu thay đổi</button>
-                <button type="button" class="rbl-secondary-button" data-document-preview-url="/Home/DocumentPreview/@Model.Id">Xem t&#224;i li&#7879;u</button>
+                <button type="submit" class="rbl-submit-button"><span data-i18n="documents.saveChanges">Lưu thay đổi</span></button>
+                <button type="button" class="rbl-secondary-button" data-document-preview-url="/Home/DocumentPreview/@Model.Id"><span data-i18n="documents.viewDocument">Xem tài liệu</span></button>
             </div>
         </form>
     </section>
@@ -114,7 +114,7 @@
             <header class="rbl-document-preview-header">
                 <div>
                     <span class="rbl-section-label">Indexed content</span>
-                    <h2 id="documentPreviewTitle">T&#224;i li&#7879;u</h2>
+                    <h2 id="documentPreviewTitle" data-i18n="documents.previewTitle">Tài liệu</h2>
                     <p id="documentPreviewMeta"></p>
                 </div>
                 <button type="button" class="rbl-icon-button" aria-label="Close preview" data-document-preview-close>
@@ -122,7 +122,7 @@
                 </button>
             </header>
             <div id="documentPreviewBody" class="rbl-document-preview-body">
-                <p class="rbl-catalog-muted">&#272;ang t&#7843;i n&#7897;i dung &#273;&#227; index...</p>
+                <p class="rbl-catalog-muted" data-i18n="documents.loadingIndex">Đang tải nội dung đã index...</p>
             </div>
         </section>
     </div>
