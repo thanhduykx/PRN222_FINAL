@@ -292,6 +292,126 @@ public sealed class RagChatServiceTests
     }
 
     [Fact]
+    public async Task AskAsync_ComparisonQuestionAnswersEveryCourseWithSeparateCitations()
+    {
+        var fixture = CreateFixture();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            CreateCreditChunk("DBA103", 3, 1),
+            CreateCreditChunk("IOT102", 4, 2)
+        ]);
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "So sánh tín chỉ của môn DBA103 và IOT102",
+            language: "vi",
+            allowedSubjects: ["DBA103", "IOT102"]);
+
+        Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
+        Assert.Contains("DBA103: 3 tín chỉ. [1]", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IOT102: 4 tín chỉ. [2]", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IOT102 nhiều hơn DBA103 1 tín chỉ", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, result.Citations.Count);
+        Assert.Equal("DBA103", result.Citations[0].Subject);
+        Assert.Equal("IOT102", result.Citations[1].Subject);
+        await fixture.Completion.DidNotReceiveWithAnyArgs().GenerateAnswerAsync(
+            default!, default!, default!, default!, default!, default);
+    }
+
+    [Fact]
+    public async Task AskAsync_ComparisonQuestionStatesWhenCreditValuesAreEqual()
+    {
+        var fixture = CreateFixture();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            CreateCreditChunk("DBA103", 3, 1),
+            CreateCreditChunk("IOT102", 3, 2)
+        ]);
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "So sánh tín chỉ DBA103 với IOT102",
+            language: "vi",
+            allowedSubjects: ["DBA103", "IOT102"]);
+
+        Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
+        Assert.Contains("có số tín chỉ bằng nhau", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("[1][2]", result.Answer);
+        Assert.Equal(2, result.Citations.Count);
+    }
+
+    [Fact]
+    public async Task AskAsync_ComparisonQuestionNeverInventsMissingCourseCredit()
+    {
+        var fixture = CreateFixture();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            CreateCreditChunk("DBA103", 3, 1),
+            new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(),
+                FileName = "IOT102-overview.txt",
+                Subject = "IOT102",
+                Chapter = "Tổng quan",
+                ChunkIndex = 2,
+                Text = "Mã môn: IOT102. Tài liệu chưa công bố số tín chỉ.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            }
+        ]);
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "So sánh tín chỉ của DBA103 và IOT102",
+            language: "vi",
+            allowedSubjects: ["DBA103", "IOT102"]);
+
+        Assert.Equal(ChatGroundingPolicy.PartialAnswerStatus, result.AnswerStatus);
+        Assert.Contains("DBA103: 3 tín chỉ. [1]", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IOT102: Chưa tìm thấy số tín chỉ", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Single(result.Citations);
+        Assert.Equal("DBA103", result.Citations[0].Subject);
+    }
+
+    [Fact]
+    public async Task AskAsync_GenericComparisonRetainsEvidenceForEachRequestedCourse()
+    {
+        var fixture = CreateFixture();
+        var chunks = Enumerable.Range(1, 7)
+            .Select(index => new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(),
+                FileName = $"DBA103-assessment-{index}.txt",
+                Subject = "DBA103",
+                Chapter = "Đánh giá",
+                ChunkIndex = index,
+                Text = $"DBA103 có nội dung đánh giá qua bài tập thực hành số {index}.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            })
+            .Append(new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(),
+                FileName = "IOT102-assessment.txt",
+                Subject = "IOT102",
+                Chapter = "Đánh giá",
+                ChunkIndex = 8,
+                Text = "IOT102 có nội dung đánh giá qua dự án thiết bị IoT.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            })
+            .ToList();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(chunks);
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "So sánh nội dung đánh giá của DBA103 và IOT102",
+            language: "vi",
+            allowedSubjects: ["DBA103", "IOT102"]);
+
+        Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
+        Assert.Contains(result.Citations, citation => citation.Subject == "DBA103");
+        Assert.Contains(result.Citations, citation => citation.Subject == "IOT102");
+    }
+
+    [Fact]
     public async Task AskAsync_RealDba103SyllabusDoesNotInventLecturerName()
     {
         var fixture = CreateFixture();
@@ -486,6 +606,20 @@ public sealed class RagChatServiceTests
             Chapter = "Authentication",
             ChunkIndex = chunkIndex,
             Text = text,
+            Embedding = new Dictionary<int, double> { [1] = 1 }
+        };
+    }
+
+    private static DataDocumentChunk CreateCreditChunk(string subject, double credits, int chunkIndex)
+    {
+        return new DataDocumentChunk
+        {
+            DocumentId = Guid.NewGuid(),
+            FileName = $"{subject}-syllabus.txt",
+            Subject = subject,
+            Chapter = "Tổng quan môn học",
+            ChunkIndex = chunkIndex,
+            Text = $"Mã môn: {subject}\nSố tín chỉ: {credits:0.##}",
             Embedding = new Dictionary<int, double> { [1] = 1 }
         };
     }

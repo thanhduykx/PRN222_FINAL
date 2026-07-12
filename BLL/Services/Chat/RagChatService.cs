@@ -268,7 +268,8 @@ public sealed class RagChatService : IRagChatService
             singleAnswer.SubjectOptions,
             singleAnswer.AnswerSource,
             singleAnswer.HasDirectCitation,
-            singleAnswer.FallbackModel);
+            singleAnswer.FallbackModel,
+            singleAnswer.AnswerStatus);
     }
 
     private async Task<SingleQuestionAnswer> BuildSingleQuestionAnswerAsync(
@@ -366,6 +367,11 @@ public sealed class RagChatService : IRagChatService
         }
 
         var exactFactIntent = DetectExactFactIntent(retrievalQuestion);
+        if (TryBuildMultiSubjectCreditComparison(retrievalQuestion, scopedChunks, responseLanguage) is { } comparisonAnswer)
+        {
+            return comparisonAnswer;
+        }
+
         if (TryBuildExactFactAnswer(retrievalQuestion, scopedChunks, responseLanguage) is { } exactFactAnswer)
         {
             return exactFactAnswer with { ResolvedSubject = route.SelectedSubject ?? exactFactAnswer.ResolvedSubject };
@@ -465,7 +471,7 @@ public sealed class RagChatService : IRagChatService
             cancellationToken);
         var answer = string.IsNullOrWhiteSpace(generatedAnswer)
                      || (!IsInsufficientDataAnswer(generatedAnswer) && !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, matchedChunks.Count))
-            ? BuildGroundedAnswer(contentTerms, matchedChunks, responseLanguage)
+            ? BuildGroundedAnswer(contentTerms, matchedChunks, responseLanguage, ExtractCourseCodes(retrievalQuestion))
             : generatedAnswer.Trim();
 
         if (IsInsufficientDataAnswer(answer))
@@ -641,7 +647,7 @@ public sealed class RagChatService : IRagChatService
         var answer = string.IsNullOrWhiteSpace(generatedAnswer)
                      || IsInsufficientDataAnswer(generatedAnswer)
                      || !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, fallbackChunks.Count)
-            ? BuildGroundedAnswer(answerSelectionTerms, fallbackChunks, responseLanguage)
+            ? BuildGroundedAnswer(answerSelectionTerms, fallbackChunks, responseLanguage, ExtractCourseCodes(question))
             : generatedAnswer.Trim();
         if (IsInsufficientDataAnswer(answer))
         {
@@ -865,7 +871,7 @@ public sealed class RagChatService : IRagChatService
 
         var courseCodes = ExtractCourseCodes(string.Join("\n", retrievalQueries));
 
-        return scopedChunks
+        var rankedCandidates = scopedChunks
             .Select(chunk =>
             {
                 var vectorScore = queryEmbeddings.Count == 0
@@ -899,8 +905,9 @@ public sealed class RagChatService : IRagChatService
             .ThenByDescending(item => item.TextSharedTerms)
             .ThenByDescending(item => item.MetadataSharedTerms)
             .ThenByDescending(item => item.VectorScore)
-            .Take(RerankCandidateK)
             .ToList();
+
+        return SelectWithCourseCoverage(rankedCandidates, courseCodes, RerankCandidateK);
     }
 
     private static SubjectRouteResult ResolveSubjectRoute(
@@ -1140,6 +1147,126 @@ public sealed class RagChatService : IRagChatService
         };
 
         return new SingleQuestionAnswer(question, answer, citations, ResolveSubject(new[] { evidence.Chunk }));
+    }
+
+    private static SingleQuestionAnswer? TryBuildMultiSubjectCreditComparison(
+        string question,
+        IReadOnlyList<DocumentChunk> chunks,
+        string language)
+    {
+        if (DetectExactFactIntent(question) != ExactFactIntent.Credits
+            || !IsMultiSubjectQuestion(NormalizeQuestion(question)))
+        {
+            return null;
+        }
+
+        var courseCodes = Regex.Matches(question, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant)
+            .Select(match => match.Value.ToUpperInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (courseCodes.Count < 2)
+        {
+            return null;
+        }
+
+        var facts = courseCodes.Select(code =>
+        {
+            var evidence = chunks
+                .Where(chunk => SubjectMatches(chunk.Subject, code))
+                .Select(chunk => new { Chunk = chunk, Credit = TryExtractCreditFact(chunk.Text) })
+                .Where(item => item.Credit is not null)
+                .OrderBy(item => item.Chunk.ChunkIndex)
+                .FirstOrDefault();
+            return new CourseCreditComparisonFact(
+                code,
+                evidence?.Credit?.Value,
+                evidence?.Credit?.EvidenceText,
+                evidence?.Chunk);
+        }).ToList();
+        if (facts.All(item => item.Credit is null))
+        {
+            return null;
+        }
+
+        var citations = new List<SourceCitation>();
+        var sourceNumbers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var fact in facts.Where(item => item.Credit is not null && item.Chunk is not null))
+        {
+            sourceNumbers[fact.CourseCode] = citations.Count + 1;
+            citations.Add(new SourceCitation
+            {
+                DocumentId = fact.Chunk!.DocumentId,
+                FileName = fact.Chunk.FileName,
+                Subject = fact.Chunk.Subject,
+                Chapter = fact.Chunk.Chapter,
+                ChunkIndex = fact.Chunk.ChunkIndex,
+                Score = 0.99,
+                Excerpt = CreateFactExcerpt(fact.Chunk.Text, fact.EvidenceText ?? string.Empty)
+            });
+        }
+
+        var lines = new List<string> { language == "vi" ? "So sánh số tín chỉ:" : "Credit comparison:" };
+        foreach (var fact in facts)
+        {
+            if (fact.Credit is not null && sourceNumbers.TryGetValue(fact.CourseCode, out var sourceNumber))
+            {
+                lines.Add(language == "vi"
+                    ? $"- {fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} tín chỉ. [{sourceNumber}]"
+                    : $"- {fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} credits. [{sourceNumber}]");
+            }
+            else
+            {
+                lines.Add(language == "vi"
+                    ? $"- {fact.CourseCode}: Chưa tìm thấy số tín chỉ trong tài liệu được phép truy cập."
+                    : $"- {fact.CourseCode}: No credit value was found in the authorized documents.");
+            }
+        }
+
+        var hasAllFacts = facts.All(item => item.Credit is not null);
+        if (hasAllFacts)
+        {
+            var first = facts[0];
+            var second = facts[1];
+            var comparisonSources = string.Concat(facts.Select(fact => $"[{sourceNumbers[fact.CourseCode]}]"));
+            var allCreditsEqual = facts.All(fact => Math.Abs(fact.Credit!.Value - first.Credit!.Value) < 0.0001);
+            if (allCreditsEqual)
+            {
+                var courseList = string.Join(language == "vi" ? ", " : ", ", facts.Select(fact => fact.CourseCode));
+                lines.Add(language == "vi"
+                    ? $"Kết luận: {courseList} có số tín chỉ bằng nhau. {comparisonSources}"
+                    : $"Conclusion: {courseList} have the same number of credits. {comparisonSources}");
+            }
+            else if (facts.Count == 2)
+            {
+                var firstIsLarger = first.Credit!.Value > second.Credit!.Value;
+                var larger = firstIsLarger ? first : second;
+                var smaller = firstIsLarger ? second : first;
+                var difference = Math.Abs(first.Credit!.Value - second.Credit!.Value);
+                lines.Add(language == "vi"
+                    ? $"Kết luận: {larger.CourseCode} nhiều hơn {smaller.CourseCode} {FormatCreditValue(difference)} tín chỉ. {comparisonSources}"
+                    : $"Conclusion: {larger.CourseCode} has {FormatCreditValue(difference)} more credits than {smaller.CourseCode}. {comparisonSources}");
+            }
+            else
+            {
+                var maximum = facts.Max(fact => fact.Credit!.Value);
+                var minimum = facts.Min(fact => fact.Credit!.Value);
+                var highest = string.Join(", ", facts.Where(fact => Math.Abs(fact.Credit!.Value - maximum) < 0.0001).Select(fact => fact.CourseCode));
+                var lowest = string.Join(", ", facts.Where(fact => Math.Abs(fact.Credit!.Value - minimum) < 0.0001).Select(fact => fact.CourseCode));
+                lines.Add(language == "vi"
+                    ? $"Kết luận: cao nhất là {highest} ({FormatCreditValue(maximum)} tín chỉ); thấp nhất là {lowest} ({FormatCreditValue(minimum)} tín chỉ). {comparisonSources}"
+                    : $"Conclusion: {highest} has the highest value ({FormatCreditValue(maximum)} credits); {lowest} has the lowest ({FormatCreditValue(minimum)} credits). {comparisonSources}");
+            }
+        }
+
+        return new SingleQuestionAnswer(
+            question,
+            string.Join("\n", lines),
+            citations,
+            AnswerSource: "Rag",
+            HasDirectCitation: citations.Count > 0,
+            AnswerStatus: hasAllFacts
+                ? ChatGroundingPolicy.GroundedAnswerStatus
+                : ChatGroundingPolicy.PartialAnswerStatus);
     }
 
     private static SingleQuestionAnswer? TryBuildLecturerNameAnswer(
@@ -1581,7 +1708,10 @@ public sealed class RagChatService : IRagChatService
             }
         }
 
-        return selected;
+        return SelectWithCourseCoverage(
+            selected.Concat(fallback).ToList(),
+            ExtractCourseCodes(question),
+            TopK);
     }
 
     private static IReadOnlyList<ScoredChunk> RerankLocally(
@@ -1598,7 +1728,7 @@ public sealed class RagChatService : IRagChatService
         var factIntent = DetectExactFactIntent(question);
         var courseCodes = ExtractCourseCodes(question);
 
-        return candidates
+        var ranked = candidates
             .Select(item =>
             {
                 var rerankScore = CalculateLocalRerankScore(item, queryTerms, contentTerms, factIntent, courseCodes);
@@ -1610,8 +1740,57 @@ public sealed class RagChatService : IRagChatService
             .ThenByDescending(item => item.TextSharedTerms)
             .ThenByDescending(item => item.MetadataSharedTerms)
             .ThenByDescending(item => item.VectorScore)
-            .Take(TopK)
             .ToList();
+
+        return SelectWithCourseCoverage(ranked, courseCodes, TopK);
+    }
+
+    private static IReadOnlyList<ScoredChunk> SelectWithCourseCoverage(
+        IReadOnlyList<ScoredChunk> rankedCandidates,
+        IReadOnlySet<string> courseCodes,
+        int limit)
+    {
+        if (rankedCandidates.Count == 0 || limit <= 0)
+        {
+            return Array.Empty<ScoredChunk>();
+        }
+
+        var selected = new List<ScoredChunk>(Math.Min(limit, rankedCandidates.Count));
+        var seenChunks = new HashSet<(Guid DocumentId, int ChunkIndex)>();
+
+        // Reserve one qualified evidence slot per requested course before global truncation.
+        foreach (var courseCode in courseCodes)
+        {
+            var representative = rankedCandidates.FirstOrDefault(candidate =>
+                SubjectMatches(candidate.Chunk.Subject, courseCode));
+            if (representative is null
+                || !seenChunks.Add((representative.Chunk.DocumentId, representative.Chunk.ChunkIndex)))
+            {
+                continue;
+            }
+
+            selected.Add(representative);
+            if (selected.Count == limit)
+            {
+                return selected;
+            }
+        }
+
+        foreach (var candidate in rankedCandidates)
+        {
+            if (!seenChunks.Add((candidate.Chunk.DocumentId, candidate.Chunk.ChunkIndex)))
+            {
+                continue;
+            }
+
+            selected.Add(candidate);
+            if (selected.Count == limit)
+            {
+                break;
+            }
+        }
+
+        return selected;
     }
 
     private static double CalculateLocalRerankScore(
@@ -1763,7 +1942,8 @@ public sealed class RagChatService : IRagChatService
         IReadOnlyList<string>? SubjectOptions = null,
         string AnswerSource = "Rag",
         bool HasDirectCitation = true,
-        string? FallbackModel = null);
+        string? FallbackModel = null,
+        string? AnswerStatus = null);
 
     private enum ExactFactIntent
     {
@@ -1774,6 +1954,12 @@ public sealed class RagChatService : IRagChatService
     }
 
     private sealed record CreditFact(double Value, string EvidenceText);
+
+    private sealed record CourseCreditComparisonFact(
+        string CourseCode,
+        double? Credit,
+        string? EvidenceText,
+        DocumentChunk? Chunk);
 
     private sealed record SubjectRouteResult(
         string? SelectedSubject,
@@ -1801,7 +1987,8 @@ public sealed class RagChatService : IRagChatService
         IReadOnlyList<string>? subjectOptions = null,
         string answerSource = "Rag",
         bool hasDirectCitation = true,
-        string? fallbackModel = null)
+        string? fallbackModel = null,
+        string? answerStatus = null)
     {
         await _repository.AddMessageAsync(sessionId, KnowledgeModelMapper.ToData(new ChatMessage
         {
@@ -1821,7 +2008,7 @@ public sealed class RagChatService : IRagChatService
             answerSource,
             hasDirectCitation,
             fallbackModel,
-            ChatGroundingPolicy.ResolveAnswerStatus(answerSource, needsClarification, citations.Count));
+            answerStatus ?? ChatGroundingPolicy.ResolveAnswerStatus(answerSource, needsClarification, citations.Count));
     }
 
     private async Task<QueryIntentDecision> ClassifyQuestionIntentAsync(
@@ -2220,14 +2407,19 @@ public sealed class RagChatService : IRagChatService
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
-    private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks, string language)
+    private static string BuildGroundedAnswer(
+        IReadOnlySet<string> queryTerms,
+        IReadOnlyList<DocumentChunk> chunks,
+        string language,
+        IReadOnlySet<string>? requiredCourseCodes = null)
     {
         var minimumSharedTerms = queryTerms.Count >= 4 ? 2 : 1;
-        var selectedSentences = chunks
+        var rankedSentences = chunks
             .SelectMany((chunk, sourceIndex) => SplitSentences(chunk.Text).Select(sentence => new
             {
                 Text = sentence,
                 SourceNumber = sourceIndex + 1,
+                chunk.Subject,
                 SharedTerms = CountSharedTerms(queryTerms, sentence)
             }))
             .Where(item => item.Text.Length is > 8 and <= 500
@@ -2236,8 +2428,36 @@ public sealed class RagChatService : IRagChatService
             .OrderByDescending(item => item.SharedTerms)
             .GroupBy(item => item.Text, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
-            .Take(3)
             .ToList();
+
+        var selectedSentences = new List<(string Text, int SourceNumber)>();
+        var selectedSentenceTexts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var courseCodes = requiredCourseCodes is { Count: > 0 }
+            ? requiredCourseCodes
+            : ExtractCourseCodes(string.Join(" ", queryTerms));
+        foreach (var courseCode in courseCodes)
+        {
+            var sentence = rankedSentences.FirstOrDefault(item => SubjectMatches(item.Subject, courseCode));
+            if (sentence is null || !selectedSentenceTexts.Add(sentence.Text))
+            {
+                continue;
+            }
+
+            selectedSentences.Add((sentence.Text, sentence.SourceNumber));
+        }
+
+        foreach (var sentence in rankedSentences)
+        {
+            if (selectedSentences.Count == 3)
+            {
+                break;
+            }
+
+            if (selectedSentenceTexts.Add(sentence.Text))
+            {
+                selectedSentences.Add((sentence.Text, sentence.SourceNumber));
+            }
+        }
 
         if (selectedSentences.Count == 0)
         {
