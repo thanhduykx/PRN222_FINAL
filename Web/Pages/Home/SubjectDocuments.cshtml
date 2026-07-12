@@ -40,20 +40,6 @@
         };
     }
 
-    string StatusTitle(IndexedDocument document)
-    {
-        if (document.Status == DocumentIndexStatus.Failed && !string.IsNullOrWhiteSpace(document.IndexError))
-        {
-            return "System error while processing document. Please check the file or try again.";
-        }
-
-        if (document.Status == DocumentIndexStatus.Indexed && document.IndexedAt.HasValue)
-        {
-            return $"Indexed at {document.IndexedAt.Value.LocalDateTime:yyyy-MM-dd HH:mm}";
-        }
-
-        return StatusLabel(document);
-    }
 }
 
 <section class="ops-page ops-documents-page ops-subject-detail-page">

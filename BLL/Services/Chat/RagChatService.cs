@@ -16,7 +16,8 @@ public sealed record ChatAnswer(
     IReadOnlyList<string>? SubjectOptions = null,
     string AnswerSource = "Rag",
     bool HasDirectCitation = true,
-    string? FallbackModel = null);
+    string? FallbackModel = null,
+    string AnswerStatus = ChatGroundingPolicy.GroundedAnswerStatus);
 
 public interface IRagChatService
 {
@@ -207,7 +208,14 @@ public sealed class RagChatService : IRagChatService
 
         if (LooksLikePromptInjection(trimmedQuestion))
         {
-            return await SaveAssistantAnswer(sessionId, BuildOutOfScopeAnswer(responseLanguage), Array.Empty<SourceCitation>(), cancellationToken, ownerInfo);
+            return await SaveAssistantAnswer(
+                sessionId,
+                BuildOutOfScopeAnswer(responseLanguage),
+                Array.Empty<SourceCitation>(),
+                cancellationToken,
+                ownerInfo,
+                answerSource: "OutOfScope",
+                hasDirectCitation: false);
         }
 
         var questionBatch = SplitQuestionBatch(trimmedQuestion);
@@ -437,7 +445,10 @@ public sealed class RagChatService : IRagChatService
             matchedChunks,
             responseLanguage,
             cancellationToken);
-        var answer = generatedAnswer ?? BuildGroundedAnswer(queryTerms, matchedChunks, responseLanguage);
+        var answer = string.IsNullOrWhiteSpace(generatedAnswer)
+                     || (!IsInsufficientDataAnswer(generatedAnswer) && !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, matchedChunks.Count))
+            ? BuildGroundedAnswer(queryTerms, matchedChunks, responseLanguage)
+            : generatedAnswer.Trim();
 
         if (IsInsufficientDataAnswer(answer))
         {
@@ -581,7 +592,9 @@ public sealed class RagChatService : IRagChatService
             generatedAnswer = null;
         }
 
-        var answer = string.IsNullOrWhiteSpace(generatedAnswer) || IsInsufficientDataAnswer(generatedAnswer)
+        var answer = string.IsNullOrWhiteSpace(generatedAnswer)
+                     || IsInsufficientDataAnswer(generatedAnswer)
+                     || !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, fallbackChunks.Count)
             ? BuildGroundedAnswer(answerSelectionTerms, fallbackChunks, responseLanguage)
             : generatedAnswer.Trim();
         if (IsInsufficientDataAnswer(answer))
@@ -784,12 +797,18 @@ public sealed class RagChatService : IRagChatService
 
         foreach (var query in retrievalQueries.Where(query => !string.IsNullOrWhiteSpace(query)).Take(4))
         {
-            queryEmbeddings.Add(await _embeddingService.EmbedAsync(query, cancellationToken));
+            queryEmbeddings.Add(await _embeddingService.EmbedAsync(
+                query,
+                EmbeddingInputType.SearchQuery,
+                cancellationToken));
         }
 
         if (queryEmbeddings.Count == 0)
         {
-            queryEmbeddings.Add(await _embeddingService.EmbedAsync(string.Join(" ", queryTerms), cancellationToken));
+            queryEmbeddings.Add(await _embeddingService.EmbedAsync(
+                string.Join(" ", queryTerms),
+                EmbeddingInputType.SearchQuery,
+                cancellationToken));
         }
 
         var courseCodes = ExtractCourseCodes(string.Join("\n", retrievalQueries));
@@ -1526,7 +1545,8 @@ public sealed class RagChatService : IRagChatService
             subjectOptions ?? Array.Empty<string>(),
             answerSource,
             hasDirectCitation,
-            fallbackModel);
+            fallbackModel,
+            ChatGroundingPolicy.ResolveAnswerStatus(answerSource, needsClarification, citations.Count));
     }
 
     private async Task<QueryIntentDecision> ClassifyQuestionIntentAsync(
@@ -1663,7 +1683,7 @@ public sealed class RagChatService : IRagChatService
             return true;
         }
 
-        return decision is null || decision.IsGrounded || decision.Confidence < 0.65;
+        return decision is null || decision.IsGrounded;
     }
 
     private static bool LooksLikePromptInjection(string question)
@@ -1887,7 +1907,8 @@ public sealed class RagChatService : IRagChatService
             return false;
         }
 
-        var answerFacts = ExtractGroundingFacts(answer);
+        var answerWithoutSourceMarkers = ChatGroundingPolicy.RemoveSourceMarkers(answer);
+        var answerFacts = ExtractGroundingFacts(answerWithoutSourceMarkers);
         if (answerFacts.Count > 0)
         {
             var contextFacts = ExtractGroundingFacts(contextText);
@@ -1897,7 +1918,7 @@ public sealed class RagChatService : IRagChatService
             }
         }
 
-        var answerTerms = ExtractTerms(answer);
+        var answerTerms = ExtractTerms(answerWithoutSourceMarkers);
         answerTerms.ExceptWith(questionTerms);
         answerTerms.RemoveWhere(term => AnswerScaffoldTerms.Contains(term));
         if (answerTerms.Count == 0)
@@ -1927,16 +1948,16 @@ public sealed class RagChatService : IRagChatService
     private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks, string language)
     {
         var selectedSentences = chunks
-            .SelectMany(chunk => SplitSentences(chunk.Text))
-            .Select(sentence => new
+            .SelectMany((chunk, sourceIndex) => SplitSentences(chunk.Text).Select(sentence => new
             {
                 Text = sentence,
+                SourceNumber = sourceIndex + 1,
                 SharedTerms = CountSharedTerms(queryTerms, sentence)
-            })
+            }))
             .Where(item => item.Text.Length > 8 && item.SharedTerms > 0)
             .OrderByDescending(item => item.SharedTerms)
-            .Select(item => item.Text)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .GroupBy(item => item.Text, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
             .Take(6)
             .ToList();
 
@@ -1947,14 +1968,12 @@ public sealed class RagChatService : IRagChatService
 
         if (language == "vi")
         {
-            return "Mình có thấy vài ý liên quan trong tài liệu. Tóm gọn lại nhé:\n\n" +
-                   string.Join("\n", selectedSentences.Select(sentence => $"- {sentence}")) +
-                   "\n\nNguồn mình để ngay bên dưới để bạn kiểm tra lại.";
+            return "Tóm tắt từ tài liệu:\n\n" +
+                   string.Join("\n", selectedSentences.Select(item => $"- {item.Text} [{item.SourceNumber}]"));
         }
 
-        return "I found a few relevant points in the documents. Quick summary:\n\n" +
-               string.Join("\n", selectedSentences.Select(sentence => $"- {sentence}")) +
-               "\n\nThe sources are listed below so you can double-check them.";
+        return "Summary from the documents:\n\n" +
+               string.Join("\n", selectedSentences.Select(item => $"- {item.Text} [{item.SourceNumber}]"));
     }
 
     private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks)

@@ -16,15 +16,16 @@ public sealed class FallbackEmbeddingService : IEmbeddingService
 
     public async Task<Dictionary<int, double>> EmbedAsync(
         string text,
+        EmbeddingInputType inputType,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            return await _primary.EmbedAsync(text, cancellationToken);
+            return await _primary.EmbedAsync(text, inputType, cancellationToken);
         }
         catch (Exception exception) when (ShouldFallback(exception, cancellationToken))
         {
-            return await _fallback.EmbedAsync(text, cancellationToken);
+            return await _fallback.EmbedAsync(text, inputType, cancellationToken);
         }
     }
 

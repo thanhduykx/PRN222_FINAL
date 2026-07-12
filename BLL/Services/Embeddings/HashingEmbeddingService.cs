@@ -5,7 +5,10 @@ public sealed class HashingEmbeddingService : IEmbeddingService
     public string ModelName => "hashing-v1";
     public int Dimensions => 256;
 
-    public Task<Dictionary<int, double>> EmbedAsync(string text, CancellationToken cancellationToken = default)
+    public Task<Dictionary<int, double>> EmbedAsync(
+        string text,
+        EmbeddingInputType inputType,
+        CancellationToken cancellationToken = default)
     {
         var result = new Dictionary<int, double>();
         if (string.IsNullOrWhiteSpace(text))

@@ -6,8 +6,17 @@ public interface IEmbeddingService
 {
     string ModelName { get; }
     int Dimensions { get; }
-    Task<Dictionary<int, double>> EmbedAsync(string text, CancellationToken cancellationToken = default);
+    Task<Dictionary<int, double>> EmbedAsync(
+        string text,
+        EmbeddingInputType inputType,
+        CancellationToken cancellationToken = default);
     double CosineSimilarity(IReadOnlyDictionary<int, double> left, IReadOnlyDictionary<int, double> right);
+}
+
+public enum EmbeddingInputType
+{
+    SearchQuery,
+    Document
 }
 
 public interface IDocumentTextExtractor
