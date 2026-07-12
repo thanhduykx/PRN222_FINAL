@@ -9009,7 +9009,10 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
 .package-membership__card.is-teal { --tone: var(--membership-teal); --tone-soft: #ccfbf1; }
 .package-membership__card.is-violet { --tone: var(--membership-violet); --tone-soft: #fae8ff; }
 .package-membership__card.is-current { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 15%, transparent), 0 20px 46px rgba(39, 68, 112, .14); }
-.package-membership__featured { position: absolute; inset-inline-end: 1rem; top: .8rem; padding: .3rem .55rem; background: var(--tone); color: #fff; box-shadow: 0 5px 12px color-mix(in srgb, var(--tone) 25%, transparent); }
+.package-membership__badges { position: absolute; z-index: 1; inset-inline-end: 1rem; top: .8rem; display: grid; justify-items: end; gap: .4rem; }
+.package-membership__featured, .package-membership__discount { padding: .3rem .55rem; border-radius: 999px; color: #fff; font-size: .68rem; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
+.package-membership__featured { position: static; background: var(--tone); box-shadow: 0 5px 12px color-mix(in srgb, var(--tone) 25%, transparent); }
+.package-membership__discount { background: #dc2626; box-shadow: 0 5px 12px rgba(220, 38, 38, .24); }
 .package-membership__icon { margin: .2rem auto .7rem; background: var(--tone); box-shadow: 0 8px 18px color-mix(in srgb, var(--tone) 32%, transparent); }
 .package-membership__code { color: #0f7a62; font-size: .72rem; font-weight: 850; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
 .package-membership__card h2 { margin: .18rem 0 .85rem; color: #123c32; font-size: 1.08rem; font-weight: 800; text-align: center; }

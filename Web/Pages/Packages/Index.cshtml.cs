@@ -103,6 +103,9 @@ public sealed class IndexModel : PageModel
                 };
 
             var packages = await _packages.GetActivePackagesAsync(cancellationToken);
+            var studentPackage = packages.FirstOrDefault(package =>
+                package.Code.Equals("STUDENT", StringComparison.OrdinalIgnoreCase));
+
             Packages = packages.Select(package => new PackageViewModel
             {
                 Id = package.Id,
@@ -113,13 +116,36 @@ public sealed class IndexModel : PageModel
                 DurationDays = package.DurationDays,
                 MonthlyChatLimit = package.MonthlyChatLimit,
                 IsLifetime = package.IsLifetime,
-                IsCurrentPackage = CurrentSubscription?.PackageId == package.Id
+                IsCurrentPackage = CurrentSubscription?.PackageId == package.Id,
+                DiscountPercent = CalculateDiscountPercent(package, studentPackage)
             }).ToList();
         }
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
         }
+    }
+
+    private static int CalculateDiscountPercent(PackageDto package, PackageDto? studentPackage)
+    {
+        if (studentPackage is null
+            || package.PriceVnd <= 0
+            || package.DurationDays <= studentPackage.DurationDays
+            || studentPackage.PriceVnd <= 0
+            || studentPackage.DurationDays <= 0)
+        {
+            return 0;
+        }
+
+        var regularPrice = studentPackage.PriceVnd * package.DurationDays / studentPackage.DurationDays;
+        if (regularPrice <= package.PriceVnd)
+        {
+            return 0;
+        }
+
+        return (int)Math.Round(
+            (regularPrice - package.PriceVnd) * 100m / regularPrice,
+            MidpointRounding.AwayFromZero);
     }
 
     private Guid GetUserId()

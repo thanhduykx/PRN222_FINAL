@@ -157,13 +157,6 @@
                         </div>
                     </details>
                     }
-                    @if (isAuthenticated && currentRole == AppRoles.Student)
-                    {
-                    <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
-                        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-                        <span>Gói dịch vụ</span>
-                    </a>
-                    }
                     @if (canManageUsers)
                     {
                     <span class="rbl-nav-section-label">Quản trị</span>
@@ -247,6 +240,7 @@
                                         @if (currentRole == AppRoles.Student)
                                         {
                                             <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
+                                            <a asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)"><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong>Gói dịch vụ</strong><small>Xem và nâng cấp gói học tập</small></span></a>
                                             <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
                                         }
                                         <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
@@ -329,12 +323,6 @@
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Home/OnlineUsers" data-i18n="admin.navOnlineUsers">Online users</a>
                                 </li>
                             }
-                            @if (isAuthenticated && currentRole == AppRoles.Student)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index">Gói dịch vụ</a>
-                                </li>
-                            }
                             @if (canManageUsers)
                             {
                                 <li class="nav-item">
@@ -363,6 +351,7 @@
                                                 @if (currentRole == AppRoles.Student)
                                                 {
                                                     <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Thông tin người dùng</strong><small>Chỉnh sửa tên hiển thị</small></span></a>
+                                                    <a asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)"><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong>Gói dịch vụ</strong><small>Xem và nâng cấp gói học tập</small></span></a>
                                                     <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong>Lịch sử giao dịch</strong><small>Xem và in biên nhận</small></span></a>
                                                 }
                                                 <a asp-page="/Account/ChangePassword"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span><span><strong>Đổi mật khẩu</strong><small>Bảo vệ tài khoản</small></span></a>
