@@ -64,6 +64,11 @@ public interface ILocalChatCompletionService
         string chapter,
         string sectionTitle,
         CancellationToken cancellationToken = default);
+
+    Task<string?> GenerateAnalyticsRecommendationsAsync(
+        string analyticsSummary,
+        string language,
+        CancellationToken cancellationToken = default);
 }
 
 internal static class ChatPromptBuilder

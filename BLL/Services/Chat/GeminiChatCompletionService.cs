@@ -83,5 +83,13 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
     {
         return _inner.GenerateChunkRetrievalHintsAsync(chunkText, fileName, subject, chapter, sectionTitle, cancellationToken);
     }
+
+    public Task<string?> GenerateAnalyticsRecommendationsAsync(
+        string analyticsSummary,
+        string language,
+        CancellationToken cancellationToken = default)
+    {
+        return _inner.GenerateAnalyticsRecommendationsAsync(analyticsSummary, language, cancellationToken);
+    }
 }
 

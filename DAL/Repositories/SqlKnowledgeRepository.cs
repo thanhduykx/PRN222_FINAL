@@ -1079,6 +1079,21 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetSubjectStudentAssignmentsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        var assignments = await context.SubjectStudents
+            .AsNoTracking()
+            .Select(item => new { item.SubjectId, item.UserId })
+            .ToListAsync(cancellationToken);
+
+        return assignments
+            .GroupBy(item => item.SubjectId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<Guid>)group.Select(item => item.UserId).Distinct().ToList());
+    }
+
     // ---------- Subject status ----------
 
     public async Task SetSubjectActiveStatusAsync(Guid subjectId, bool isActive, CancellationToken cancellationToken = default)

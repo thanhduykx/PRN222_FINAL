@@ -48,6 +48,13 @@
     }
 
     string AdminTabClass(IndexModel.AdminSection tab) => section == tab ? "ops-tab is-active" : "ops-tab";
+    string RoleLabel(string role) => role switch
+    {
+        PRN222_FINAL.BLL.Security.AppRoles.Admin => "Quản trị viên",
+        PRN222_FINAL.BLL.Security.AppRoles.Lecturer => "Giảng viên",
+        PRN222_FINAL.BLL.Security.AppRoles.Student => "Sinh viên",
+        _ => role
+    };
 }
 
 <style>
@@ -469,8 +476,70 @@
         margin-bottom: var(--ds-space-4);
     }
 
+    .ops-admin-kpis .ops-kpi {
+        min-height: 112px;
+        padding: 1rem 1.1rem;
+        border-radius: var(--ds-radius-md);
+        box-shadow: var(--ds-shadow-card);
+    }
+
+    .ops-admin-kpis .ops-kpi span {
+        margin-bottom: .35rem;
+        color: var(--ds-text-muted);
+        font-size: .72rem;
+        letter-spacing: .04em;
+    }
+
+    .ops-admin-kpis .ops-kpi strong {
+        margin-bottom: .3rem;
+        font-size: 1.65rem;
+    }
+
+    .ops-admin-page > .ops-panel {
+        margin-bottom: var(--ds-space-4);
+        border-radius: var(--ds-radius-md);
+    }
+
+    .ops-admin-page .ops-panel-head {
+        align-items: center;
+        padding: 1rem 1.15rem;
+    }
+
+    .ops-admin-page .ops-panel-head h2 {
+        font-size: 1.05rem;
+    }
+
+    .ops-admin-filter {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) minmax(170px, .35fr) auto;
+        align-items: end;
+        gap: .75rem;
+        padding: .85rem 1.15rem;
+    }
+
+    .ops-admin-filter .ops-field {
+        min-width: 0;
+        margin: 0;
+    }
+
+    .ops-user-table th,
+    .ops-user-table td {
+        padding: .8rem 1rem;
+    }
+
+    .ops-user-table tbody tr {
+        transition: background-color .15s ease;
+    }
+
+    .ops-user-table .ops-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
     @@media (max-width: 1100px) {
         .ops-admin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .ops-admin-filter { grid-template-columns: 1fr 1fr; }
+        .ops-admin-filter > div { grid-column: 1 / -1; }
     }
 
     @@media (max-width: 640px) {
@@ -486,6 +555,13 @@
     @if (TempData["Error"] is string error)
     {
         <div class="rbl-alert is-error">@error</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.LoadErrorMessage))
+    {
+        <div class="rbl-alert is-error" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+            @Model.LoadErrorMessage
+        </div>
     }
 
     <header class="ops-page-header ops-admin-heading">
@@ -513,19 +589,19 @@
         @* === DIRECTORY: Bảng người dùng / User table === *@
         <section class="ops-kpi-grid ops-admin-kpis" aria-label="User metrics">
             <article class="ops-kpi">
-                <span data-i18n="admin.totalUsers">Total users</span>
+                <span>Tổng người dùng</span>
                 <strong>@Model.TotalUserCount</strong>
-                <small>@users.Count <span data-i18n="admin.usersShown">shown</span></small>
+                <small>Đang hiển thị @users.Count</small>
             </article>
             <article class="ops-kpi">
-                <span data-i18n="admin.lecturers">Lecturers</span>
+                <span>Giảng viên</span>
                 <strong>@Model.LecturerUserCount</strong>
-                <small data-i18n="admin.manageSubjects">Manage assigned subjects</small>
+                <small>Quản lý môn được phân công</small>
             </article>
             <article class="ops-kpi">
-                <span data-i18n="admin.students">Students</span>
+                <span>Sinh viên</span>
                 <strong>@Model.StudentUserCount</strong>
-                <small data-i18n="admin.readChatAccess">Read and chat access</small>
+                <small>Được sử dụng trợ lý học tập</small>
             </article>
             <article class="ops-kpi">
                 <span>Có thể xóa</span>
@@ -537,46 +613,46 @@
         <section class="ops-panel">
             <div class="ops-panel-head">
                 <div>
-                    <span class="ops-eyebrow" data-i18n="admin.directory">Directory</span>
-                    <h2>Bảng người dùng / User table</h2>
+                    <span class="ops-eyebrow">Danh sách tài khoản</span>
+                    <h2>Người dùng trong hệ thống</h2>
                 </div>
                 <span class="ops-panel-note">@users.Count/@Model.TotalUserCount <span data-i18n="admin.usersUnit">users</span></span>
             </div>
 
             <form asp-page="/Admin/Index" method="get" class="ops-filter-bar ops-admin-filter" asp-route-section="directory">
                 <label class="ops-field ops-field--search">
-                    <span data-i18n="admin.searchDirectory">Search / Tìm kiếm</span>
-                    <input name="q" value="@Model.Query" placeholder="Name, email, provider, subject..." data-i18n-placeholder="admin.searchDirectoryPlaceholder" />
+                    <span>Tìm kiếm</span>
+                    <input name="q" value="@Model.Query" placeholder="Tên, email hoặc môn học..." />
                 </label>
                 <label class="ops-field">
-                    <span data-i18n="admin.roleFilter">Role / Vai trò</span>
+                    <span>Vai trò</span>
                     <select name="roleFilter">
                         @if (string.IsNullOrWhiteSpace(Model.RoleFilter))
                         {
-                            <option value="" selected data-i18n="admin.allRoles">All roles</option>
+                            <option value="" selected>Tất cả vai trò</option>
                         }
                         else
                         {
-                            <option value="" data-i18n="admin.allRoles">All roles</option>
+                            <option value="">Tất cả vai trò</option>
                         }
                         @foreach (var role in Model.Roles)
                         {
                             if (role.Equals(Model.RoleFilter, StringComparison.OrdinalIgnoreCase))
                             {
-                                <option value="@role" selected>@role</option>
+                                <option value="@role" selected>@RoleLabel(role)</option>
                             }
                             else
                             {
-                                <option value="@role">@role</option>
+                                <option value="@role">@RoleLabel(role)</option>
                             }
                         }
                     </select>
                 </label>
                 <div style="display: flex; gap: 0.5rem; align-items: flex-end; padding-bottom: 2px;">
-                    <button type="submit" class="ops-button ops-button--secondary" data-i18n="admin.filter">Filter</button>
+                    <button type="submit" class="ops-button ops-button--secondary">Áp dụng</button>
                     @if (hasActiveFilters)
                     {
-                        <a class="ops-button ops-button--ghost" asp-page="/Admin/Index" asp-route-section="directory" data-i18n="admin.clear">Clear</a>
+                        <a class="ops-button ops-button--ghost" asp-page="/Admin/Index" asp-route-section="directory">Xóa bộ lọc</a>
                     }
                 </div>
             </form>
@@ -594,11 +670,11 @@
                     <table class="ops-table ops-user-table">
                         <thead>
                             <tr>
-                                <th data-i18n="admin.thUser">User</th>
-                                <th data-i18n="admin.thCreated">Created</th>
-                                <th data-i18n="admin.thRole">Role / Vai trò</th>
-                                <th data-i18n="admin.thSubjects">Subjects</th>
-                                <th data-i18n="admin.thActions" style="text-align: right;">Actions</th>
+                                <th scope="col">Người dùng</th>
+                                <th scope="col">Hoạt động gần nhất</th>
+                                <th scope="col">Vai trò</th>
+                                <th scope="col">Môn học</th>
+                                <th scope="col" style="text-align: right;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -620,7 +696,7 @@
                                         </span>
                                     </td>
                                     <td data-label="Role / Vai trò">
-                                        <span class="ops-role-badge">@user.Role</span>
+                                        <span class="ops-role-badge">@RoleLabel(user.Role)</span>
                                     </td>
                                     <td data-label="Subjects">
                                         @if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Lecturer)
@@ -645,11 +721,11 @@
                                         }
                                         else if (user.Role == PRN222_FINAL.BLL.Security.AppRoles.Student)
                                         {
-                                            <span class="ops-chip" data-i18n="admin.allIndexedDocs">All indexed documents</span>
+                                            <span class="ops-chip">Được dùng trợ lý học tập</span>
                                         }
                                         else
                                         {
-                                            <span class="ops-chip ops-chip--muted" data-i18n="admin.notApplicable">Not applicable</span>
+                                            <span class="ops-chip ops-chip--muted">Không áp dụng</span>
                                         }
                                     </td>
                                     <td data-label="Actions" style="text-align: right;">
@@ -676,7 +752,7 @@
                                                     class="ops-mini-button ops-mini-button--danger"
                                                     disabled="@deleteDisabled"
                                                     title="@deleteTitle">
-                                                <span data-i18n="admin.delete">Delete</span>
+                                                <span>Xóa</span>
                                             </button>
                                         </form>
                                     </td>

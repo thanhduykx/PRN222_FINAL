@@ -248,8 +248,8 @@
     <header class="ops-page-heading">
         <div>
             <span class="ops-eyebrow">Cách trợ lý đọc và trả lời</span>
-            <h1>Thiết lập AI</h1>
-            <p>Tối ưu hóa chất lượng trả lời và cách AI xử lý tài liệu môn học của bạn.</p>
+            <h1>Thiết lập trợ lý</h1>
+            <p>Chọn cách trợ lý đọc tài liệu và tạo câu trả lời cho người học.</p>
         </div>
     </header>
 
@@ -266,22 +266,22 @@
 
         <section class="ops-panel ai-settings-card">
             <div class="ops-panel-head">
-                <h2>Sinh văn bản (Generation)</h2>
-                <p>Chọn bộ máy AI dùng để hiểu câu hỏi và viết câu trả lời cuối cùng.</p>
+                <h2>Tạo câu trả lời</h2>
+                <p>Chọn dịch vụ và bộ máy dùng để hiểu câu hỏi, sau đó viết câu trả lời.</p>
             </div>
             <label class="ops-field">
-                <span>Nhà cung cấp câu trả lời</span>
+                <span>Dịch vụ AI</span>
                 <select asp-for="Input.AnswerProvider" class="modern-input" data-chat-provider>
                     @foreach (var provider in Model.AnswerProviderOptions)
                     {
                         <option value="@provider" data-configured="@Model.IsProviderConfigured(provider).ToString().ToLowerInvariant()">@provider</option>
                     }
                 </select>
-                <small>API key được đọc từ cấu hình máy chủ và không được lưu trong trang này.</small>
+                <small>Khóa kết nối được bảo vệ trong cấu hình máy chủ, không hiển thị trên trang.</small>
                 <span asp-validation-for="Input.AnswerProvider" class="text-danger"></span>
             </label>
             <label class="ops-field">
-                <span>Model trả lời (Chat Model)</span>
+                <span>Bộ máy trả lời</span>
                 <select asp-for="Input.AnswerModel" class="modern-input" data-chat-model>
                     @foreach (var providerModels in Model.AnswerModelsByProvider)
                     {
@@ -296,17 +296,17 @@
             </label>
             <div class="provider-status @(Model.IsSelectedProviderConfigured ? "is-configured" : "is-missing")" data-provider-status>
                 <span class="material-symbols-outlined" aria-hidden="true" data-provider-status-icon>@(Model.IsSelectedProviderConfigured ? "check_circle" : "key_off")</span>
-                <span data-provider-status-text>@(Model.IsSelectedProviderConfigured ? "Provider đã có API key" : "Provider chưa có API key")</span>
+                <span data-provider-status-text>@(Model.IsSelectedProviderConfigured ? "Dịch vụ đã kết nối" : "Dịch vụ chưa có khóa kết nối")</span>
             </div>
         </section>
 
         <section class="ops-panel ai-settings-card">
             <div class="ops-panel-head">
-                <h2>Vector hóa (Embedding)</h2>
-                <p>Thiết lập cách AI "đọc" và chuyển đổi tài liệu thành vector toán học.</p>
+                <h2>Đọc tài liệu</h2>
+                <p>Chọn cách trợ lý ghi nhớ nội dung để tìm đúng đoạn liên quan khi có câu hỏi.</p>
             </div>
             <label class="ops-field">
-                <span>Model đọc tài liệu (Embedding Model)</span>
+                <span>Bộ máy đọc tài liệu</span>
                 <select asp-for="Input.ReadingModel" class="modern-input">
                     @foreach (var modelName in Model.ReadingModelOptions)
                     {
@@ -317,19 +317,19 @@
             </label>
 
             <label class="ops-field">
-                <span>Số chiều dữ liệu (Output Dimensionality)</span>
+                <span>Mức độ chi tiết khi ghi nhớ</span>
                 <div class="range-group">
                     <input type="range" id="detailSlider" min="128" max="4096" step="1" value="768" />
                     <input asp-for="Input.ReadingDetail" id="detailNumber" class="modern-input" type="number" min="128" max="4096" />
                 </div>
-                <small>Mặc định 768. Số càng cao lưu càng nhiều chi tiết nhưng truy xuất sẽ chậm hơn.</small>
+                <small>Mặc định 768. Mức cao hơn giữ nhiều chi tiết nhưng cần thêm dung lượng và thời gian tìm kiếm.</small>
                 <span asp-validation-for="Input.ReadingDetail" class="text-danger"></span>
             </label>
         </section>
 
         <section class="ops-panel ai-settings-card ai-settings-card--wide">
             <div class="ops-panel-head">
-                <h2>Kỹ thuật chia tài liệu (Text Chunking)</h2>
+                <h2>Chia tài liệu thành đoạn</h2>
                 <p>Khi upload file lớn, hệ thống sẽ cắt nhỏ file ra thành nhiều đoạn. Đoạn ngắn giúp tìm kiếm chính xác, đoạn dài giữ được nhiều ngữ cảnh.</p>
             </div>
 
@@ -345,12 +345,12 @@
                 </label>
 
                 <label class="ops-field">
-                    <span>Độ dài phần nối (Overlap)</span>
+                    <span>Phần nội dung lặp lại giữa hai đoạn</span>
                     <div class="range-group">
                         <input type="range" id="overlapSlider" min="0" max="500" step="10" value="100" />
                         <input asp-for="Input.SectionConnection" id="overlapNumber" class="modern-input" type="number" min="0" max="500" />
                     </div>
-                    <small>Giúp AI không bị "mất dấu" ở giữa các câu. Khuyến nghị: 10% độ dài đoạn.</small>
+                    <small>Giúp trợ lý không bỏ sót ý ở điểm cắt. Khuyến nghị khoảng 10% độ dài đoạn.</small>
                     <span asp-validation-for="Input.SectionConnection" class="text-danger"></span>
                 </label>
             </div>
@@ -418,7 +418,7 @@
                 providerStatus?.classList.toggle('is-configured', isConfigured);
                 providerStatus?.classList.toggle('is-missing', !isConfigured);
                 if (providerStatusIcon) providerStatusIcon.textContent = isConfigured ? 'check_circle' : 'key_off';
-                if (providerStatusText) providerStatusText.textContent = isConfigured ? 'Provider đã có API key' : 'Provider chưa có API key';
+                if (providerStatusText) providerStatusText.textContent = isConfigured ? 'Dịch vụ đã kết nối' : 'Dịch vụ chưa có khóa kết nối';
             }
 
             providerSelect?.addEventListener('change', () => syncProviderModels(true));

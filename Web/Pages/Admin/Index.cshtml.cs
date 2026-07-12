@@ -51,6 +51,7 @@ public sealed class IndexModel : PageModel
     public int StudentUserCount { get; private set; }
     public int SubjectCount { get; private set; }
     public int AssignedSubjectCount { get; private set; }
+    public string? LoadErrorMessage { get; private set; }
 
     public enum AdminSection { Directory, CreateAccount, BulkImport, CreateSubject, LecturerTable, StudentTable }
 
@@ -59,7 +60,20 @@ public sealed class IndexModel : PageModel
     public async Task OnGetAsync(string? section, string? q, string? roleFilter, CancellationToken cancellationToken)
     {
         CurrentSection = ParseSection(section);
-        await LoadAsync(q, roleFilter, cancellationToken);
+        try
+        {
+            await LoadAsync(q, roleFilter, cancellationToken);
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogWarning(exception, "Admin user directory loading was canceled or timed out.");
+            LoadErrorMessage = "Dữ liệu người dùng phản hồi quá chậm. Vui lòng tải lại trang hoặc thử lại sau.";
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Admin user directory could not be loaded.");
+            LoadErrorMessage = "Không thể tải dữ liệu người dùng lúc này. Vui lòng thử lại sau.";
+        }
     }
 
     private static AdminSection ParseSection(string? section)
@@ -861,8 +875,14 @@ public sealed class IndexModel : PageModel
 
     private async Task LoadAsync(string? q, string? roleFilter, CancellationToken cancellationToken)
     {
-        var users = await _users.GetAllAsync(cancellationToken);
-        var subjects = await _knowledge.GetCourseCatalogAsync(cancellationToken);
+        var usersTask = _users.GetAllAsync(cancellationToken);
+        var subjectsTask = _knowledge.GetCourseCatalogAsync(cancellationToken);
+        var assignmentsTask = _knowledge.GetSubjectStudentAssignmentsAsync(cancellationToken);
+        await Task.WhenAll(usersTask, subjectsTask, assignmentsTask);
+
+        var users = await usersTask;
+        var subjects = await subjectsTask;
+        var studentAssignments = await assignmentsTask;
         var normalizedQuery = q?.Trim();
         var normalizedRoleFilter = roleFilter?.Trim();
         var adminCount = users.Count(user => user.Role == AppRoles.Admin);
@@ -885,7 +905,7 @@ public sealed class IndexModel : PageModel
                 };
             }
 
-            var enrolledStudentIds = await _knowledge.GetSubjectStudentIdsAsync(subject.Id, cancellationToken);
+            var enrolledStudentIds = studentAssignments.GetValueOrDefault(subject.Id) ?? Array.Empty<Guid>();
             foreach (var studentId in enrolledStudentIds)
             {
                 if (!subjectMap.ContainsKey(studentId)) subjectMap[studentId] = new();
