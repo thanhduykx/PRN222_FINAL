@@ -1,10 +1,10 @@
-﻿@page
+@page
 @model PRN222_FINAL.Web.Pages.Subscriptions.CurrentModel
 @{
-    ViewData["Title"] = "Tài khoản và thanh toán";
+    ViewData["Title"] = "Account & Billing";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Tài khoản và thanh toán";
+    ViewData["ShellTitle"] = "Account & Billing";
     ViewData["ShellTitleI18n"] = "subscriptions.shellTitle";
 
     string StatusLabel(string status) => status switch
@@ -41,7 +41,7 @@
 
     <div class="account-billing-grid">
         <section class="current-plan-card @(Model.Subscription is null ? "is-empty" : "") @(hasPremiumEffects ? "is-premium" : "")">
-            <div class="current-plan-card__heading"><span>Gói học tập hiện tại</span>@if (Model.Subscription is not null){<span class="current-plan-card__badge">Đang hoạt động</span>}</div>
+            <div class="current-plan-card__heading"><span data-i18n="subscriptions.currentPlan">Gói học tập hiện tại</span>@if (Model.Subscription is not null){<span class="current-plan-card__badge" data-i18n="subscriptions.activeBadge">Đang hoạt động</span>}</div>
             @if (Model.Subscription is null)
             {
                 <div class="current-plan-card__empty"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><h2 data-i18n="subscriptions.noActivePackage">Chưa có gói hoạt động</h2><p data-i18n="subscriptions.choosePackageDesc">Chọn gói phù hợp để bắt đầu hỏi đáp theo tài liệu.</p><a asp-page="/Packages/Index"><span data-i18n="subscriptions.viewPackagesBtn">Xem các gói</span></a></div>
@@ -58,9 +58,9 @@
                 {
                     <section class="premium-identity" aria-label="Đặc quyền hình ảnh của gói @Model.Subscription.PackageName">
                         <div class="premium-identity__benefits">
-                            <div><span class="premium-benefit-icon" aria-hidden="true">☆</span><span>Toàn quyền của gói <strong>@Model.Subscription.PackageName</strong></span></div>
-                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span>Sở hữu hiệu ứng tên <strong class="premium-user-name">@Model.Profile.FullName</strong> đặc biệt</span></div>
-                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span>Sở hữu hiệu ứng avatar đặc biệt</span></div>
+                            <div><span class="premium-benefit-icon" aria-hidden="true">☆</span><span><span data-i18n="subscriptions.fullAccess">Toàn quyền của gói</span> <strong>@Model.Subscription.PackageName</strong></span></div>
+                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span><span data-i18n="subscriptions.specialNameEffect1">Sở hữu hiệu ứng tên</span> <strong class="premium-user-name">@Model.Profile.FullName</strong> <span data-i18n="subscriptions.specialNameEffect2">đặc biệt</span></span></div>
+                            <div><span class="premium-benefit-icon" aria-hidden="true">✓</span><span data-i18n="subscriptions.specialAvatarEffect">Sở hữu hiệu ứng avatar đặc biệt</span></div>
                         </div>
                         <div class="premium-avatar" aria-label="Avatar đặc quyền của @Model.Profile.FullName">
                             <span aria-hidden="true">@profileInitial</span>
@@ -92,7 +92,7 @@
                         <summary>
                             <img src="@ProviderLogo(payment.Provider)" alt="" />
                             <span class="transaction-item__identity"><strong>@payment.PackageName</strong><small>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy · HH:mm")</small></span>
-                            <strong class="transaction-item__amount">@payment.AmountVnd.ToString("N0")đ</strong>
+                            <strong class="transaction-item__amount">@payment.AmountVnd.ToString("N0") VND</strong>
                             <span class="transaction-item__status">@StatusLabel(payment.Status)</span>
                             <span class="material-symbols-outlined transaction-item__chevron" aria-hidden="true">expand_more</span>
                         </summary>
@@ -101,15 +101,15 @@
                             <div class="payment-receipt__status @StatusClass(payment.Status)"><span class="material-symbols-outlined" aria-hidden="true">@(payment.Status == "Paid" ? "check_circle" : payment.Status == "Pending" ? "schedule" : "cancel")</span><span>@StatusLabel(payment.Status)</span></div>
                             <div class="payment-receipt__customer"><span data-i18n="subscriptions.buyer">Người mua</span><strong>@Model.Profile.FullName</strong><small>@Model.AccountEmail</small></div>
                             <dl>
-                                <div><dt>Gói dịch vụ</dt><dd>@payment.PackageName</dd></div>
-                                <div><dt>Cổng thanh toán</dt><dd><img src="@ProviderLogo(payment.Provider)" alt="" /> @payment.Provider</dd></div>
-                                <div><dt>Mã đơn hàng</dt><dd>@payment.OrderCode</dd></div>
-                                <div><dt>Ngày tạo</dt><dd>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd></div>
-                                <div><dt>Ngày thanh toán</dt><dd>@(payment.PaidAt?.LocalDateTime.ToString("dd/MM/yyyy HH:mm") ?? "Chưa xác nhận")</dd></div>
+                                <div><dt data-i18n="subscriptions.packageLabel">Gói dịch vụ</dt><dd>@payment.PackageName</dd></div>
+                                <div><dt data-i18n="subscriptions.gatewayLabel">Cổng thanh toán</dt><dd><img src="@ProviderLogo(payment.Provider)" alt="" /> @payment.Provider</dd></div>
+                                <div><dt data-i18n="subscriptions.orderCodeLabel">Mã đơn hàng</dt><dd>@payment.OrderCode</dd></div>
+                                <div><dt data-i18n="subscriptions.createdAtLabel">Ngày tạo</dt><dd>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd></div>
+                                <div><dt data-i18n="subscriptions.paidAtLabel">Ngày thanh toán</dt><dd>@(payment.PaidAt.HasValue ? payment.PaidAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm") : "")@if(!payment.PaidAt.HasValue){<span data-i18n="subscriptions.unconfirmed">Chưa xác nhận</span>}</dd></div>
                             </dl>
-                            <div class="payment-receipt__total"><span>Tổng thanh toán</span><strong>@payment.AmountVnd.ToString("N0") VND</strong></div>
+                            <div class="payment-receipt__total"><span data-i18n="subscriptions.totalPaid">Tổng thanh toán</span><strong>@payment.AmountVnd.ToString("N0") VND</strong></div>
                             @if (!string.IsNullOrWhiteSpace(payment.FailureReason)){<p class="payment-receipt__failure">@payment.FailureReason</p>}
-                            <div class="payment-receipt__footer"><small>Biên nhận được tạo tự động từ dữ liệu giao dịch trong hệ thống.</small><button type="button" data-print-receipt="@receiptId"><span class="material-symbols-outlined" aria-hidden="true">print</span><span data-i18n="subscriptions.printReceipt">In biên nhận</span></button></div>
+                            <div class="payment-receipt__footer"><small data-i18n="subscriptions.receiptNote">Biên nhận được tạo tự động từ dữ liệu giao dịch trong hệ thống.</small><button type="button" data-print-receipt="@receiptId"><span class="material-symbols-outlined" aria-hidden="true">print</span><span data-i18n="subscriptions.printReceipt">In biên nhận</span></button></div>
                         </div>
                     </details>
                 }

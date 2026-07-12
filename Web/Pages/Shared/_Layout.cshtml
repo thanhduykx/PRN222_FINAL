@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @inject PRN222_FINAL.BLL.Services.Billing.ISubscriptionService SubscriptionService
 @{
     var useRblShell = ViewData["UseRblShell"] as bool? ?? false;
@@ -92,7 +92,7 @@
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 </head>
 <body class="@bodyClass">
-    <a class="ds-skip-link" href="#mainContent">Bỏ qua tới nội dung chính</a>
+    <a class="ds-skip-link" href="#mainContent" data-i18n="shell.skipLink">Bỏ qua tới nội dung chính</a>
     @if (useRblShell)
     {
         <div class="rbl-app-frame">
@@ -107,12 +107,12 @@
                     </div>
                     <button type="button" class="rbl-mobile-nav-toggle" data-mobile-nav-toggle aria-expanded="false" aria-controls="primaryNavigation">
                         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
-                        <span class="visually-hidden">Mở menu chính</span>
+                        <span class="visually-hidden" data-i18n="shell.openNav">Mở menu chính</span>
                     </button>
                 </div>
 
                 <nav class="rbl-nav" id="primaryNavigation" data-primary-navigation>
-                    <span class="rbl-nav-section-label">Học tập</span>
+                    <span class="rbl-nav-section-label" data-i18n="shell.navLearning">Học tập</span>
                     @if (canChat)
                     {
                     <a class="@chatNavClass" asp-page="/Home/Chat" aria-current="@(activeNav == "chat" ? "page" : null)">
@@ -166,14 +166,14 @@
                     }
                     @if (canManageUsers)
                     {
-                    <span class="rbl-nav-section-label">Quản trị</span>
+                    <span class="rbl-nav-section-label" data-i18n="shell.navAdmin">Quản trị</span>
                     <a class="@assistantSettingsNavClass" asp-page="/Admin/AiSettings" aria-current="@(activeNav == "assistant-settings" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-                        <span>Thiết lập trợ lý</span>
+                        <span data-i18n="shell.assistantSettings">Thiết lập trợ lý</span>
                     </a>
                     <a class="@reportsNavClass" asp-page="/Admin/Statistics" asp-route-tab="overview" asp-route-days="30" aria-current="@(activeNav == "reports" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
-                        <span>Báo cáo &amp; Thống kê</span>
+                        <span data-i18n="shell.reports">Báo cáo &amp; Thống kê</span>
                     </a>
                     <a class="@adminNavClass" asp-page="/Admin/Index" asp-route-section="directory" aria-current="@(activeNav == "admin" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span>
@@ -233,7 +233,7 @@
                         @if (isAuthenticated)
                         {
                             <details class="rbl-account-menu" data-account-menu>
-                                <summary aria-label="Mở menu tài khoản">
+                                <summary aria-label="Mở menu tài khoản" data-i18n-aria-label="shell.openAccountMenu">
                                     <span class="@accountAvatarClass">@userInitial</span>
                                     <span class="@accountNameClass">@displayName</span>
                                     <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
@@ -359,7 +359,7 @@
                                         <summary><span class="@accountAvatarClass">@userInitial</span><span class="@accountNameClass">@displayName</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
                                         <div class="rbl-account-menu__panel">
                                             <div class="rbl-account-menu__identity"><span class="@accountAvatarClass is-large">@userInitial</span><div><strong class="@(hasPremiumIdentity ? "premium-user-name" : null)">@displayName</strong><span>@accountEmail</span><small>@currentRole</small></div></div>
-                                            <nav aria-label="Tài khoản">
+                                            <nav aria-label="Tài khoản" data-i18n-aria-label="shell.accountNav">
                                                 @if (currentRole == AppRoles.Student)
                                                 {
                                                     <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong data-i18n="account.profile">Thông tin người dùng</strong><small data-i18n="account.profileDesc">Chỉnh sửa tên hiển thị</small></span></a>

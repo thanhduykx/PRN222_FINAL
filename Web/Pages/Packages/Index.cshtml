@@ -1,11 +1,11 @@
-﻿@page
+@page
 @using PRN222_FINAL.BLL.Models
 @model PRN222_FINAL.Web.Pages.Packages.IndexModel
 @{
-    ViewData["Title"] = "Gói dịch vụ";
+    ViewData["Title"] = "Packages";
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "billing";
-    ViewData["ShellTitle"] = "Gói dịch vụ";
+    ViewData["ShellTitle"] = "Packages";
     ViewData["ShellTitleI18n"] = "packages.shellTitle";
 }
 
@@ -68,7 +68,7 @@
                 <span class="package-membership__code">@package.Code</span>
                 <h2 data-i18n="packages.name.@package.Code.ToLowerInvariant()">@package.Name</h2>
                 <div class="package-membership__price">
-                    <strong>@(package.IsFree ? "Free" : $"{package.PriceVnd:N0}đ")</strong>
+                    <strong>@(package.IsFree ? "Free" : $"{package.PriceVnd:N0} VND")</strong>
                     <span>
                         @if (package.IsFree)
                         {
