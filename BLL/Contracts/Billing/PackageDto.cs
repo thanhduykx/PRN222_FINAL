@@ -13,4 +13,5 @@ public sealed class PackageDto
     public int StorageLimitMb { get; set; }
     public bool IsLifetime { get; set; }
     public bool IsActive { get; set; }
+    public int SortOrder { get; set; }
 }

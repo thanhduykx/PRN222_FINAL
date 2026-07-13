@@ -3,8 +3,6 @@ using PRN222_FINAL.BLL.Security;
 using PRN222_FINAL.BLL.Models;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
-using System.Net;
-using System.Net.Sockets;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -24,11 +22,13 @@ public sealed class LoginModel : PageModel
 
     private readonly IUserAccountService _users;
     private readonly IAuthenticationSchemeProvider _schemes;
+    private readonly string _googlePublicOrigin;
 
-    public LoginModel(IUserAccountService users, IAuthenticationSchemeProvider schemes)
+    public LoginModel(IUserAccountService users, IAuthenticationSchemeProvider schemes, IConfiguration configuration)
     {
         _users = users;
         _schemes = schemes;
+        _googlePublicOrigin = (configuration["Authentication:Google:PublicOrigin"] ?? string.Empty).Trim().TrimEnd('/');
     }
 
     [BindProperty]
@@ -47,7 +47,7 @@ public sealed class LoginModel : PageModel
     public bool IsGoogleLoginEnabled { get; private set; }
     public string? GoogleLoginUnavailableMessage { get; private set; }
 
-    public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnGetAsync(string? returnUrl = null, string? googleError = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
@@ -55,6 +55,10 @@ public sealed class LoginModel : PageModel
         }
 
         ReturnUrl = returnUrl;
+        if (!string.IsNullOrWhiteSpace(googleError))
+        {
+            TempData["AuthError"] = "Đăng nhập Google không thành công. Vui lòng thử lại hoặc kiểm tra cấu hình callback Google OAuth.";
+        }
         await ConfigureGoogleLoginStateAsync();
         return Page();
     }
@@ -96,17 +100,51 @@ public sealed class LoginModel : PageModel
             return RedirectToPage("/Account/Login", new { returnUrl });
         }
 
-        if (IsPrivateIpHost(Request.Host.Host))
+        if (MustRebaseGoogleLoginToPublicOrigin())
         {
+            var startUrl = $"{_googlePublicOrigin}/Account/Login?handler=GoogleStart";
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                startUrl += $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
+            }
+            return Redirect(startUrl);
+        }
+
+        return CreateGoogleChallenge(returnUrl);
+    }
+
+    public async Task<IActionResult> OnGetGoogleStartAsync(string? returnUrl = null)
+    {
+        if (await _schemes.GetSchemeAsync(GoogleDefaults.AuthenticationScheme) is null)
+        {
+            TempData["AuthError"] = "Google sign-in is not configured.";
             return RedirectToPage("/Account/Login", new { returnUrl });
         }
 
+        return CreateGoogleChallenge(returnUrl);
+    }
+
+    private ChallengeResult CreateGoogleChallenge(string? returnUrl)
+    {
         var properties = new AuthenticationProperties
         {
             RedirectUri = Url.Page("/Account/GoogleCallback", pageHandler: null, values: new { returnUrl }, protocol: Request.Scheme)
         };
 
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+    }
+
+    private bool MustRebaseGoogleLoginToPublicOrigin()
+    {
+        if (string.IsNullOrWhiteSpace(_googlePublicOrigin)
+            || !Uri.TryCreate(_googlePublicOrigin, UriKind.Absolute, out var publicOrigin))
+        {
+            return false;
+        }
+
+        return !Request.Scheme.Equals(publicOrigin.Scheme, StringComparison.OrdinalIgnoreCase)
+               || !Request.Host.Host.Equals(publicOrigin.Host, StringComparison.OrdinalIgnoreCase)
+               || Request.Host.Port != (publicOrigin.IsDefaultPort ? null : publicOrigin.Port);
     }
 
     private async Task SignInAsync(UserAccount user)
@@ -179,40 +217,6 @@ public sealed class LoginModel : PageModel
         GoogleLoginUnavailableMessage = null;
         IsGoogleLoginEnabled = await _schemes.GetSchemeAsync(GoogleDefaults.AuthenticationScheme) is not null;
 
-        if (IsGoogleLoginEnabled && IsPrivateIpHost(Request.Host.Host))
-        {
-            IsGoogleLoginEnabled = false;
-        }
-    }
-
-    private static bool IsPrivateIpHost(string? host)
-    {
-        if (string.IsNullOrWhiteSpace(host))
-        {
-            return false;
-        }
-
-        host = host.Trim('[', ']');
-        if (!IPAddress.TryParse(host, out var ipAddress) || IPAddress.IsLoopback(ipAddress))
-        {
-            return false;
-        }
-
-        if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
-        {
-            var bytes = ipAddress.GetAddressBytes();
-            return bytes[0] == 10
-                   || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-                   || (bytes[0] == 192 && bytes[1] == 168);
-        }
-
-        if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
-        {
-            var bytes = ipAddress.GetAddressBytes();
-            return ipAddress.IsIPv6LinkLocal || (bytes[0] & 0xfe) == 0xfc;
-        }
-
-        return false;
     }
 }
 

@@ -22,12 +22,13 @@
     var showLearningFooter = currentRole == AppRoles.Student || currentRole == AppRoles.Lecturer;
     var homePage = currentRole == AppRoles.Student ? "/Home/Chat" : "/Home/Index";
     var hasPremiumIdentity = false;
+    PRN222_FINAL.BLL.Contracts.Billing.SubscriptionDto? currentTopbarSubscription = null;
     if (isAuthenticated && currentRole == AppRoles.Student && Guid.TryParse(currentUserId, out var subscriptionUserId))
     {
         try
         {
-            var currentSubscription = await SubscriptionService.GetCurrentSubscriptionAsync(subscriptionUserId, Context.RequestAborted);
-            hasPremiumIdentity = currentSubscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
+            currentTopbarSubscription = await SubscriptionService.GetCurrentSubscriptionAsync(subscriptionUserId, Context.RequestAborted);
+            hasPremiumIdentity = currentTopbarSubscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
         }
         catch
         {
@@ -223,9 +224,18 @@
                         <a class="rbl-topbar-package" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
                             <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">payments</span>
                             <span class="rbl-topbar-package__text">
-                                <strong data-i18n="nav.billing">Gói dịch vụ</strong>
-                                <small data-i18n="account.packagesDesc">Xem và chọn gói học tập</small>
+                                @if (currentTopbarSubscription is not null)
+                                {
+                                    <strong>Gói @currentTopbarSubscription.PackageName</strong>
+                                    <small>@(currentTopbarSubscription.IsLifetime ? "Hiệu lực vĩnh viễn" : $"Còn {Math.Max(0, (currentTopbarSubscription.EndsAt - DateTimeOffset.UtcNow).Days)} ngày")</small>
+                                }
+                                else
+                                {
+                                    <strong>Gói dịch vụ</strong>
+                                    <small>Chọn gói học tập</small>
+                                }
                             </span>
+                            <span class="rbl-topbar-package__status">@(currentTopbarSubscription is null ? "Xem gói" : "Đang dùng")</span>
                         </a>
                     }
                     <div class="rbl-topbar-actions">
