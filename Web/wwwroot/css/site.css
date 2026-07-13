@@ -5788,6 +5788,10 @@ body.rbl-body .rbl-main {
   gap: 16px;
 }
 
+.package-pricing-page > .ops-page-header {
+  display: none !important;
+}
+
 .package-pricing-card {
   display: grid;
   gap: 16px;
@@ -5812,18 +5816,28 @@ body.rbl-body .rbl-main {
 }
 
 .package-price-form .ops-field {
-  flex: 1;
+  min-width: 0;
 }
 
 .package-price-form {
   display: grid;
-  grid-template-columns: minmax(170px, .75fr) minmax(240px, 1.5fr) auto;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 
 .package-price-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   min-height: 70px;
   resize: vertical;
+}
+
+.package-price-form .ops-button {
+  width: 100%;
+  justify-content: center;
 }
 
 .package-pricing-card__pending {
