@@ -80,7 +80,7 @@
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span><strong>@package.MonthlyChatLimit.ToString("N0")</strong> <span data-i18n="packages.questionsPerMonth">câu hỏi mỗi tháng</span></span></li>
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span data-i18n="packages.answerBasedOnDocs">Trả lời dựa trên tài liệu môn học</span></li>
                     <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span data-i18n="packages.saveHistory">Lưu lịch sử và nguồn tham khảo</span></li>
-                    @if (package.IsStudent)
+                    @if (package.HasPremiumBenefits)
                     {
                         <li><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span data-i18n="packages.profileEffect">Sở hữu hiệu ứng hồ sơ đặc biệt</span></li>
                         <li><span class="material-symbols-outlined" aria-hidden="true">support_agent</span><span data-i18n="packages.prioritySupport">Hỗ trợ ưu tiên, phản hồi nhanh hơn</span></li>
