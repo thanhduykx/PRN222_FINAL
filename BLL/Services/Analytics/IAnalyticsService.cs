@@ -6,4 +6,5 @@ public interface IAnalyticsService
 {
     Task TrackCourseAccessAsync(CourseAccessLogRequestDto request, CancellationToken cancellationToken = default);
     Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(int days, CancellationToken cancellationToken = default);
+    Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken = default);
 }

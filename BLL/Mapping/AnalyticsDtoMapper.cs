@@ -17,6 +17,7 @@ public static class AnalyticsDtoMapper
         GeneratedAt = data.GeneratedAt, FromUtc = data.FromUtc, ToUtc = data.ToUtc,
         TotalChatSessions = data.TotalChatSessions, TotalChatQuestions = data.TotalChatQuestions,
         TotalAssistantAnswers = data.TotalAssistantAnswers, ActiveChatUsers = data.ActiveChatUsers,
+        ReturningChatUsers = data.ReturningChatUsers,
         TotalSubjects = data.TotalSubjects, TotalDocuments = data.TotalDocuments,
         IndexedDocuments = data.IndexedDocuments, ProcessingDocuments = data.ProcessingDocuments,
         FailedDocuments = data.FailedDocuments, PaidRevenueVnd = data.PaidRevenueVnd,
@@ -42,6 +43,8 @@ public static class AnalyticsDtoMapper
         }).ToList(),
         DailyChatUsage = data.DailyChatUsage.Select(x => new DailyChatUsageDto
         { Date=x.Date,QuestionCount=x.QuestionCount,SessionCount=x.SessionCount,ActiveUserCount=x.ActiveUserCount }).ToList(),
+        ChatTimeSlotUsage = data.ChatTimeSlotUsage.Select(x => new ChatTimeSlotUsageDto
+        { Label=x.Label,StartHour=x.StartHour,EndHour=x.EndHour,QuestionCount=x.QuestionCount,ActiveUserCount=x.ActiveUserCount }).ToList(),
         DailySubscriptionUsage = data.DailySubscriptionUsage.Select(x => new DailySubscriptionUsageDto
         { Date=x.Date,NewSubscriptionCount=x.NewSubscriptionCount,SuccessfulPaymentCount=x.SuccessfulPaymentCount }).ToList(),
         TopChatUsers = data.TopChatUsers.Select(x => new UserChatUsageDto
