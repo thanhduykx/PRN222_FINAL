@@ -5494,6 +5494,7 @@ body.rbl-body .rbl-topbar-title {
 }
 
 body.rbl-body .rbl-topbar-actions {
+  grid-column: 3;
   justify-self: end;
   gap: 10px;
 }
@@ -7026,6 +7027,7 @@ body.rbl-body .rbl-main {
   }
 
   body.rbl-body .rbl-topbar-actions {
+    grid-column: 2;
     flex-wrap: wrap;
     justify-content: flex-start;
   }
