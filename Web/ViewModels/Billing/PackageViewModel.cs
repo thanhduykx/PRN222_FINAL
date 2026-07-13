@@ -15,5 +15,7 @@ public sealed class PackageViewModel
     public int DiscountPercent { get; set; }
     public bool IsFree => PriceVnd <= 0;
     public bool IsStudent => Code.Equals("STUDENT", StringComparison.OrdinalIgnoreCase);
+    public bool HasPremiumBenefits => Code.Equals("PRO", StringComparison.OrdinalIgnoreCase)
+        || Code.Equals("ANNUAL", StringComparison.OrdinalIgnoreCase);
     public string DurationLabel => IsLifetime ? "Vĩnh viễn" : $"{DurationDays} ngày";
 }
