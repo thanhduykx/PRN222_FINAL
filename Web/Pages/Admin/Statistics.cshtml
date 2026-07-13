@@ -475,63 +475,40 @@
             </section>
 
             <section class="ops-semester-analysis" aria-labelledby="semesterAnalysisTitle">
-                <div class="ops-semester-analysis__head">
+                <header class="ops-semester-analysis__head">
                     <div>
                         <span class="ops-section-eyebrow">Phân tích theo học kỳ</span>
                         <h2 id="semesterAnalysisTitle">@Model.SemesterLabel</h2>
                         <p>Spring: tháng 1 - 4 · Summer: tháng 5 - 8 · Fall: tháng 9 - 12</p>
                     </div>
-                    <form method="get" class="ops-semester-filter">
+                    <form method="get" class="ops-semester-controls">
                         <input type="hidden" name="tab" value="chatbot" />
                         <input type="hidden" name="days" value="@Model.Days" />
-                        <label>
-                            <span>Học kỳ</span>
-                            <select asp-for="Semester" onchange="this.form.submit()">
-                                <option value="spring">Spring</option>
-                                <option value="summer">Summer</option>
-                                <option value="fall">Fall</option>
-                            </select>
-                        </label>
-                        <label>
-                            <span>Năm</span>
-                            <select asp-for="AcademicYear" onchange="this.form.submit()">
-                                @foreach (var year in Model.AcademicYears)
-                                {
-                                    <option value="@year">@year</option>
-                                }
-                            </select>
-                        </label>
+                        <div class="ops-semester-field">
+                            <label for="semesterSelect">Học kỳ</label>
+                            <select id="semesterSelect" asp-for="Semester" onchange="this.form.submit()"><option value="spring">Spring</option><option value="summer">Summer</option><option value="fall">Fall</option></select>
+                        </div>
+                        <div class="ops-semester-field">
+                            <label for="academicYearSelect">Năm</label>
+                            <select id="academicYearSelect" asp-for="AcademicYear" onchange="this.form.submit()">@foreach (var year in Model.AcademicYears) { <option value="@year">@year</option> }</select>
+                        </div>
                     </form>
-                </div>
+                </header>
 
                 <div class="ops-semester-summary">
-                    <article>
-                        <span class="material-symbols-outlined is-blue" aria-hidden="true">groups</span>
-                        <div><small>Sinh viên truy cập</small><strong>@Model.SemesterDashboard.ActiveChatUsers.ToString("N0")</strong><p>@Model.SemesterDashboard.TotalChatQuestions.ToString("N0") câu hỏi trong kỳ</p></div>
-                    </article>
-                    <article>
-                        <span class="material-symbols-outlined is-green" aria-hidden="true">replay</span>
-                        <div><small>Tỷ lệ quay lại dùng</small><strong>@semesterReturnRate%</strong><p>@Model.SemesterDashboard.ReturningChatUsers.ToString("N0") người dùng từ 2 ngày trở lên</p></div>
-                    </article>
-                    <article>
-                        <span class="material-symbols-outlined is-purple" aria-hidden="true">school</span>
-                        <div><small>Môn được hỏi nhiều nhất</small><strong>@(semesterTopSubject?.SubjectCode ?? "-")</strong><p>@(semesterTopSubject is null ? "Chưa có dữ liệu" : $"{semesterTopSubject.ChatCitationCount:N0} câu hỏi có nguồn")</p></div>
-                    </article>
-                    <article>
-                        <span class="material-symbols-outlined is-orange" aria-hidden="true">workspace_premium</span>
-                        <div><small>Người hỏi nhiều nhất</small><strong>@(semesterTopUser?.UserName ?? "-")</strong><p>@(semesterTopUser is null ? "Chưa có dữ liệu" : $"{semesterTopUser.QuestionCount:N0} câu hỏi · {semesterTopUser.SessionCount:N0} phiên")</p></div>
-                    </article>
+                    <article><span class="material-symbols-outlined is-blue" aria-hidden="true">groups</span><div><small>Sinh viên truy cập</small><strong>@Model.SemesterDashboard.ActiveChatUsers.ToString("N0")</strong><p>@Model.SemesterDashboard.TotalChatQuestions.ToString("N0") câu hỏi trong kỳ</p></div></article>
+                    <article><span class="material-symbols-outlined is-green" aria-hidden="true">replay</span><div><small>Tỷ lệ quay lại dùng</small><strong>@semesterReturnRate%</strong><p>@Model.SemesterDashboard.ReturningChatUsers.ToString("N0") người dùng từ 2 ngày trở lên</p></div></article>
+                    <article><span class="material-symbols-outlined is-purple" aria-hidden="true">school</span><div><small>Môn được hỏi nhiều nhất</small><strong>@(semesterTopSubject?.SubjectCode ?? "-")</strong><p>@(semesterTopSubject is null ? "Chưa có dữ liệu" : $"{semesterTopSubject.ChatCitationCount:N0} câu hỏi có nguồn")</p></div></article>
+                    <article><span class="material-symbols-outlined is-orange" aria-hidden="true">workspace_premium</span><div><small>Người hỏi nhiều nhất</small><strong>@(semesterTopUser?.UserName ?? "-")</strong><p>@(semesterTopUser is null ? "Chưa có dữ liệu" : $"{semesterTopUser.QuestionCount:N0} câu hỏi · {semesterTopUser.SessionCount:N0} phiên")</p></div></article>
                 </div>
 
                 <div class="ops-semester-grid">
-                    <article class="ops-panel ops-time-analysis">
-                        <div class="ops-panel-head"><div><h2>Thời điểm sinh viên truy cập</h2><p class="ops-muted mb-0">Tỷ trọng câu hỏi theo từng khung giờ trong ngày.</p></div></div>
+                    <article class="ops-semester-card ops-time-analysis">
+                        <div class="ops-semester-card__head"><div><h3>Thời điểm sinh viên truy cập</h3><p>Tỷ trọng câu hỏi theo từng khung giờ trong ngày</p></div></div>
                         <div class="ops-time-bars">
                             @foreach (var slot in Model.SemesterDashboard.ChatTimeSlotUsage)
                             {
-                                var slotPercent = Model.SemesterDashboard.TotalChatQuestions == 0
-                                    ? 0
-                                    : Math.Round(slot.QuestionCount * 100d / Model.SemesterDashboard.TotalChatQuestions, 1);
+                                var slotPercent = Model.SemesterDashboard.TotalChatQuestions == 0 ? 0 : Math.Round(slot.QuestionCount * 100d / Model.SemesterDashboard.TotalChatQuestions, 1);
                                 var slotWidth = slot.QuestionCount * 100d / maxSemesterTimeSlotQuestions;
                                 <div class="ops-time-bar">
                                     <div class="ops-time-bar__label"><strong>@slot.Label</strong><span>@slotPercent% · @slot.ActiveUserCount người</span></div>
@@ -542,42 +519,37 @@
                         </div>
                     </article>
 
-                    <article class="ops-panel">
-                        <div class="ops-panel-head"><div><h2>Môn được hỏi nhiều nhất</h2><p class="ops-muted mb-0">Xếp hạng trong @Model.SemesterLabel.</p></div></div>
+                    <article class="ops-semester-card ops-subject-ranking">
+                        <div class="ops-semester-card__head"><div><h3>Môn được hỏi nhiều nhất</h3><p>Xếp hạng trong @Model.SemesterLabel</p></div></div>
                         @if (semesterTopSubjects.Count == 0)
                         {
-                            <div class="ops-empty ops-stat-empty--compact"><strong>Chưa có dữ liệu môn học</strong><p>Chưa ghi nhận câu trả lời có trích dẫn trong học kỳ này.</p></div>
+                            <div class="ops-semester-empty"><strong>Chưa có dữ liệu</strong><span>Học kỳ này chưa ghi nhận môn học.</span></div>
                         }
                         else
                         {
                             <div class="ops-table-wrap"><table class="ops-table ops-compact-table">
                                 <thead><tr><th>#</th><th>Môn học</th><th>Câu hỏi có nguồn</th><th>Lần gần nhất</th></tr></thead>
-                                <tbody>
-                                    @for (var subjectIndex = 0; subjectIndex < semesterTopSubjects.Count; subjectIndex++)
-                                    {
-                                        var subject = semesterTopSubjects[subjectIndex];
-                                        <tr><td>@(subjectIndex + 1)</td><td><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></td><td>@subject.ChatCitationCount.ToString("N0")</td><td>@(subject.LastChatAt?.LocalDateTime.ToString("dd/MM HH:mm") ?? "-")</td></tr>
-                                    }
-                                </tbody>
+                                <tbody>@for (var subjectIndex = 0; subjectIndex < semesterTopSubjects.Count; subjectIndex++) { var subject = semesterTopSubjects[subjectIndex]; <tr><td>@(subjectIndex + 1)</td><td><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></td><td>@subject.ChatCitationCount.ToString("N0")</td><td>@(subject.LastChatAt?.LocalDateTime.ToString("dd/MM HH:mm") ?? "-")</td></tr> }</tbody>
                             </table></div>
                         }
                     </article>
                 </div>
 
-                <article class="ops-panel ops-semester-users">
-                    <div class="ops-panel-head"><div><h2>Sinh viên hỏi nhiều nhất</h2><p class="ops-muted mb-0">Các tài khoản hoạt động nổi bật trong @Model.SemesterLabel.</p></div></div>
+                <article class="ops-semester-card ops-semester-users">
+                    <div class="ops-semester-card__head"><div><h3>Sinh viên hỏi nhiều nhất</h3><p>Các tài khoản hoạt động nổi bật trong @Model.SemesterLabel</p></div></div>
                     @if (Model.SemesterDashboard.TopChatUsers.Count == 0)
                     {
-                        <div class="ops-empty ops-stat-empty--compact"><strong>Chưa có dữ liệu người dùng</strong><p>Chưa có sinh viên đặt câu hỏi trong học kỳ này.</p></div>
+                        <div class="ops-semester-empty"><strong>Chưa có dữ liệu</strong><span>Chưa có sinh viên đặt câu hỏi trong học kỳ này.</span></div>
                     }
                     else
                     {
                         <div class="ops-table-wrap"><table class="ops-table ops-compact-table">
-                            <thead><tr><th>Người dùng</th><th>Email</th><th>Câu hỏi</th><th>Phiên chat</th><th>Lần hỏi gần nhất</th></tr></thead>
+                            <thead><tr><th>Người dùng</th><th>Email</th><th>Câu hỏi</th><th>Phiên chat</th><th>Lần gần nhất</th></tr></thead>
                             <tbody>
-                                @foreach (var user in Model.SemesterDashboard.TopChatUsers.Take(5))
+                                @for (var userIndex = 0; userIndex < Math.Min(5, Model.SemesterDashboard.TopChatUsers.Count); userIndex++)
                                 {
-                                    <tr><td><strong>@user.UserName</strong></td><td>@ShortEmail(user.UserEmail)</td><td>@user.QuestionCount.ToString("N0")</td><td>@user.SessionCount.ToString("N0")</td><td>@(user.LastQuestionAt?.LocalDateTime.ToString("dd/MM/yyyy HH:mm") ?? "-")</td></tr>
+                                    var user = Model.SemesterDashboard.TopChatUsers[userIndex];
+                                    <tr><td><strong>@user.UserName</strong></td><td>@ShortEmail(user.UserEmail)</td><td><strong>@user.QuestionCount.ToString("N0")</strong></td><td>@user.SessionCount.ToString("N0")</td><td>@(user.LastQuestionAt?.LocalDateTime.ToString("dd/MM/yyyy HH:mm") ?? "-")</td></tr>
                                 }
                             </tbody>
                         </table></div>

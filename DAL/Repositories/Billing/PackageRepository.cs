@@ -61,6 +61,40 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoveRetiredAsync(string packageCode, CancellationToken cancellationToken = default)
+    {
+        var normalizedCode = (packageCode ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedCode))
+        {
+            return;
+        }
+
+        await using var context = CreateContext();
+        var package = await context.Packages
+            .FirstOrDefaultAsync(item => item.Code.ToUpper() == normalizedCode, cancellationToken);
+        if (package is null)
+        {
+            return;
+        }
+
+        var hasHistory = await context.Payments.AnyAsync(item => item.PackageId == package.Id, cancellationToken)
+                         || await context.Subscriptions.AnyAsync(item => item.PackageId == package.Id, cancellationToken);
+        if (hasHistory)
+        {
+            package.IsActive = false;
+            package.SortOrder = int.MaxValue;
+        }
+        else
+        {
+            await context.PackagePriceChanges
+                .Where(change => change.PackageId == package.Id)
+                .ExecuteDeleteAsync(cancellationToken);
+            context.Packages.Remove(package);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<KnowledgeSqlPackagePriceChange?> UpdatePriceAsync(
         Guid packageId,
         decimal newPriceVnd,

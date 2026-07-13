@@ -157,6 +157,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
 
         var packages = await context.Packages
             .AsNoTracking()
+            .Where(package => package.Code != "LIFETIME")
             .OrderBy(package => package.SortOrder)
             .ThenBy(package => package.PriceVnd)
             .Select(package => new PackageRow(package.Id, package.Code, package.Name))
