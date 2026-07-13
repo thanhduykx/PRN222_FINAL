@@ -75,6 +75,8 @@
         --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
+    /* Keep legacy admin presentation from overriding shared components outside this page. */
+    @@scope (.ops-admin-page) {
     .ops-admin-page {
         font-family: 'Inter', system-ui, sans-serif;
         background-color: var(--admin-bg);
@@ -546,6 +548,7 @@
     @@media (max-width: 640px) {
         .ops-admin-kpis { grid-template-columns: 1fr; }
     }
+    }
 </style>
 
 <section class="ops-page ops-admin-page">
@@ -925,7 +928,7 @@
                                         </div>
                                     </td>
                                     <td data-label="Subjects" data-i18n-data-label="admin.thSubjects">
-                                        <div class="ops-subject-cell" style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
+                                        <div class="ops-subject-cell ops-subject-assignment">
                                             <div class="ops-chip-list">
                                                 @if (lecturer.AssignedSubjectDetails.Count == 0)
                                                 {
@@ -935,14 +938,14 @@
                                                 {
                                                     foreach (var subject in lecturer.AssignedSubjectDetails)
                                                     {
-                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
+                                                        <div class="ops-chip ops-chip--removable" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
                                                             <span>@subject.DisplayName@(subject.IsLeader? Html.Raw("<span data-i18n=\"admin.subjectLeaderSuffix\"> (Trưởng bộ môn)</span>") : Html.Raw(""))</span>
 
-                                                            <form asp-page-handler="UnregisterLecturerSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(lecturer)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(lecturer)?">
+                                                            <form asp-page-handler="UnregisterLecturerSubject" method="post" class="ops-inline-form" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(lecturer)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(lecturer)?">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="UserId" value="@lecturer.Id" />
                                                                 <input type="hidden" name="SubjectId" value="@subject.Id" />
-                                                                <button type="submit" title="Gỡ môn" data-i18n-title="admin.unassignButton" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
+                                                                <button type="submit" class="ops-inline-remove-button" title="Gỡ môn" data-i18n-title="admin.unassignButton" aria-label="Gỡ môn @subject.DisplayName">
                                                                     &times;
                                                                 </button>
                                                             </form>
@@ -950,10 +953,10 @@
                                                     }
                                                 }
                                             </div>
-                                            <form asp-page-handler="RegisterLecturerSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm-en="Assign selected subject to @DisplayName(lecturer)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(lecturer)?">
+                                            <form asp-page-handler="RegisterLecturerSubject" method="post" class="ops-assign-form" data-confirm-en="Assign selected subject to @DisplayName(lecturer)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(lecturer)?">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="UserId" value="@lecturer.Id" />
-                                                <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(lecturer)" style="padding: 0.35rem 0.5rem; border: 1px solid var(--admin-border); border-radius: 6px; font-size: 0.75rem;">
+                                                <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(lecturer)">
                                                     @if (availableSubjects.Count == 0)
                                                     {
                                                         <option value="" data-i18n="admin.noSubjectsAvailable">Không có môn nào</option>
@@ -967,7 +970,7 @@
                                                         <option value="@subject.Id">@subject.DisplayName</option>
                                                     }
                                                 </select>
-                                                <button type="submit" class="ops-button ops-button--secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" disabled="@(availableSubjects.Count == 0)" data-i18n="admin.assignButton">Đăng ký</button>
+                                                <button type="submit" class="ops-button ops-button--secondary" disabled="@(availableSubjects.Count == 0)" data-i18n="admin.assignButton">Đăng ký</button>
                                             </form>
                                         </div>
                                     </td>
@@ -1034,7 +1037,7 @@
                                         </div>
                                     </td>
                                     <td data-label="Subjects" data-i18n-data-label="admin.thSubjects">
-                                        <div class="ops-subject-cell" style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;">
+                                        <div class="ops-subject-cell ops-subject-assignment">
                                             <div class="ops-chip-list">
                                                 @if (student.AssignedSubjectDetails.Count == 0)
                                                 {
@@ -1044,13 +1047,13 @@
                                                 {
                                                     foreach (var subject in student.AssignedSubjectDetails)
                                                     {
-                                                        <div class="ops-chip" style="display: inline-flex; align-items: center; padding-right: 6px;" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
+                                                        <div class="ops-chip ops-chip--removable" title="Đã assign - click X để gỡ" data-i18n-title="admin.assignedClickToRemove">
                                                             <span>@subject.DisplayName</span>
-                                                            <form asp-page-handler="UnregisterStudentSubject" method="post" class="ops-inline-form" style="margin: 0; padding: 0; display: flex; align-items: center;" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(student)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(student)?">
+                                                            <form asp-page-handler="UnregisterStudentSubject" method="post" class="ops-inline-form" data-confirm-en="Unassign @subject.DisplayName from @DisplayName(student)?" data-confirm-vi="Gỡ môn @subject.DisplayName khỏi @DisplayName(student)?">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="UserId" value="@student.Id" />
                                                                 <input type="hidden" name="SubjectId" value="@subject.Id" />
-                                                                <button type="submit" title="Gỡ môn" data-i18n-title="admin.unassignButton" style="background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 6px; color: inherit; opacity: 0.7; display: flex; align-items: center; padding: 0; font-size: 14px;">
+                                                                <button type="submit" class="ops-inline-remove-button" title="Gỡ môn" data-i18n-title="admin.unassignButton" aria-label="Gỡ môn @subject.DisplayName">
                                                                     &times;
                                                                 </button>
                                                             </form>
@@ -1058,10 +1061,10 @@
                                                     }
                                                 }
                                             </div>
-                                            <form asp-page-handler="RegisterStudentSubject" method="post" class="ops-assign-form" style="display: flex; gap: 0.5rem;" data-confirm-en="Assign selected subject to @DisplayName(student)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(student)?">
+                                            <form asp-page-handler="RegisterStudentSubject" method="post" class="ops-assign-form" data-confirm-en="Assign selected subject to @DisplayName(student)?" data-confirm-vi="Đăng ký môn đã chọn cho @DisplayName(student)?">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="UserId" value="@student.Id" />
-                                                <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(student)" style="padding: 0.35rem 0.5rem; border: 1px solid var(--admin-border); border-radius: 6px; font-size: 0.75rem;">
+                                                <select name="SubjectId" required disabled="@(availableSubjects.Count == 0)" aria-label="Đăng ký môn cho @DisplayName(student)">
                                                     @if (availableSubjects.Count == 0)
                                                     {
                                                         <option value="" data-i18n="admin.noSubjectsAvailable">Không có môn nào</option>
@@ -1075,7 +1078,7 @@
                                                         <option value="@subject.Id">@subject.DisplayName</option>
                                                     }
                                                 </select>
-                                                <button type="submit" class="ops-button ops-button--secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" disabled="@(availableSubjects.Count == 0)" data-i18n="admin.assignButton">Đăng ký</button>
+                                                <button type="submit" class="ops-button ops-button--secondary" disabled="@(availableSubjects.Count == 0)" data-i18n="admin.assignButton">Đăng ký</button>
                                             </form>
                                         </div>
                                     </td>
