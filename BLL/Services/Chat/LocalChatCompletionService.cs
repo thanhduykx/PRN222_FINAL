@@ -84,6 +84,8 @@ internal static class ChatPromptBuilder
             Khong dung kien thuc ngoai tai lieu, khong doan, khong them so lieu hoac quy dinh khong co trong nguon.
             Moi nhan dinh thuc te phai kem chi so nguon dang [1], [2] tu document chunks.
             Viet moi nhan dinh thanh mot cau hoac mot bullet rieng de nguon gan dung voi nhan dinh.
+            Trinh bay bang Markdown de de doc: dung tieu de ngan, in dam cac tu khoa quan trong va tach tung y bang bullet.
+            Khong viet mot khoi van ban dai. Moi bullet chi nen chua mot y chinh.
             Neu chunks khong du can cu de tra loi truc tiep, chi tra loi dung cau:
             "Minh khong du du lieu trong tai lieu de tra loi cau hoi nay."
             Tra loi bang tieng Viet, ngan gon, ro y, co the dien giai lai thay vi chep nguyen van.

@@ -54,15 +54,13 @@
         .Select((item, index) => new { id = $"subject-{index}", subject = item.Item3, en = item.Item1, vi = item.Item2 })
         .ToArray();
     var initialRelatedQuestions = relatedQuestions.Take(8).ToArray();
-    var readyDataCount = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student)
-        ? subjectOptions.Count
-        : Model.Documents.Count;
-    var readyDataUnit = User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Student)
-        ? "môn có dữ liệu"
-        : "tài liệu đã index";
+    var chatUserName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+        ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value?.Split('@')[0]
+        ?? "bạn";
 }
 
 <section class="rbl-chat-page"
+         data-chat-user-name="@chatUserName"
          data-chat-suggestions-en='@System.Text.Json.JsonSerializer.Serialize(suggestionsEn)'
          data-chat-suggestions-vi='@System.Text.Json.JsonSerializer.Serialize(suggestionsVi)'
          data-chat-subject-suggestions='@System.Text.Json.JsonSerializer.Serialize(subjectPayload)'
@@ -71,48 +69,10 @@
     {
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
-    <header class="chat-page-heading">
-        <h1>Chat tài liệu</h1>
-        <p>Hỏi đáp thông minh dựa trên tài liệu đã index của bạn</p>
-    </header>
-    <section class="chat-source-scope" aria-label="Phạm vi nguồn trả lời" data-i18n-aria-label="chat.scopeAria" data-chat-subject-count="@subjectOptions.Count">
-        <span class="chat-ai-mark" aria-hidden="true">AI</span>
-        <div>
-            <strong data-i18n="chat.scopeTitle">Trả lời dựa trên tài liệu đã index</strong>
-            <span data-chat-scope-label>
-                @if (subjectOptions.Count == 0)
-                {
-                    <span data-i18n="chat.scopeEmpty">Chưa có môn học sẵn sàng</span>
-                }
-                else
-                {
-                    <span data-i18n="chat.scopeCountPrefix">Đang tìm trong</span> @subjectOptions.Count <span data-i18n="chat.scopeCountSuffix">môn học có quyền truy cập</span>
-                }
-            </span>
-        </div>
-        <div class="chat-source-ready">
-            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-            <strong>Dữ liệu sẵn sàng</strong>
-            <small>@readyDataCount @readyDataUnit</small>
-        </div>
-        <a asp-page="/Home/Courses" class="chat-source-scope__link" hidden="@(!User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Lecturer) && !User.IsInRole(PRN222_FINAL.BLL.Security.AppRoles.Admin))" data-i18n="chat.viewCourses">Xem môn học <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
-    </section>
     <main class="rbl-chat-main" aria-label="Document chat" data-i18n-aria-label="chat.mainAria">
         <div id="chatMessages" class="chat-messages codex-chat-messages rbl-chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Nội dung hội thoại" data-i18n-aria-label="chat.messagesAria">
-            <div class="chat-empty-state rbl-chat-empty">
-                <span class="rbl-bot-mark">smart_toy</span>
-                <h3 data-i18n="chat.emptyTitle">Xin chào Lecturer! 👋</h3>
-                <p data-i18n="chat.emptyText">Tôi có thể giúp gì cho bạn hôm nay?</p>
-                <p>Bạn có thể hỏi về nội dung môn học, khái niệm, bài tập hoặc bất kỳ thông tin nào trong tài liệu đã index.</p>
-                <div class="suggestion-grid rbl-suggestion-grid" aria-label="Question suggestions" data-i18n-aria-label="chat.suggestionsAria">
-                    @foreach (var question in suggestedQuestions)
-                    {
-                        <button type="button" class="suggestion-chip" data-question="@question.En" data-question-en="@question.En" data-question-vi="@question.Vi">@question.En</button>
-                    }
-                </div>
-            </div>
             <div class="message assistant">
-                <div class="bubble" data-i18n="chat.welcome">Bạn có thể hỏi về nội dung tài liệu môn học. Câu trả lời sẽ rõ ràng và có nguồn tham khảo.</div>
+                <div class="bubble" data-chat-welcome>Chào @chatUserName! Mình là trợ lý học tập của bạn. Bạn muốn mình tra cứu, tóm tắt hay giải thích nội dung nào trong tài liệu hôm nay?</div>
             </div>
         </div>
 
