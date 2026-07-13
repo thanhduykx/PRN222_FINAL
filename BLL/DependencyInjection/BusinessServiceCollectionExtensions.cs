@@ -35,6 +35,7 @@ public static class BusinessServiceCollectionExtensions
 
         services.AddSingleton<IKnowledgeRepository>(_ => new SqlKnowledgeRepository(connectionString));
         services.AddSingleton<IUserAccountRepository>(_ => new PostgresUserAccountRepository(connectionString));
+        services.AddSingleton<IAccountEmailJobRepository>(_ => new PostgresAccountEmailJobRepository(connectionString));
         var smtp = configuration.GetSection("Smtp");
         services.AddSingleton<IEmailRepository>(_ => new SmtpEmailRepository(new SmtpSettingsData(
             smtp["Host"] ?? string.Empty,
@@ -45,7 +46,7 @@ public static class BusinessServiceCollectionExtensions
             smtp["UserName"] ?? string.Empty,
             smtp["Password"] ?? string.Empty)));
         services.AddSingleton<IAccountEmailService>(provider => new AccountEmailService(
-            provider.GetRequiredService<IEmailRepository>(), Path.Combine(contentRootPath, "wwwroot")));
+            provider.GetRequiredService<IEmailRepository>()));
         services.AddSingleton<IAccountEmailJobQueue, AccountEmailJobQueue>();
         var seedAdmin = configuration.GetSection("SeedAdmin");
         services.AddSingleton<IUserAccountService>(provider => new UserAccountService(

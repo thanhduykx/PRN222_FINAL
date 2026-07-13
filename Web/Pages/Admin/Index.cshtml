@@ -689,6 +689,10 @@
                                             <div class="ops-user-identity">
                                                 <strong>@DisplayName(user)</strong>
                                                 <small>@user.Email</small>
+                                                @if (user.IsSuspended)
+                                                {
+                                                    <small style="color:#b91c1c;font-weight:700;">Đã khóa</small>
+                                                }
                                             </div>
                                         </div>
                                     </td>
@@ -744,6 +748,16 @@
                                             : !user.MeetsInactivePeriod ? "admin.delErrActive"
                                             : "admin.delOk";
                                         }
+                                        <form asp-page-handler="SetSuspended" method="post" style="display:inline-block;margin-right:.35rem;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="UserId" value="@user.Id" />
+                                            <input type="hidden" name="Suspend" value="@(!user.IsSuspended ? "true" : "false")" />
+                                            <button type="submit"
+                                                    class="ops-mini-button"
+                                                    disabled="@(user.IsCurrentUser && !user.IsSuspended)">
+                                                @(user.IsSuspended ? "Mở khóa" : "Khóa")
+                                            </button>
+                                        </form>
                                         <form asp-page-handler="DeleteUser" method="post" class="ops-danger-form" data-confirm-i18n="admin.deleteConfirm" style="display: inline-block;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="UserId" value="@user.Id" />
@@ -784,10 +798,7 @@
                     <span data-i18n="admin.email">Email</span>
                     <input name="Email" type="email" autocomplete="email" placeholder="example@domain.com" data-i18n-placeholder="admin.emailPlaceholder" />
                 </label>
-                <label class="ops-field">
-                    <span data-i18n="admin.password">Password</span>
-                    <input name="Password" type="password" minlength="8" autocomplete="new-password" placeholder="Tối thiểu 8 ký tự" data-i18n-placeholder="admin.passwordPlaceholder" />
-                </label>
+                <p class="ops-panel-note">Người dùng sẽ nhận liên kết đặt mật khẩu dùng một lần qua email.</p>
                 <label class="ops-field">
                     <span data-i18n="admin.role">Role</span>
                     <select name="Role" data-admin-role-select>

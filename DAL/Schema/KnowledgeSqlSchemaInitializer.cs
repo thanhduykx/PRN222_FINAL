@@ -116,6 +116,20 @@ public static class KnowledgeSqlSchemaInitializer
 
             CREATE INDEX IF NOT EXISTS "IX_subscriptions_UserId_Status_EndsAt" ON subscriptions ("UserId", "Status", "EndsAt");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_subscriptions_PaymentId" ON subscriptions ("PaymentId") WHERE "PaymentId" IS NOT NULL;
+            WITH ranked_active AS (
+                SELECT "Id", ROW_NUMBER() OVER (
+                    PARTITION BY "UserId"
+                    ORDER BY ("EndsAt" > NOW()) DESC, "EndsAt" DESC, "CreatedAt" DESC, "Id" DESC
+                ) AS row_number
+                FROM subscriptions
+                WHERE "Status" = 'Active'
+            )
+            UPDATE subscriptions AS subscription
+            SET "Status" = 'Canceled', "EndsAt" = LEAST(subscription."EndsAt", NOW())
+            FROM ranked_active
+            WHERE subscription."Id" = ranked_active."Id" AND ranked_active.row_number > 1;
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_subscriptions_one_active_per_user"
+                ON subscriptions ("UserId") WHERE "Status" = 'Active';
 
             CREATE TABLE IF NOT EXISTS course_access_logs (
                 "Id" uuid PRIMARY KEY,

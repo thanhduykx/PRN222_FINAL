@@ -207,7 +207,7 @@ public abstract class HomePageModelBase : PageModel
         {
             if (IsAdmin())
             {
-                return true;
+                return false;
             }
 
             if (!IsLecturer() || CurrentUserId() is not { } userId)
@@ -224,7 +224,7 @@ public abstract class HomePageModelBase : PageModel
         {
             if (IsAdmin())
             {
-                return true;
+                return false;
             }
 
             if (!IsLecturer() || CurrentUserId() is not { } userId)
@@ -683,7 +683,7 @@ public abstract class HomePageModelBase : PageModel
 
         protected string GetUploadsRoot()
         {
-            return Path.GetFullPath(Path.Combine(_environment.WebRootPath, "uploads"));
+            return Path.GetFullPath(Path.Combine(_environment.ContentRootPath, "storage", "uploads"));
         }
 
         protected static string ResolveContentType(IndexedDocument document)
