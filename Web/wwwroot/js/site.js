@@ -205,6 +205,7 @@ const translations = {
 
         "account.profile": "User profile",
         "account.profileDesc": "Edit display name",
+        "account.packagesDesc": "View and choose a learning package",
         "account.history": "Transaction history",
         "account.historyDesc": "View and print receipts",
         "account.changePassword": "Change password",
@@ -667,10 +668,10 @@ const translations = {
     "chat.headerTitle": "Introduction to AI",
     "chat.headerSubtitle": "Ask questions from indexed documents. If the data is insufficient, the chatbot must report missing sources instead of guessing.",
     "chat.currentSession": "Current session",
-    "chat.emptyTitle": "Start with a specific question",
-    "chat.emptyText": "Choose a suggestion below or type your question. If the documents do not contain enough data, the chatbot will say so instead of guessing.",
     "chat.suggestionsAria": "Question suggestions",
-    "chat.welcome": "Hi, ask me about uploaded documents. I will keep the answer short and show sources when I have enough data.",
+    "chat.welcomeNamed": "Hi {name}! I’m your learning assistant. What would you like me to find, summarize, or explain from the documents today?",
+    "chat.answerLabel": "Answer",
+    "chat.followUpLabel": "You can ask next",
     "chat.placeholder": "Ask about a subject, chapter, or indexed document...",
     "chat.send": "Send",
     "chat.relatedLabel": "Related questions",
@@ -1249,6 +1250,7 @@ const translations = {
 
         "account.profile": "Thông tin người dùng",
         "account.profileDesc": "Chỉnh sửa tên hiển thị",
+        "account.packagesDesc": "Xem và chọn gói học tập",
         "account.history": "Lịch sử giao dịch",
         "account.historyDesc": "Xem và in biên nhận",
         "account.changePassword": "Đổi mật khẩu",
@@ -1672,10 +1674,10 @@ const translations = {
     "chat.headerTitle": "Nhập môn AI",
     "chat.headerSubtitle": "Hỏi đáp dựa trên tài liệu đã index. Nếu dữ liệu không đủ, chatbot phải báo thiếu nguồn thay vì đoán.",
     "chat.currentSession": "Phiên hiện tại",
-    "chat.emptyTitle": "Bắt đầu bằng một câu hỏi cụ thể",
-    "chat.emptyText": "Chọn gợi ý bên dưới hoặc nhập câu hỏi của bạn. Nếu tài liệu không đủ dữ liệu, chatbot sẽ báo rõ thay vì đoán.",
     "chat.suggestionsAria": "Gợi ý câu hỏi",
-    "chat.welcome": "Chào bạn, hỏi mình về tài liệu đã upload nhé. Có đủ dữ liệu thì mình trả lời gọn và kèm nguồn.",
+    "chat.welcomeNamed": "Chào {name}! Mình là trợ lý học tập của bạn. Bạn muốn mình tra cứu, tóm tắt hay giải thích nội dung nào trong tài liệu hôm nay?",
+    "chat.answerLabel": "Câu trả lời",
+    "chat.followUpLabel": "Bạn có thể hỏi thêm",
     "chat.placeholder": "Hỏi về môn, chương hoặc tài liệu đã index...",
     "chat.send": "Gửi",
     "chat.relatedLabel": "Câu hỏi liên quan",
@@ -2010,6 +2012,14 @@ function t(key) {
   return translations[getLanguage()][key] || translations.en[key] || key;
 }
 
+function getChatUserName() {
+  return chatPage?.dataset.chatUserName?.trim() || (getLanguage() === "vi" ? "bạn" : "there");
+}
+
+function getPersonalizedWelcome() {
+  return t("chat.welcomeNamed").replace("{name}", getChatUserName());
+}
+
 function readJsonDataAttribute(element, key, fallback) {
   if (!element?.dataset?.[key]) {
     return fallback;
@@ -2088,7 +2098,8 @@ function dedupeQuestionItems(items) {
 }
 
 function getAvailableQuestionItems(basePool, asked, selectedSubject = "") {
-  const available = dedupeQuestionItems(basePool).filter((item) => !questionWasAsked(item, asked));
+  const normalizedBasePool = dedupeQuestionItems(basePool);
+  const available = normalizedBasePool.filter((item) => !questionWasAsked(item, asked));
   if (available.length > 0) {
     return available;
   }
@@ -2096,7 +2107,15 @@ function getAvailableQuestionItems(basePool, asked, selectedSubject = "") {
   const recoveryPool = selectedSubject
     ? buildRecoveryQuestionItems(selectedSubject)
     : subjectQuestionSubjects.flatMap((subject) => buildRecoveryQuestionItems(subject));
-  return dedupeQuestionItems(recoveryPool).filter((item) => !questionWasAsked(item, asked));
+  const availableRecoveryItems = dedupeQuestionItems(recoveryPool)
+    .filter((item) => !questionWasAsked(item, asked));
+  if (availableRecoveryItems.length > 0) {
+    return availableRecoveryItems;
+  }
+
+  // A long-running session may exhaust both pools. Recycle the primary pool so
+  // suggestions remain useful instead of permanently hiding the entire strip.
+  return normalizedBasePool;
 }
 
 function readRelatedQuestionPool() {
@@ -2206,9 +2225,17 @@ function applyLanguage() {
       : `Hi ${name}, I can help you find information faster.`;
   });
 
+  document.querySelectorAll("[data-chat-welcome]").forEach((element) => {
+    renderAssistantContent(element, getPersonalizedWelcome(), {
+      includeAnswerLabel: false
+    });
+  });
+  refreshChatFollowUpSuggestions();
+
   updateSuggestionButtons();
   updateRelatedQuestionButtons();
   updateDropzoneDefaultText();
+  refreshChatTimeLabels();
   if (latestOnlineUsersSnapshot) {
     renderOnlineUsersSnapshot(latestOnlineUsersSnapshot);
   }
@@ -2250,23 +2277,7 @@ function setSelectedSubjectFilter(subject) {
   });
   updateSuggestionButtons();
   renderRelatedQuestions();
-  updateChatSourceScope(normalizedSubject);
-}
-
-function updateChatSourceScope(selectedSubject) {
-  const scope = document.querySelector(".chat-source-scope");
-  const label = scope?.querySelector("[data-chat-scope-label]");
-  if (!scope || !label) return;
-
-  if (selectedSubject) {
-    label.textContent = `Chỉ tìm trong tài liệu môn ${selectedSubject}`;
-    return;
-  }
-
-  const subjectCount = Number.parseInt(scope.dataset.chatSubjectCount || "0", 10);
-  label.textContent = subjectCount > 0
-    ? `Đang tìm trong ${subjectCount} môn học có quyền truy cập`
-    : "Chưa có môn học sẵn sàng";
+  refreshChatFollowUpSuggestions();
 }
 
 function bindSubjectFilterChips() {
@@ -2675,20 +2686,11 @@ function renderWelcomeMessage() {
     return;
   }
 
-  const suggestions = getChatSuggestions();
-  chatMessages.innerHTML = `
-    <div class="chat-empty-state">
-      <span class="empty-state-mark">AI</span>
-      <h3 data-i18n="chat.emptyTitle">${escapeHtml(t("chat.emptyTitle"))}</h3>
-      <p data-i18n="chat.emptyText">${escapeHtml(t("chat.emptyText"))}</p>
-      <div class="suggestion-grid" aria-label="${escapeHtml(t("chat.suggestionsAria"))}" data-i18n-aria-label="chat.suggestionsAria">
-        ${suggestions.map((question) => `<button type="button" class="suggestion-chip" data-question="${escapeHtml(question)}">${escapeHtml(question)}</button>`).join("")}
-      </div>
-    </div>
-    <div class="message assistant">
-      <div class="bubble" data-i18n="chat.welcome">${escapeHtml(t("chat.welcome"))}</div>
-    </div>`;
-  bindSuggestionButtons();
+  chatMessages.replaceChildren();
+  const welcomeMessage = appendMessageTo(chatMessages, "assistant", getPersonalizedWelcome(), [], {
+    includeAnswerLabel: false
+  });
+  welcomeMessage?.querySelector(".bubble")?.setAttribute("data-chat-welcome", "");
   applyLanguage();
 }
 
@@ -2704,7 +2706,9 @@ function renderSessionMessages(messages) {
   }
 
   messages.forEach((message) => {
-    appendMessageTo(chatMessages, message.role, message.content, message.citations || []);
+    appendMessageTo(chatMessages, message.role, message.content, message.citations || [], {
+      createdAt: message.createdAt
+    });
   });
   renderRelatedQuestions();
 }
@@ -3524,7 +3528,88 @@ function bindSessionButtons() {
   });
 }
 
-function appendMessageTo(target, role, content, citations = []) {
+const chatTimeGroupWindowMs = 60 * 60 * 1000;
+
+function parseChatTimestamp(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isSameLocalDate(left, right) {
+  return left.getFullYear() === right.getFullYear()
+    && left.getMonth() === right.getMonth()
+    && left.getDate() === right.getDate();
+}
+
+function formatChatTimestamp(value) {
+  const timestamp = parseChatTimestamp(value);
+  if (!timestamp) return "";
+  const language = getLanguage();
+  const now = new Date();
+  const time = timestamp.toLocaleTimeString(language === "vi" ? "vi-VN" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  if (isSameLocalDate(timestamp, now)) {
+    return language === "vi" ? `Hôm nay, ${time}` : `Today, ${time}`;
+  }
+  return timestamp.toLocaleString(language === "vi" ? "vi-VN" : "en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function appendChatTimeDivider(target, timestamp, beforeElement = null) {
+  const divider = document.createElement("div");
+  divider.className = "chat-time-divider";
+  divider.dataset.chatGroupTime = timestamp.toISOString();
+  const time = document.createElement("time");
+  time.dateTime = timestamp.toISOString();
+  time.textContent = formatChatTimestamp(timestamp);
+  divider.appendChild(time);
+  target.insertBefore(divider, beforeElement);
+}
+
+function appendChatTimeDividerIfNeeded(target, timestamp) {
+  const previousMessage = Array.from(target.querySelectorAll(".message[data-created-at]")).at(-1);
+  const previousTimestamp = parseChatTimestamp(previousMessage?.dataset.createdAt);
+  if (!previousTimestamp
+      || !isSameLocalDate(previousTimestamp, timestamp)
+      || timestamp.getTime() - previousTimestamp.getTime() >= chatTimeGroupWindowMs) {
+    appendChatTimeDivider(target, timestamp);
+  }
+}
+
+function refreshChatTimeLabels(root = document) {
+  root.querySelectorAll(".chat-time-divider").forEach((divider) => {
+    const timestamp = parseChatTimestamp(divider.dataset.chatGroupTime);
+    const time = divider.querySelector("time");
+    if (timestamp && time) time.textContent = formatChatTimestamp(timestamp);
+  });
+}
+
+function initializeChatTimeline(target) {
+  if (!target) return;
+  target.querySelectorAll(".chat-time-divider").forEach((divider) => divider.remove());
+  const fallbackTimestamp = new Date();
+  let previousTimestamp = null;
+  target.querySelectorAll(".message").forEach((message) => {
+    const timestamp = parseChatTimestamp(message.dataset.createdAt) || fallbackTimestamp;
+    message.dataset.createdAt = timestamp.toISOString();
+    if (!previousTimestamp
+        || !isSameLocalDate(previousTimestamp, timestamp)
+        || timestamp.getTime() - previousTimestamp.getTime() >= chatTimeGroupWindowMs) {
+      appendChatTimeDivider(target, timestamp, message);
+    }
+    previousTimestamp = timestamp;
+  });
+}
+
+function appendMessageTo(target, role, content, citations = [], options = {}) {
   if (!target) {
     return null;
   }
@@ -3533,12 +3618,23 @@ function appendMessageTo(target, role, content, citations = []) {
     target.querySelector(".chat-empty-state")?.remove();
   }
 
+  const createdAt = options.createdAt === null
+    ? null
+    : parseChatTimestamp(options.createdAt ?? new Date()) || new Date();
+  if (createdAt) appendChatTimeDividerIfNeeded(target, createdAt);
+
   const wrapper = document.createElement("div");
   wrapper.className = `message ${role}`;
+  if (createdAt) wrapper.dataset.createdAt = createdAt.toISOString();
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  if (role === "assistant") renderAssistantContent(bubble, content);
+  if (role === "assistant") {
+    renderAssistantContent(bubble, content, {
+      includeAnswerLabel: options.includeAnswerLabel !== false,
+      includeFollowUps: options.includeFollowUps !== false
+    });
+  }
   else bubble.textContent = content;
 
   wrapper.appendChild(bubble);
@@ -3583,10 +3679,62 @@ function appendSafeInlineContent(target, text) {
   if (cursor < value.length) target.appendChild(document.createTextNode(value.slice(cursor)));
 }
 
-function renderAssistantContent(bubble, content) {
+function getFollowUpSuggestions() {
+  const subject = getSelectedSubjectFilter();
+  if (getLanguage() === "vi") {
+    return subject
+      ? [`Giải thích kỹ hơn một ý quan trọng của ${subject}.`, `Tóm tắt các nội dung chính khác của ${subject}.`]
+      : ["Giải thích kỹ hơn ý chính vừa nêu.", "Trong tài liệu còn nội dung nào liên quan?"];
+  }
+  return subject
+    ? [`Explain one important point from ${subject} in more detail.`, `Summarize other key topics from ${subject}.`]
+    : ["Explain the main point in more detail.", "What related information is available in the documents?"];
+}
+
+function appendFollowUpSuggestions(bubble) {
+  const section = document.createElement("section");
+  section.className = "chat-follow-up-suggestions";
+  const heading = document.createElement("strong");
+  heading.dataset.chatFollowUpLabel = "";
+  heading.textContent = t("chat.followUpLabel");
+  const actions = document.createElement("div");
+  getFollowUpSuggestions().forEach((suggestion, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.chatFollowUpIndex = String(index);
+    button.textContent = suggestion;
+    button.addEventListener("click", () => {
+      if (!questionInput) return;
+      questionInput.value = suggestion;
+      questionInput.focus();
+    });
+    actions.appendChild(button);
+  });
+  section.append(heading, actions);
+  bubble.appendChild(section);
+}
+
+function refreshChatFollowUpSuggestions() {
+  const suggestions = getFollowUpSuggestions();
+  document.querySelectorAll("[data-chat-follow-up-label]").forEach((heading) => {
+    heading.textContent = t("chat.followUpLabel");
+  });
+  document.querySelectorAll("[data-chat-follow-up-index]").forEach((button) => {
+    const index = Number.parseInt(button.dataset.chatFollowUpIndex || "", 10);
+    if (Number.isInteger(index) && suggestions[index]) button.textContent = suggestions[index];
+  });
+}
+
+function renderAssistantContent(bubble, content, options = {}) {
   if (!bubble) return;
   bubble.replaceChildren();
   bubble.classList.add("chat-answer-prose");
+  if (options.includeAnswerLabel !== false) {
+    const answerLabel = document.createElement("strong");
+    answerLabel.className = "chat-answer-label";
+    answerLabel.textContent = t("chat.answerLabel");
+    bubble.appendChild(answerLabel);
+  }
   const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
   let list = null;
   let codeBlock = null;
@@ -3644,6 +3792,9 @@ function renderAssistantContent(bubble, content) {
   });
 
   if (!bubble.childNodes.length) bubble.textContent = String(content || "");
+  if (options.includeFollowUps !== false && String(content || "").trim()) {
+    appendFollowUpSuggestions(bubble);
+  }
 }
 
 async function appendAssistantAnswer(target, content, citations) {
@@ -3651,7 +3802,10 @@ async function appendAssistantAnswer(target, content, citations) {
   if (pace === "fast" || !content || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return appendMessageTo(target, "assistant", content, citations);
   }
-  const wrapper = appendMessageTo(target, "assistant", "", []);
+  const wrapper = appendMessageTo(target, "assistant", "", [], {
+    includeAnswerLabel: false,
+    includeFollowUps: false
+  });
   const bubble = wrapper?.querySelector(".bubble");
   if (!wrapper || !bubble) return wrapper;
   const step = content.length > 800 ? 8 : 4;
@@ -3830,7 +3984,11 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
   renderRelatedQuestions();
   appendMessageTo(messagesTarget, "user", question);
   input.value = "";
-  const loadingMessage = appendMessageTo(messagesTarget, "assistant", t("chat.loading"));
+  const loadingMessage = appendMessageTo(messagesTarget, "assistant", t("chat.loading"), [], {
+    createdAt: null,
+    includeAnswerLabel: false,
+    includeFollowUps: false
+  });
 
   try {
     const response = await fetch("/Home/Ask", {
@@ -4215,6 +4373,7 @@ initAdminRoleUpdateForms();
 initAssistantLauncherDrag();
 initOnlineUsersWidget();
 markActiveSession(getSessionId());
+initializeChatTimeline(chatMessages);
 applyLanguage();
 startDocumentStatusRealtime();
 

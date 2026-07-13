@@ -157,13 +157,6 @@
                         </div>
                     </details>
                     }
-                    @if (isAuthenticated && currentRole == AppRoles.Student)
-                    {
-                    <a class="rbl-nav-link @(activeNav == "billing" ? "is-active" : "")" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
-                        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
-                        <span data-i18n="nav.billing">Gói dịch vụ</span>
-                    </a>
-                    }
                     @if (canManageUsers)
                     {
                     <span class="rbl-nav-section-label" data-i18n="shell.navAdmin">Quản trị</span>
@@ -225,6 +218,16 @@
                             <span>@shellTitle</span>
                         }
                     </div>
+                    @if (isAuthenticated && currentRole == AppRoles.Student)
+                    {
+                        <a class="rbl-topbar-package" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
+                            <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">payments</span>
+                            <span class="rbl-topbar-package__text">
+                                <strong data-i18n="nav.billing">Gói dịch vụ</strong>
+                                <small data-i18n="account.packagesDesc">Xem và chọn gói học tập</small>
+                            </span>
+                        </a>
+                    }
                     <div class="rbl-topbar-actions">
                         <div class="language-switch rbl-language-switch" role="group" aria-label="Language">
                             <button type="button" class="language-option" data-language-option="en" aria-pressed="true">ENG</button>
@@ -329,12 +332,6 @@
                                     <a class="nav-link text-dark" asp-area="" asp-page="/Home/OnlineUsers" data-i18n="admin.navOnlineUsers">Online users</a>
                                 </li>
                             }
-                            @if (isAuthenticated && currentRole == AppRoles.Student)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-page="/Packages/Index" data-i18n="shell.packages">Gói dịch vụ</a>
-                                </li>
-                            }
                             @if (canManageUsers)
                             {
                                 <li class="nav-item">
@@ -362,6 +359,7 @@
                                             <nav aria-label="Tài khoản" data-i18n-aria-label="shell.accountNav">
                                                 @if (currentRole == AppRoles.Student)
                                                 {
+                                                    <a asp-page="/Packages/Index"><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong data-i18n="nav.billing">Gói dịch vụ</strong><small data-i18n="account.packagesDesc">Xem và chọn gói học tập</small></span></a>
                                                     <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong data-i18n="account.profile">Thông tin người dùng</strong><small data-i18n="account.profileDesc">Chỉnh sửa tên hiển thị</small></span></a>
                                                     <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong data-i18n="account.history">Lịch sử giao dịch</strong><small data-i18n="account.historyDesc">Xem và in biên nhận</small></span></a>
                                                 }
