@@ -23,6 +23,7 @@ public sealed class AdminAnalyticsDashboardDto
     public int TotalChatQuestions { get; set; }
     public int TotalAssistantAnswers { get; set; }
     public int ActiveChatUsers { get; set; }
+    public int ReturningChatUsers { get; set; }
     public int TotalSubjects { get; set; }
     public int TotalDocuments { get; set; }
     public int IndexedDocuments { get; set; }
@@ -38,6 +39,7 @@ public sealed class AdminAnalyticsDashboardDto
     public IReadOnlyList<SubjectUsageDto> SubjectUsage { get; set; } = Array.Empty<SubjectUsageDto>();
     public IReadOnlyList<PackagePurchaseStatsDto> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsDto>();
     public IReadOnlyList<DailyChatUsageDto> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageDto>();
+    public IReadOnlyList<ChatTimeSlotUsageDto> ChatTimeSlotUsage { get; set; } = Array.Empty<ChatTimeSlotUsageDto>();
     public IReadOnlyList<DailySubscriptionUsageDto> DailySubscriptionUsage { get; set; } = Array.Empty<DailySubscriptionUsageDto>();
     public IReadOnlyList<UserChatUsageDto> TopChatUsers { get; set; } = Array.Empty<UserChatUsageDto>();
     public IReadOnlyList<DocumentAnalyticsDto> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsDto>();
@@ -79,6 +81,15 @@ public sealed class DailyChatUsageDto
     public DateOnly Date { get; set; }
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
+    public int ActiveUserCount { get; set; }
+}
+
+public sealed class ChatTimeSlotUsageDto
+{
+    public string Label { get; set; } = string.Empty;
+    public int StartHour { get; set; }
+    public int EndHour { get; set; }
+    public int QuestionCount { get; set; }
     public int ActiveUserCount { get; set; }
 }
 

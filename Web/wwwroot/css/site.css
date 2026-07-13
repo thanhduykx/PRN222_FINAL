@@ -11189,6 +11189,244 @@ th.i18n-dynamic-width {
   flex: 0 0 auto;
 }
 
+/* Admin chatbot semester analytics */
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d8e5f4;
+  border-radius: 8px;
+  background: #f7faff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-section-eyebrow {
+  color: #0872e8;
+  font-size: .72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head h2 {
+  margin: 4px 0 3px;
+  color: #071a3a;
+  font-size: 1.16rem;
+  font-weight: 950;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head p {
+  margin: 0;
+  color: #65758c;
+  font-size: .76rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-filter label {
+  display: grid;
+  gap: 5px;
+  color: #42526a;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-filter select {
+  min-width: 124px;
+  height: 38px;
+  padding: 0 34px 0 11px;
+  border: 1px solid #cfdced;
+  border-radius: 7px;
+  background: #fff;
+  color: #142944;
+  font: inherit;
+  font-size: .78rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-filter label:last-child select {
+  min-width: 94px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  min-height: 96px;
+  padding: 14px;
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .material-symbols-outlined {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 23px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-blue { background: #e7f1ff; color: #0875ee; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-green { background: #e2f7eb; color: #079447; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-purple { background: #f1e8ff; color: #7e22ce; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-orange { background: #fff0e3; color: #e85b0b; }
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary small {
+  overflow: hidden;
+  color: #66758b;
+  font-size: .72rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary strong {
+  overflow: hidden;
+  color: #071a3a;
+  font-size: 1.18rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary p {
+  overflow: hidden;
+  margin: 0;
+  color: #748298;
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  gap: 14px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis .ops-panel {
+  min-width: 0;
+  margin: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bars {
+  display: grid;
+  gap: 16px;
+  padding: 4px 2px 2px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar {
+  display: grid;
+  grid-template-columns: minmax(126px, .75fr) minmax(120px, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label {
+  display: grid;
+  gap: 2px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label strong {
+  color: #1d304b;
+  font-size: .76rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label span,
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar > b {
+  color: #728096;
+  font-size: .68rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar > b {
+  text-align: right;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eff8;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: #1677ed;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis td small {
+  display: block;
+  margin-top: 2px;
+  color: #77859a;
+  font-size: .66rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-empty--compact {
+  min-height: 130px;
+}
+
+@media (max-width: 1180px) {
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head,
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+    grid-template-columns: 1fr;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-filter select {
+    width: 100%;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-time-bar {
+    grid-template-columns: 1fr 42px;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
 /* Lecturer and student chatbot reference layout */
 body.rbl-body:has(.rbl-chat-page) {
   --rbl-primary: #0967dc;
