@@ -7980,6 +7980,7 @@ body.price-change-modal-open {
   color: #65758a;
   font-size: .82rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .course-chapter-heading > span {
@@ -8072,8 +8073,20 @@ body.price-change-modal-open {
   }
 
   .course-document-actions {
-    grid-column: 2;
+    grid-column: 1 / -1;
     flex-wrap: wrap;
+  }
+
+  .course-document-actions .ops-mini-button {
+    width: auto;
+    min-width: 68px;
+    flex: 1 1 68px;
+  }
+
+  .course-document-main strong,
+  .course-document-main small {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 }
 
