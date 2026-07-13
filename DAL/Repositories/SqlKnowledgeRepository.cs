@@ -313,10 +313,12 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
         }
 
         KnowledgeSqlCourseSubject subject;
+        string? previousDisplayName = null;
         if (subjectId.HasValue)
         {
             subject = await context.CourseSubjects.FirstOrDefaultAsync(item => item.Id == subjectId.Value, cancellationToken)
                 ?? throw new InvalidOperationException("Subject not found.");
+            previousDisplayName = BuildSubjectDisplayName(subject.Code, subject.Name);
         }
         else
         {
@@ -336,6 +338,21 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
             subject.OwnerUserId = ownerInfo.UserId;
             subject.OwnerName = ownerInfo.Name?.Trim() ?? string.Empty;
             subject.OwnerEmail = ownerInfo.Email?.Trim() ?? string.Empty;
+        }
+
+        var currentDisplayName = BuildSubjectDisplayName(subject.Code, subject.Name);
+        if (previousDisplayName is not null
+            && !previousDisplayName.Equals(currentDisplayName, StringComparison.Ordinal))
+        {
+            context.SystemNotifications.Add(new KnowledgeSqlSystemNotification
+            {
+                Id = Guid.NewGuid(),
+                Type = SystemNotificationTypes.SubjectRenamed,
+                EntityId = subject.Id,
+                Title = "Tên môn học đã thay đổi",
+                Message = $"Môn học {previousDisplayName} đã được đổi tên thành {currentDisplayName}.",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -937,6 +954,20 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
     private static string NormalizeCode(string code)
     {
         return string.Join(string.Empty, (code ?? string.Empty).Trim().ToUpperInvariant().Where(character => !char.IsWhiteSpace(character)));
+    }
+
+    private static string BuildSubjectDisplayName(string? code, string? name)
+    {
+        var normalizedCode = (code ?? string.Empty).Trim();
+        var normalizedName = (name ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedCode))
+        {
+            return normalizedName;
+        }
+
+        return normalizedCode.Equals(normalizedName, StringComparison.OrdinalIgnoreCase)
+            ? normalizedCode
+            : $"{normalizedCode} - {normalizedName}";
     }
 
     private static string NormalizeFileName(string fileName)

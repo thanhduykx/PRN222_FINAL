@@ -63,8 +63,10 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
 
     public async Task<KnowledgeSqlPackagePriceChange?> UpdatePriceAsync(
         Guid packageId,
+        decimal expectedCurrentPriceVnd,
         decimal newPriceVnd,
         string changedBy,
+        string reason,
         DateTimeOffset changedAt,
         CancellationToken cancellationToken = default)
     {
@@ -74,6 +76,10 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
             cancellationToken);
         var package = await context.Packages.FirstOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw new InvalidOperationException("Package not found.");
+        if (package.PriceVnd != expectedCurrentPriceVnd)
+        {
+            throw new InvalidOperationException("Package price changed since this page was loaded.");
+        }
         if (package.PriceVnd == newPriceVnd)
         {
             return null;
@@ -87,10 +93,21 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
             OldPriceVnd = package.PriceVnd,
             NewPriceVnd = newPriceVnd,
             ChangedBy = changedBy,
+            Reason = reason,
             ChangedAt = changedAt
         };
         package.PriceVnd = newPriceVnd;
         context.PackagePriceChanges.Add(change);
+        var priceCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+        context.SystemNotifications.Add(new PRN222_FINAL.DAL.Entities.KnowledgeSqlSystemNotification
+        {
+            Id = Guid.NewGuid(),
+            Type = PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged,
+            EntityId = package.Id,
+            Title = $"Cập nhật giá gói {package.Name}",
+            Message = $"Giá gói {package.Name} đã thay đổi từ {change.OldPriceVnd.ToString("N0", priceCulture)}đ thành {change.NewPriceVnd.ToString("N0", priceCulture)}đ. Giá mới áp dụng cho các giao dịch tiếp theo.",
+            OccurredAt = changedAt
+        });
         await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return change;
@@ -104,5 +121,30 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
             .OrderByDescending(change => change.ChangedAt)
             .ThenByDescending(change => change.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<KnowledgeSqlPackagePriceChange>> GetPriceChangesAsync(
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.PackagePriceChanges
+            .AsNoTracking()
+            .OrderByDescending(change => change.ChangedAt)
+            .ThenByDescending(change => change.Id)
+            .Take(Math.Clamp(limit, 1, 100))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, int>> GetPendingPaymentCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments
+            .AsNoTracking()
+            .Where(payment => payment.Status == PRN222_FINAL.DAL.Enums.PaymentStatus.Pending)
+            .GroupBy(payment => payment.PackageId)
+            .Select(group => new { PackageId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.PackageId, item => item.Count, cancellationToken);
     }
 }
