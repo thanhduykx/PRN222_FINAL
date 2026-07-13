@@ -65,6 +65,7 @@
          data-chat-suggestions-vi='@System.Text.Json.JsonSerializer.Serialize(suggestionsVi)'
          data-chat-subject-suggestions='@System.Text.Json.JsonSerializer.Serialize(subjectPayload)'
          data-chat-related-questions='@System.Text.Json.JsonSerializer.Serialize(relatedPayload)'>
+    <h1 class="visually-hidden" data-i18n="chat.title">Chat tài liệu</h1>
     @if (!string.IsNullOrWhiteSpace(Model.LoadErrorMessage))
     {
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
@@ -173,7 +174,10 @@
         <div id="chatSessionList" class="chat-session-list rbl-session-list">
             @if (Model.ChatSessions.Count == 0)
             {
-                <p class="session-empty" data-i18n="chat.noSessions">No sessions yet.</p>
+                <div class="session-empty">
+                    <strong data-i18n="chat.noSessions">No sessions yet.</strong>
+                    <span data-i18n="chat.startSessionHint">Start a new session to chat with the assistant.</span>
+                </div>
             }
             else
             {
@@ -197,21 +201,21 @@
                             </span>
                             <small>@session.UpdatedAt.ToLocalTime().ToString("dd/MM HH:mm") / @session.MessageCount messages</small>
                         </button>
-                        <button type="button" class="chat-session-menu-button" data-session-menu-toggle data-session-id="@session.Id" aria-label="Session actions">
+                        <button type="button" class="chat-session-menu-button" data-session-menu-toggle data-session-id="@session.Id" aria-label="Session actions" data-i18n-aria-label="chat.sessionActions">
                             <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
                         </button>
                         <div class="chat-session-menu" data-session-menu>
                             <button type="button" data-session-action="star" data-session-id="@session.Id" data-session-starred="@session.IsStarred.ToString().ToLowerInvariant()">
                                 <span class="material-symbols-outlined" aria-hidden="true">star</span>
-                                <span>@(session.IsStarred ? "Unstar" : "Star")</span>
+                                <span data-i18n="@(session.IsStarred ? "chat.unstar" : "chat.star")">@(session.IsStarred ? "Unstar" : "Star")</span>
                             </button>
                             <button type="button" data-session-action="rename" data-session-id="@session.Id">
                                 <span class="material-symbols-outlined" aria-hidden="true">edit</span>
-                                <span>Rename</span>
+                                <span data-i18n="chat.rename">Rename</span>
                             </button>
                             <button type="button" class="danger" data-session-action="delete" data-session-id="@session.Id">
                                 <span class="material-symbols-outlined" aria-hidden="true">delete</span>
-                                <span>Delete</span>
+                                <span data-i18n="chat.delete">Delete</span>
                             </button>
                         </div>
                     </div>

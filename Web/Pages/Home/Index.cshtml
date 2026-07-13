@@ -98,10 +98,11 @@
 }
 
 <section class="ops-page ops-documents-page">
+    <h1 class="visually-hidden" data-i18n="documents.shellTitle">Kho tài liệu</h1>
     <header class="ops-page-header">
         <div>
             <span class="ops-eyebrow" data-i18n="documents.eyebrow">Learning content operations</span>
-            <h1 data-i18n="documents.shellTitle">Kho tài liệu</h1>
+            <strong class="ops-page-title" data-i18n="documents.shellTitle">Kho tài liệu</strong>
             <p data-i18n="documents.manageSubtitle">Quản lý tài liệu, danh mục môn học và trạng thái index để chatbot trả lời đúng nguồn.</p>
         </div>
         <a class="ops-button ops-button--secondary" asp-page="/Home/Chat">
@@ -210,7 +211,18 @@
                     }
                 </datalist>
 
-                <div class="ops-ingest-grid">
+                <div class="ops-upload-source-switch" role="group" aria-label="Chọn nguồn tài liệu" data-i18n-aria-label="documents.sourceChoiceAria">
+                    <button type="button" class="is-active" data-upload-source-choice="file" aria-pressed="true">
+                        <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                        <span data-i18n="documents.sourceFile">Tải file</span>
+                    </button>
+                    <button type="button" data-upload-source-choice="url" aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">link</span>
+                        <span data-i18n="documents.sourceUrl">Nhập URL</span>
+                    </button>
+                </div>
+
+                <div class="ops-ingest-grid" data-upload-source-panel="file">
                     <label id="documentDropzone" class="ops-dropzone dropzone" for="documentFileInput">
                         <input id="documentFileInput" name="File" type="file" accept=".pdf,.docx,.pptx,.txt" />
                         <span class="ops-upload-illustration" aria-hidden="true">
@@ -225,10 +237,15 @@
                                data-default-vi="PDF, DOCX, PPTX, TXT">PDF, DOCX, PPTX, TXT</small>
                         <span class="ops-button ops-button--secondary"><span class="material-symbols-outlined" aria-hidden="true">upload</span> <span data-i18n="documents.chooseFileBtn">Chọn file</span></span>
                     </label>
+                    <button type="submit" class="ops-button ops-button--primary ops-upload-submit"
+                            disabled="@(!canUploadToSubject)" data-upload-submit>
+                        <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                        <span data-i18n="documents.indexFile">Index file</span>
+                    </button>
                 </div>
                 </div>
 
-                    <div class="ops-ingest-actions ops-upload-url-card">
+                    <div class="ops-ingest-actions ops-upload-url-card" data-upload-source-panel="url" hidden>
                         <h2><span class="material-symbols-outlined" aria-hidden="true">link</span> <span data-i18n="documents.url">URL trang bài giảng</span></h2>
                         <label class="ops-field ops-url-field">
                             <span data-i18n="documents.enterUrl">Nhập URL trang bài giảng</span>
@@ -237,9 +254,9 @@
                         </label>
 
                         <button type="submit" class="ops-button ops-button--primary ops-upload-submit"
-                                disabled="@(!canUploadToSubject)">
+                                disabled="@(!canUploadToSubject)" data-upload-submit>
                             <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
-                            <span data-i18n="documents.submit">Index now</span>
+                            <span data-i18n="documents.indexUrl">Index URL</span>
                         </button>
                     </div>
             </form>

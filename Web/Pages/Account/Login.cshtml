@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Đăng nhập";
     ViewData["BodyClass"] = "auth-body";
+    var authInfo = TempData["AuthInfo"] as string;
 }
 
 <section class="auth-page">
@@ -20,6 +21,13 @@
         {
             <div class="alert alert-success">@success</div>
         }
+        @if (!string.IsNullOrWhiteSpace(authInfo))
+        {
+            <div class="auth-notice" role="status">
+                <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                <span data-i18n="account.provisioningInfo">@authInfo</span>
+            </div>
+        }
 
         <form asp-page="/Account/Login" method="post" class="auth-form">
             @Html.AntiForgeryToken()
@@ -27,12 +35,18 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <label>
                 Email
-                <input asp-for="Email" class="form-control" autocomplete="email" />
+                <input asp-for="Email" class="form-control" autocomplete="email" autofocus />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </label>
             <label>
                 <span data-i18n="account.password">Mật khẩu</span>
-                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                <span class="auth-password-field">
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <button type="button" class="auth-password-toggle" data-password-toggle="Password"
+                            aria-label="Hiện mật khẩu" data-i18n-aria-label="account.showPassword">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                    </button>
+                </span>
                 <span asp-validation-for="Password" class="text-danger"></span>
             </label>
             <button type="submit" class="btn btn-primary"><span data-i18n="account.loginTitle">Đăng nhập</span></button>
@@ -52,7 +66,10 @@
             </form>
         }
 
-        <p class="auth-switch" data-i18n="account.noAccountContact">Chưa có tài khoản? Vui lòng liên hệ Nhà trường để xin cấp tài khoản.</p>
+        @if (string.IsNullOrWhiteSpace(authInfo))
+        {
+            <p class="auth-switch" data-i18n="account.noAccountContact">Chưa có tài khoản? Vui lòng liên hệ Nhà trường để xin cấp tài khoản.</p>
+        }
         @if (!Model.IsGoogleLoginEnabled && !string.IsNullOrWhiteSpace(Model.GoogleLoginUnavailableMessage))
         {
             <div class="alert alert-warning">@Model.GoogleLoginUnavailableMessage</div>
