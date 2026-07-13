@@ -34,7 +34,7 @@ EduVietRAG là web app ASP.NET Core Razor Pages hỗ trợ quản lý tài liệ
 
 ## Kiến Trúc Hệ Thống
 
-![Sơ đồ kiến trúc EduVietRAG](docs/architecture.jpg)
+![Sơ đồ kiến trúc EduVietRAG](docs\architecture.jpg)
 
 
 
