@@ -799,7 +799,9 @@ const translations = {
     "admin.saveConfig": "Save system configuration",
     "admin.groqHint": "Recommended llama-3.3-70b-versatile for quality or llama-3.1-8b-instant for speed.",
     "admin.geminiHint": "Recommended gemini-3.5-flash for balanced speed and cost.",
-    
+    "shell.assistantSettings": "Assistant Settings",
+    "shell.reports": "Reports & Statistics",
+
     "documents.status.indexed": "Indexed",
     "documents.status.processing": "Processing",
     "documents.status.failed": "Failed",
@@ -1009,6 +1011,7 @@ const translations = {
     "stat.answerRate": "Answer rate",
     "stat.answers": "answers",
     "stat.assistantResponsesUnit": "assistant responses",
+    "stat.basedOnAnswers": "Based on assistant responses",
     "stat.dailyChatUsage": "Daily Chat Usage",
     "stat.dailyChatUsageDesc": "Track days with high student inquiry volume to supplement documents.",
     "stat.description": "Analyze chatbot activity, documents, users and permissions in the system.",
@@ -1804,6 +1807,8 @@ const translations = {
     "admin.saveConfig": "Lưu cấu hình hệ thống",
     "admin.groqHint": "Khuyến nghị llama-3.3-70b-versatile cho chất lượng hoặc llama-3.1-8b-instant cho tốc độ.",
     "admin.geminiHint": "Khuyến nghị gemini-3.5-flash cho tốc độ và chi phí cân bằng.",
+    "shell.assistantSettings": "Thiết lập trợ lý",
+    "shell.reports": "Báo cáo & Thống kê",
 
     "admin.active": "Active",
     "admin.addAccount": "Thêm tài khoản",
@@ -1938,6 +1943,7 @@ const translations = {
     "stat.answerRate": "Tỷ lệ trả lời được",
     "stat.answers": "câu trả lời",
     "stat.assistantResponsesUnit": "câu trả lời của trợ lý",
+    "stat.basedOnAnswers": "Dựa trên phản hồi trợ lý",
     "stat.dailyChatUsage": "Sử dụng chatbot hàng ngày",
     "stat.dailyChatUsageDesc": "Theo dõi những ngày sinh viên hỏi nhiều để có kế hoạch bổ sung học liệu.",
     "stat.description": "Phân tích hoạt động chatbot, tài liệu, người dùng và phân quyền trong hệ thống.",
@@ -2168,6 +2174,8 @@ async function setLanguage(language) {
     });
   }
 }
+
+window.applyTranslations = applyLanguage;
 
 function applyLanguage() {
   const language = getLanguage();
