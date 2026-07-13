@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PRN222_FINAL.DAL.Entities;
 using PRN222_FINAL.DAL.Entities.Billing;
 
@@ -24,6 +24,10 @@ public sealed class KnowledgeSqlDbContext : DbContext
     public DbSet<KnowledgeSqlPayment> Payments => Set<KnowledgeSqlPayment>();
     public DbSet<KnowledgeSqlSubscription> Subscriptions => Set<KnowledgeSqlSubscription>();
     public DbSet<KnowledgeSqlPackagePriceChange> PackagePriceChanges => Set<KnowledgeSqlPackagePriceChange>();
+    
+    public DbSet<KnowledgeSqlTestQuestion> TestQuestions => Set<KnowledgeSqlTestQuestion>();
+    public DbSet<KnowledgeSqlExperimentRun> ExperimentRuns => Set<KnowledgeSqlExperimentRun>();
+    public DbSet<KnowledgeSqlBenchmarkResult> BenchmarkResults => Set<KnowledgeSqlBenchmarkResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -155,6 +159,32 @@ public sealed class KnowledgeSqlDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(subscription => subscription.PaymentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlTestQuestion>(entity =>
+        {
+            entity.HasIndex(q => q.Subject);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlExperimentRun>(entity =>
+        {
+            entity.HasIndex(r => r.Subject);
+            entity.HasIndex(r => r.Status);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlBenchmarkResult>(entity =>
+        {
+            entity.HasIndex(r => new { r.RunId, r.QuestionId }).IsUnique();
+
+            entity.HasOne(r => r.Run)
+                .WithMany(r => r.Results)
+                .HasForeignKey(r => r.RunId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.Question)
+                .WithMany()
+                .HasForeignKey(r => r.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PRN222_FINAL.BLL;
 using PRN222_FINAL.BLL.Options;
@@ -18,6 +18,7 @@ using PRN222_FINAL.DAL.Repositories;
 using PRN222_FINAL.DAL.Repositories.Analytics;
 using PRN222_FINAL.DAL.Repositories.Billing;
 using PRN222_FINAL.DAL.Repositories.Files;
+using PRN222_FINAL.DAL.Repositories.Benchmarks;
 using PRN222_FINAL.BLL.Models;
 
 namespace PRN222_FINAL.BLL;
@@ -86,6 +87,8 @@ public static class BusinessServiceCollectionExtensions
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAnalyticsRecommendationService, AnalyticsRecommendationService>();
         services.AddScoped<IChatUsageService, ChatUsageService>();
+
+        services.AddSingleton<IBenchmarkRepository>(_ => new SqlBenchmarkRepository(connectionString));
 
         return services;
     }

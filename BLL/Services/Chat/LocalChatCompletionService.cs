@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.BLL.Models;
+using PRN222_FINAL.BLL.Models;
 
 namespace PRN222_FINAL.BLL;
 
@@ -67,6 +67,11 @@ public interface ILocalChatCompletionService
 
     Task<string?> GenerateAnalyticsRecommendationsAsync(
         string analyticsSummary,
+        string language,
+        CancellationToken cancellationToken = default);
+
+    Task<string?> GenerateBenchmarkAnalysisAsync(
+        string metricsSummary,
         string language,
         CancellationToken cancellationToken = default);
 }

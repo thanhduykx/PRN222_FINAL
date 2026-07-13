@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -261,6 +261,34 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
             0.1,
             900,
             cancellationToken);
+    }
+
+    public async Task<string?> GenerateBenchmarkAnalysisAsync(
+        string metricsSummary,
+        string language,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsEnabled || string.IsNullOrWhiteSpace(metricsSummary))
+        {
+            return "<p>Chat service không được bật hoặc dữ liệu benchmark rỗng.</p>";
+        }
+
+        var result = await CallChatAsync(
+            "You are an AI benchmark analyst. You analyze the Ragas metrics (Faithfulness, Relevancy, Precision, Recall) of language models. Return your analysis in valid HTML format (no markdown, just HTML tags like <p>, <ul>, <li>, <strong>).",
+            $$"""
+            Analyze the following benchmark results for an AI model. Point out what the model did well, what it did poorly, and why. Compare the current run's score with the previous run if available. 
+            Give your opinion on why this model is better/worse.
+            UI language: {{language}}
+            Return ONLY valid HTML (e.g. <h3>, <p>, <ul>). Do NOT return markdown block wrappers like ```html.
+
+            Benchmark Data:
+            {{metricsSummary.Trim()}}
+            """,
+            0.5,
+            2048,
+            cancellationToken);
+
+        return result ?? "<p>Không thể tạo báo cáo AI (API trả về rỗng hoặc lỗi kết nối). Vui lòng thử lại sau.</p>";
     }
 
     private async Task<string?> CallChatAsync(

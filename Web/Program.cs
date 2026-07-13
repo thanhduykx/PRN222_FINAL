@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.BLL.Services.Chat;
+using PRN222_FINAL.BLL.Services.Chat;
 using PRN222_FINAL.BLL.Services.Accounts;
 using PRN222_FINAL.BLL.Security;
 using PRN222_FINAL.BLL.Models;
@@ -252,6 +252,10 @@ namespace PRN222_FINAL.Web
             builder.Services.AddScoped<PRN222_FINAL.BLL.IRagChatService, PRN222_FINAL.BLL.RagChatService>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.DocumentIndexWorker>();
 
+            builder.Services.AddSingleton<PRN222_FINAL.BLL.Services.Benchmarks.IBenchmarkJobQueue, PRN222_FINAL.BLL.Services.Benchmarks.BenchmarkJobQueue>();
+            builder.Services.AddScoped<PRN222_FINAL.BLL.Services.Benchmarks.IBenchmarkService, PRN222_FINAL.BLL.Services.Benchmarks.BenchmarkService>();
+            builder.Services.AddHostedService<PRN222_FINAL.Web.Services.BenchmarkWorker>();
+
             var app = builder.Build();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.Services.IAiSettingsService>();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.IKnowledgeService>();
@@ -275,6 +279,7 @@ namespace PRN222_FINAL.Web
 
             app.MapStaticAssets();
             app.MapHub<DocumentStatusHub>("/hubs/documents");
+            app.MapHub<BenchmarkStatusHub>("/hubs/benchmarks");
             app.MapRazorPages()
                 .WithStaticAssets();
 

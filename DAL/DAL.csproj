@@ -19,10 +19,6 @@
     <Compile Remove="Entities\Citation.cs" />
     <Compile Remove="Entities\Embedding.cs" />
     <Compile Remove="Entities\EmbeddingModel.cs" />
-    <Compile Remove="Entities\Experiment.cs" />
-    <Compile Remove="Entities\ExperimentRun.cs" />
-    <Compile Remove="Entities\BenchmarkResult.cs" />
-    <Compile Remove="Entities\TestQuestion.cs" />
     <Compile Remove="EduVietRagDbContext.cs" />
     <Compile Remove="Migrations\**\*.cs" />
   </ItemGroup>

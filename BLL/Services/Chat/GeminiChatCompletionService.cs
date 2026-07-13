@@ -1,4 +1,4 @@
-﻿namespace PRN222_FINAL.BLL;
+namespace PRN222_FINAL.BLL;
 
 public sealed class GeminiChatCompletionService : ILocalChatCompletionService
 {
@@ -90,6 +90,13 @@ public sealed class GeminiChatCompletionService : ILocalChatCompletionService
         CancellationToken cancellationToken = default)
     {
         return _inner.GenerateAnalyticsRecommendationsAsync(analyticsSummary, language, cancellationToken);
+    }
+    public Task<string?> GenerateBenchmarkAnalysisAsync(
+        string metricsSummary,
+        string language,
+        CancellationToken cancellationToken = default)
+    {
+        return _inner.GenerateBenchmarkAnalysisAsync(metricsSummary, language, cancellationToken);
     }
 }
 
