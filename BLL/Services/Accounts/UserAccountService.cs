@@ -18,6 +18,9 @@ public interface IUserAccountService
     Task<UserAccount> UpdateFullNameAsync(Guid userId, string fullName, CancellationToken cancellationToken = default);
     Task<UserAccount> UpdateRoleAsync(Guid userId, string role, CancellationToken cancellationToken = default);
     Task MarkActiveAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task RecordLoginFailureAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task RecordLoginSuccessAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<UserAccount> SetSuspendedAsync(Guid userId, bool isSuspended, CancellationToken cancellationToken = default);
     Task<UserAccount> DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<(UserAccount Account, string Token, DateTimeOffset ExpiresAt)?> CreatePasswordResetTokenAsync(
         string email,
@@ -162,7 +165,7 @@ public sealed class UserAccountService : IUserAccountService
             };
 
             users.Add(user);
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -203,7 +206,7 @@ public sealed class UserAccountService : IUserAccountService
             };
 
             users.Add(user);
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -236,7 +239,7 @@ public sealed class UserAccountService : IUserAccountService
 
                 if (changed)
                 {
-                    await SaveAsync(users, cancellationToken);
+                    await SaveAsync(existing, cancellationToken);
                 }
 
                 return existing;
@@ -251,7 +254,7 @@ public sealed class UserAccountService : IUserAccountService
             };
 
             users.Add(user);
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -288,7 +291,7 @@ public sealed class UserAccountService : IUserAccountService
             }
 
             user.Role = normalizedRole;
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -307,7 +310,7 @@ public sealed class UserAccountService : IUserAccountService
                 ?? throw new InvalidOperationException("User not found.");
 
             user.FullName = NormalizeFullName(fullName);
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -361,8 +364,7 @@ public sealed class UserAccountService : IUserAccountService
                 }
             }
 
-            users.Remove(user);
-            await SaveAsync(users, cancellationToken);
+            await _repository.DeleteAsync(user.Id, cancellationToken);
             return user;
         }
         finally
@@ -375,6 +377,50 @@ public sealed class UserAccountService : IUserAccountService
     {
         if (userId == Guid.Empty) throw new InvalidOperationException("User is required.");
         await _repository.UpdateLastActiveAsync(userId, DateTimeOffset.UtcNow, cancellationToken);
+    }
+
+    public async Task RecordLoginFailureAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty) throw new InvalidOperationException("User is required.");
+        await _repository.RecordLoginFailureAsync(
+            userId,
+            maxFailures: 5,
+            DateTimeOffset.UtcNow.AddMinutes(15),
+            cancellationToken);
+    }
+
+    public async Task RecordLoginSuccessAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty) throw new InvalidOperationException("User is required.");
+        await _repository.ResetLoginFailuresAsync(userId, cancellationToken);
+        await _repository.UpdateLastActiveAsync(userId, DateTimeOffset.UtcNow, cancellationToken);
+    }
+
+    public async Task<UserAccount> SetSuspendedAsync(Guid userId, bool isSuspended, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var users = await LoadAsync(cancellationToken);
+            var user = users.FirstOrDefault(item => item.Id == userId)
+                ?? throw new InvalidOperationException("User not found.");
+            if (isSuspended
+                && user.Role == AppRoles.Admin
+                && users.Count(item => item.Role == AppRoles.Admin && !item.IsSuspended) <= 1)
+            {
+                throw new InvalidOperationException("Cannot suspend the last active admin.");
+            }
+
+            var changedAt = DateTimeOffset.UtcNow;
+            await _repository.SetSuspendedAsync(userId, isSuspended, changedAt, cancellationToken);
+            user.IsSuspended = isSuspended;
+            user.SuspendedAt = isSuspended ? changedAt : null;
+            return user;
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     public async Task<(UserAccount Account, string Token, DateTimeOffset ExpiresAt)?> CreatePasswordResetTokenAsync(
@@ -398,7 +444,7 @@ public sealed class UserAccountService : IUserAccountService
 
             user.PasswordResetTokenHash = HashResetToken(token);
             user.PasswordResetTokenExpiresAt = expiresAt;
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return (user, token, expiresAt);
         }
         finally
@@ -435,7 +481,7 @@ public sealed class UserAccountService : IUserAccountService
             user.PasswordResetTokenHash = null;
             user.PasswordResetTokenExpiresAt = null;
             user.PasswordChangedAt = DateTimeOffset.UtcNow;
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -473,7 +519,7 @@ public sealed class UserAccountService : IUserAccountService
             user.PasswordResetTokenHash = null;
             user.PasswordResetTokenExpiresAt = null;
             user.PasswordChangedAt = DateTimeOffset.UtcNow;
-            await SaveAsync(users, cancellationToken);
+            await SaveAsync(user, cancellationToken);
             return user;
         }
         finally
@@ -532,7 +578,7 @@ public sealed class UserAccountService : IUserAccountService
     private async Task<List<UserAccount>> LoadAsync(CancellationToken cancellationToken)
     {
         var users = await LoadUsersCoreAsync(cancellationToken);
-        var changed = false;
+        var original = users.ToDictionary(user => user.Id, ToData);
 
         foreach (var user in users)
         {
@@ -540,13 +586,11 @@ public sealed class UserAccountService : IUserAccountService
             if (user.Role != normalizedRole)
             {
                 user.Role = normalizedRole;
-                changed = true;
             }
 
             if (string.IsNullOrWhiteSpace(user.FullName))
             {
                 user.FullName = user.Email;
-                changed = true;
             }
 
             if (user.PasswordResetTokenExpiresAt is { } resetExpiresAt
@@ -555,30 +599,26 @@ public sealed class UserAccountService : IUserAccountService
             {
                 user.PasswordResetTokenHash = null;
                 user.PasswordResetTokenExpiresAt = null;
-                changed = true;
             }
         }
 
-        if (EnsureFixedAccounts(users))
-        {
-            changed = true;
-        }
+        EnsureFixedAccounts(users);
+        EnsureSeedAdmin(users);
 
-        if (EnsureSeedAdmin(users))
+        foreach (var user in users)
         {
-            changed = true;
-        }
-
-        if (changed)
-        {
-            await SaveAsync(users, cancellationToken);
+            var current = ToData(user);
+            if (!original.TryGetValue(user.Id, out var previous) || !PersistenceEquals(previous, current))
+            {
+                await _repository.UpsertAsync(current, cancellationToken);
+            }
         }
 
         return users;
     }
 
-    private Task SaveAsync(List<UserAccount> users, CancellationToken cancellationToken) =>
-        _repository.SaveAllAsync(users.Select(ToData).ToList(), cancellationToken);
+    private Task SaveAsync(UserAccount user, CancellationToken cancellationToken) =>
+        _repository.UpsertAsync(ToData(user), cancellationToken);
 
     private async Task<List<UserAccount>> LoadUsersCoreAsync(CancellationToken cancellationToken) =>
         (await _repository.LoadAllAsync(cancellationToken)).Select(ToModel).ToList();
@@ -587,15 +627,35 @@ public sealed class UserAccountService : IUserAccountService
     {
         Id=user.Id,Email=user.Email,FullName=user.FullName,PasswordHash=user.PasswordHash,
         PasswordResetTokenHash=user.PasswordResetTokenHash,PasswordResetTokenExpiresAt=user.PasswordResetTokenExpiresAt,
-        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt
+        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt,
+        IsSuspended=user.IsSuspended,SuspendedAt=user.SuspendedAt,FailedLoginCount=user.FailedLoginCount,LockoutEnd=user.LockoutEnd
     };
 
     private static UserAccount ToModel(PRN222_FINAL.DAL.Models.Accounts.UserAccountData user) => new()
     {
         Id=user.Id,Email=user.Email,FullName=user.FullName,PasswordHash=user.PasswordHash,
         PasswordResetTokenHash=user.PasswordResetTokenHash,PasswordResetTokenExpiresAt=user.PasswordResetTokenExpiresAt,
-        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt
+        PasswordChangedAt=user.PasswordChangedAt,Provider=user.Provider,Role=user.Role,CreatedAt=user.CreatedAt,LastActiveAt=user.LastActiveAt,
+        IsSuspended=user.IsSuspended,SuspendedAt=user.SuspendedAt,FailedLoginCount=user.FailedLoginCount,LockoutEnd=user.LockoutEnd
     };
+
+    private static bool PersistenceEquals(
+        PRN222_FINAL.DAL.Models.Accounts.UserAccountData left,
+        PRN222_FINAL.DAL.Models.Accounts.UserAccountData right) =>
+        left.Email == right.Email
+        && left.FullName == right.FullName
+        && left.PasswordHash == right.PasswordHash
+        && left.PasswordResetTokenHash == right.PasswordResetTokenHash
+        && left.PasswordResetTokenExpiresAt == right.PasswordResetTokenExpiresAt
+        && left.PasswordChangedAt == right.PasswordChangedAt
+        && left.Provider == right.Provider
+        && left.Role == right.Role
+        && left.CreatedAt == right.CreatedAt
+        && left.LastActiveAt == right.LastActiveAt
+        && left.IsSuspended == right.IsSuspended
+        && left.SuspendedAt == right.SuspendedAt
+        && left.FailedLoginCount == right.FailedLoginCount
+        && left.LockoutEnd == right.LockoutEnd;
     private static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();
