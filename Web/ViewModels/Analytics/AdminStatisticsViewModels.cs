@@ -9,6 +9,7 @@ public sealed class AdminStatisticsViewModel
     public int TotalChatQuestions { get; set; }
     public int TotalAssistantAnswers { get; set; }
     public int ActiveChatUsers { get; set; }
+    public int ReturningChatUsers { get; set; }
     public int TotalSubjects { get; set; }
     public int TotalDocuments { get; set; }
     public int IndexedDocuments { get; set; }
@@ -24,6 +25,7 @@ public sealed class AdminStatisticsViewModel
     public IReadOnlyList<SubjectUsageViewModel> SubjectUsage { get; set; } = Array.Empty<SubjectUsageViewModel>();
     public IReadOnlyList<PackagePurchaseStatsViewModel> PackagePurchases { get; set; } = Array.Empty<PackagePurchaseStatsViewModel>();
     public IReadOnlyList<DailyChatUsageViewModel> DailyChatUsage { get; set; } = Array.Empty<DailyChatUsageViewModel>();
+    public IReadOnlyList<ChatTimeSlotUsageViewModel> ChatTimeSlotUsage { get; set; } = Array.Empty<ChatTimeSlotUsageViewModel>();
     public IReadOnlyList<DailySubscriptionUsageViewModel> DailySubscriptionUsage { get; set; } = Array.Empty<DailySubscriptionUsageViewModel>();
     public IReadOnlyList<UserChatUsageViewModel> TopChatUsers { get; set; } = Array.Empty<UserChatUsageViewModel>();
     public IReadOnlyList<DocumentAnalyticsViewModel> RecentDocuments { get; set; } = Array.Empty<DocumentAnalyticsViewModel>();
@@ -63,6 +65,13 @@ public sealed class DailyChatUsageViewModel
     public string DateLabel { get; set; } = string.Empty;
     public int QuestionCount { get; set; }
     public int SessionCount { get; set; }
+    public int ActiveUserCount { get; set; }
+}
+
+public sealed class ChatTimeSlotUsageViewModel
+{
+    public string Label { get; set; } = string.Empty;
+    public int QuestionCount { get; set; }
     public int ActiveUserCount { get; set; }
 }
 

@@ -85,7 +85,6 @@ public sealed class PackageServiceTests
             new KnowledgeSqlPackage { Id = Guid.NewGuid(), Code = "FREE", PriceVnd = 0 },
             new KnowledgeSqlPackage { Id = Guid.NewGuid(), Code = "STUDENT", PriceVnd = 79_000 },
             new KnowledgeSqlPackage { Id = Guid.NewGuid(), Code = "PRO", PriceVnd = 159_000 },
-            new KnowledgeSqlPackage { Id = Guid.NewGuid(), Code = "LIFETIME", PriceVnd = 0 },
             new KnowledgeSqlPackage { Id = Guid.NewGuid(), Code = "ANNUAL", PriceVnd = 599_000 }
         });
         repository.GetActiveAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<KnowledgeSqlPackage>());
@@ -94,5 +93,6 @@ public sealed class PackageServiceTests
         await service.GetActivePackagesAsync();
 
         await repository.DidNotReceiveWithAnyArgs().UpsertAsync(default!, default);
+        await repository.Received(1).RemoveRetiredAsync("LIFETIME", Arg.Any<CancellationToken>());
     }
 }

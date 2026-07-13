@@ -40,7 +40,16 @@ public sealed class StatisticsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string Tab { get; set; } = "overview";
 
+    [BindProperty(SupportsGet = true)]
+    public string Semester { get; set; } = string.Empty;
+
+    [BindProperty(SupportsGet = true)]
+    public int AcademicYear { get; set; }
+
     public AdminStatisticsViewModel Dashboard { get; private set; } = new();
+    public AdminStatisticsViewModel SemesterDashboard { get; private set; } = new();
+    public string SemesterLabel { get; private set; } = string.Empty;
+    public IReadOnlyList<int> AcademicYears { get; private set; } = Array.Empty<int>();
     public int TotalUsers { get; private set; }
     public int StudentUsers { get; private set; }
     public int LecturerUsers { get; private set; }
@@ -82,12 +91,18 @@ public sealed class StatisticsModel : PageModel
         ViewData["ActiveNav"] = "reports";
         Days = Math.Clamp(Days <= 0 ? 30 : Days, 1, 180);
         Tab = NormalizeTab(Tab);
+        NormalizeSemesterSelection();
         ViewData["ReportsSection"] = Tab;
 
         try
         {
             _analyticsSnapshot = await _analytics.GetAdminDashboardAsync(Days, cancellationToken);
             Dashboard = Map(_analyticsSnapshot);
+            if (Tab == "chatbot")
+            {
+                var (semesterFromUtc, semesterToUtc) = GetSemesterRange(AcademicYear, Semester);
+                SemesterDashboard = Map(await _analytics.GetAdminDashboardAsync(semesterFromUtc, semesterToUtc, cancellationToken));
+            }
             Packages = await _packages.GetActivePackagesAsync(cancellationToken);
             var users = await _users.GetAllAsync(cancellationToken);
             TotalUsers = users.Count;
@@ -115,6 +130,7 @@ public sealed class StatisticsModel : PageModel
         TotalChatQuestions = dto.TotalChatQuestions,
         TotalAssistantAnswers = dto.TotalAssistantAnswers,
         ActiveChatUsers = dto.ActiveChatUsers,
+        ReturningChatUsers = dto.ReturningChatUsers,
         TotalSubjects = dto.TotalSubjects,
         TotalDocuments = dto.TotalDocuments,
         IndexedDocuments = dto.IndexedDocuments,
@@ -160,6 +176,12 @@ public sealed class StatisticsModel : PageModel
             SessionCount = day.SessionCount,
             ActiveUserCount = day.ActiveUserCount
         }).ToList(),
+        ChatTimeSlotUsage = dto.ChatTimeSlotUsage.Select(slot => new ChatTimeSlotUsageViewModel
+        {
+            Label = slot.Label,
+            QuestionCount = slot.QuestionCount,
+            ActiveUserCount = slot.ActiveUserCount
+        }).ToList(),
         DailySubscriptionUsage = dto.DailySubscriptionUsage.Select(day => new DailySubscriptionUsageViewModel
         {
             DateLabel = day.Date.ToString("dd/MM"),
@@ -203,5 +225,46 @@ public sealed class StatisticsModel : PageModel
         return normalized is "overview" or "chatbot" or "documents" or "users" or "permissions" or "subscription" or "billing"
             ? normalized
             : "overview";
+    }
+
+    private void NormalizeSemesterSelection()
+    {
+        var currentYear = DateTimeOffset.Now.Year;
+        AcademicYear = AcademicYear == 0 ? currentYear : Math.Clamp(AcademicYear, currentYear - 4, currentYear);
+        AcademicYears = Enumerable.Range(currentYear - 4, 5).Reverse().ToArray();
+
+        var normalized = (Semester ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalized is not ("spring" or "summer" or "fall"))
+        {
+            normalized = DateTimeOffset.Now.Month switch
+            {
+                <= 4 => "spring",
+                <= 8 => "summer",
+                _ => "fall"
+            };
+        }
+
+        Semester = normalized;
+        SemesterLabel = normalized switch
+        {
+            "spring" => $"Spring {AcademicYear} (01/01 - 30/04)",
+            "summer" => $"Summer {AcademicYear} (01/05 - 31/08)",
+            _ => $"Fall {AcademicYear} (01/09 - 31/12)"
+        };
+    }
+
+    private static (DateTimeOffset FromUtc, DateTimeOffset ToUtc) GetSemesterRange(int year, string semester)
+    {
+        var (startMonth, endMonth) = semester switch
+        {
+            "spring" => (1, 4),
+            "summer" => (5, 8),
+            _ => (9, 12)
+        };
+        var offset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, startMonth, 1));
+        var fromLocal = new DateTimeOffset(year, startMonth, 1, 0, 0, 0, offset);
+        var endOffset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, endMonth, 1));
+        var toLocal = new DateTimeOffset(year, endMonth, 1, 0, 0, 0, endOffset).AddMonths(1).AddTicks(-1);
+        return (fromLocal.ToUniversalTime(), toLocal.ToUniversalTime());
     }
 }

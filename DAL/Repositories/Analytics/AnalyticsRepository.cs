@@ -114,7 +114,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         var citationRows = await context.Citations
             .AsNoTracking()
             .Where(citation => citation.Message.CreatedAt >= fromUtc && citation.Message.CreatedAt <= toUtc)
-            .Select(citation => new CitationRow(citation.DocumentId, citation.Subject, citation.Message.CreatedAt))
+            .Select(citation => new CitationRow(citation.MessageId, citation.DocumentId, citation.Subject, citation.Message.CreatedAt))
             .ToListAsync(cancellationToken);
 
         var payments = await context.Payments
@@ -164,6 +164,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
 
         var packages = await context.Packages
             .AsNoTracking()
+            .Where(package => package.Code != "LIFETIME")
             .OrderBy(package => package.SortOrder)
             .ThenBy(package => package.PriceVnd)
             .Select(package => new PackageRow(package.Id, package.Code, package.Name))
@@ -182,6 +183,10 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                 .Select(row => row.OwnerUserId!.Value)
                 .Distinct()
                 .Count(),
+            ReturningChatUsers = questionRows
+                .Where(row => row.OwnerUserId.HasValue)
+                .GroupBy(row => row.OwnerUserId!.Value)
+                .Count(group => group.Select(row => DateOnly.FromDateTime(row.CreatedAt.LocalDateTime.Date)).Distinct().Count() >= 2),
             TotalSubjects = subjects.Count,
             TotalDocuments = documents.Count,
             IndexedDocuments = documents.Count(document => document.Status == DocumentIndexStatus.Indexed),
@@ -197,6 +202,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             SubjectUsage = BuildSubjectUsage(subjects, documents, citationRows, accessRows, lecturerCounts, studentCounts),
             PackagePurchases = BuildPackagePurchases(packages, payments, activeSubscriptionCounts),
             DailyChatUsage = BuildDailyChatUsage(questionRows),
+            ChatTimeSlotUsage = BuildChatTimeSlotUsage(questionRows),
             DailySubscriptionUsage = BuildDailySubscriptionUsage(subscriptions, payments, fromUtc, toUtc),
             TopChatUsers = BuildTopChatUsers(questionRows),
             RecentDocuments = BuildRecentDocuments(documents, citationRows),
@@ -252,7 +258,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                     DocumentCount = subjectDocuments.Count,
                     IndexedDocumentCount = subjectDocuments.Count(document => document.Status == DocumentIndexStatus.Indexed),
                     ChunkCount = subjectDocuments.Sum(document => document.ChunkCount),
-                    ChatCitationCount = subjectCitations.Count,
+                    ChatCitationCount = subjectCitations.Select(citation => citation.MessageId).Distinct().Count(),
                     CourseAccessCount = subjectAccessRows.Count,
                     LastAccessedAt = subjectAccessRows.Count == 0 ? null : subjectAccessRows.Max(access => access.AccessedAt),
                     LastChatAt = subjectCitations.Count == 0 ? null : subjectCitations.Max(citation => citation.CreatedAt)
@@ -326,6 +332,32 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
             .ThenBy(user => user.UserEmail)
             .Take(10)
             .ToList();
+    }
+
+    private static IReadOnlyList<ChatTimeSlotUsageData> BuildChatTimeSlotUsage(IReadOnlyList<ChatQuestionRow> questionRows)
+    {
+        var slots = new[]
+        {
+            new { Label = "00:00 - 06:00", Start = 0, End = 6 },
+            new { Label = "06:00 - 12:00", Start = 6, End = 12 },
+            new { Label = "12:00 - 18:00", Start = 12, End = 18 },
+            new { Label = "18:00 - 24:00", Start = 18, End = 24 }
+        };
+
+        return slots.Select(slot =>
+        {
+            var rows = questionRows
+                .Where(row => row.CreatedAt.LocalDateTime.Hour >= slot.Start && row.CreatedAt.LocalDateTime.Hour < slot.End)
+                .ToList();
+            return new ChatTimeSlotUsageData
+            {
+                Label = slot.Label,
+                StartHour = slot.Start,
+                EndHour = slot.End,
+                QuestionCount = rows.Count,
+                ActiveUserCount = rows.Where(row => row.OwnerUserId.HasValue).Select(row => row.OwnerUserId!.Value).Distinct().Count()
+            };
+        }).ToList();
     }
 
     private static IReadOnlyList<DailySubscriptionUsageData> BuildDailySubscriptionUsage(
@@ -411,7 +443,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         string Status,
         int ChunkCount,
         DateTimeOffset UploadedAt);
-    private sealed record CitationRow(Guid DocumentId, string Subject, DateTimeOffset CreatedAt);
+    private sealed record CitationRow(Guid MessageId, Guid DocumentId, string Subject, DateTimeOffset CreatedAt);
     private sealed record AccessRow(Guid SubjectId, DateTimeOffset AccessedAt);
     private sealed record PackageRow(Guid Id, string Code, string Name);
     private sealed record CountRow(Guid Id, int Count);
