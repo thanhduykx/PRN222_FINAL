@@ -18,6 +18,8 @@ using PRN222_FINAL.DAL.Repositories;
 using PRN222_FINAL.DAL.Repositories.Analytics;
 using PRN222_FINAL.DAL.Repositories.Billing;
 using PRN222_FINAL.DAL.Repositories.Files;
+using PRN222_FINAL.DAL.Repositories.Notifications;
+using PRN222_FINAL.BLL.Services.Notifications;
 using PRN222_FINAL.BLL.Models;
 
 namespace PRN222_FINAL.BLL;
@@ -87,6 +89,8 @@ public static class BusinessServiceCollectionExtensions
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAnalyticsRecommendationService, AnalyticsRecommendationService>();
         services.AddScoped<IChatUsageService, ChatUsageService>();
+        services.AddSingleton<ISystemNotificationRepository>(_ => new SystemNotificationRepository(connectionString));
+        services.AddSingleton<ISystemNotificationService, SystemNotificationService>();
 
         return services;
     }

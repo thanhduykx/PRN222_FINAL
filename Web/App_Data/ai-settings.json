@@ -1,7 +1,8 @@
-{
+﻿{
   "ChatModel": "gemini-3.5-flash",
   "EmbeddingModel": "gemini-embedding-2",
-  "EmbeddingDimensions": 128,
-  "ChunkSize": 1900,
-  "ChunkOverlap": 0
+  "EmbeddingDimensions": 707,
+  "ChunkSize": 1100,
+  "ChunkOverlap": 20,
+  "ChatProvider": "Gemini"
 }

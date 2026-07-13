@@ -35,8 +35,11 @@ public sealed class PackageService : IPackageService
 
     public async Task<PackagePriceChangeDto?> UpdatePriceAsync(
         Guid packageId,
+        decimal expectedCurrentPriceVnd,
         decimal newPriceVnd,
         string changedBy,
+        string reason,
+        bool confirmFreePrice,
         CancellationToken cancellationToken = default)
     {
         if (packageId == Guid.Empty)
@@ -47,9 +50,30 @@ public sealed class PackageService : IPackageService
         {
             throw new ArgumentOutOfRangeException(nameof(newPriceVnd), "Giá phải là số nguyên từ 0 đến 1.000.000.000 đồng.");
         }
+        if (expectedCurrentPriceVnd < 0 || expectedCurrentPriceVnd > 1_000_000_000m || decimal.Truncate(expectedCurrentPriceVnd) != expectedCurrentPriceVnd)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expectedCurrentPriceVnd), "Giá hiện tại không hợp lệ. Vui lòng tải lại trang.");
+        }
+
+        var normalizedReason = (reason ?? string.Empty).Trim();
+        if (normalizedReason.Length is < 5 or > 500)
+        {
+            throw new ArgumentException("Lý do thay đổi giá phải có từ 5 đến 500 ký tự.", nameof(reason));
+        }
+        if (expectedCurrentPriceVnd > 0 && newPriceVnd == 0 && !confirmFreePrice)
+        {
+            throw new InvalidOperationException("Bạn phải xác nhận riêng trước khi chuyển gói trả phí thành miễn phí.");
+        }
 
         var actor = string.IsNullOrWhiteSpace(changedBy) ? "Admin" : changedBy.Trim();
-        var change = await _packages.UpdatePriceAsync(packageId, newPriceVnd, actor, DateTimeOffset.UtcNow, cancellationToken);
+        var change = await _packages.UpdatePriceAsync(
+            packageId,
+            expectedCurrentPriceVnd,
+            newPriceVnd,
+            actor,
+            normalizedReason,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
         return change is null ? null : ToPriceChangeDto(change);
     }
 
@@ -58,6 +82,18 @@ public sealed class PackageService : IPackageService
         var change = await _packages.GetLatestPriceChangeAsync(cancellationToken);
         return change is null ? null : ToPriceChangeDto(change);
     }
+
+    public async Task<IReadOnlyList<PackagePriceChangeDto>> GetRecentPriceChangesAsync(
+        int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var changes = await _packages.GetPriceChangesAsync(Math.Clamp(limit, 1, 100), cancellationToken);
+        return changes.Select(ToPriceChangeDto).ToList();
+    }
+
+    public Task<IReadOnlyDictionary<Guid, int>> GetPendingPaymentCountsAsync(
+        CancellationToken cancellationToken = default) =>
+        _packages.GetPendingPaymentCountsAsync(cancellationToken);
 
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
@@ -165,6 +201,8 @@ public sealed class PackageService : IPackageService
         PackageName = change.PackageName,
         OldPriceVnd = change.OldPriceVnd,
         NewPriceVnd = change.NewPriceVnd,
+        ChangedBy = change.ChangedBy,
+        Reason = change.Reason,
         ChangedAt = change.ChangedAt
     };
 }
