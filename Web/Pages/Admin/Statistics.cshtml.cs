@@ -20,15 +20,18 @@ public sealed class StatisticsModel : PageModel
     private readonly IUserAccountService _users;
     private readonly IPackageService _packages;
     private readonly IAnalyticsRecommendationService _recommendations;
+    private readonly ILogger<StatisticsModel> _logger;
     private AdminAnalyticsDashboardDto? _analyticsSnapshot;
 
     public StatisticsModel(IAnalyticsService analytics, IUserAccountService users, IPackageService packages,
-        IAnalyticsRecommendationService recommendations)
+        IAnalyticsRecommendationService recommendations,
+        ILogger<StatisticsModel> logger)
     {
         _analytics = analytics;
         _users = users;
         _packages = packages;
         _recommendations = recommendations;
+        _logger = logger;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -96,8 +99,9 @@ public sealed class StatisticsModel : PageModel
         {
             ErrorMessage = "Dữ liệu phản hồi quá chậm. Hãy thử phạm vi ngắn hơn hoặc tải lại trang.";
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Admin analytics dashboard could not be loaded for {Days} days.", Days);
             ErrorMessage = "Không thể tải báo cáo lúc này. Vui lòng thử lại sau.";
         }
     }

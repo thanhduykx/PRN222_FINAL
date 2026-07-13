@@ -26,20 +26,20 @@ public sealed class IndexModel : PageModel
     private readonly IUserAccountService _users;
     private readonly IUserProvisioningService _provisioning;
     private readonly IKnowledgeService _knowledge;
-    private readonly IAccountEmailService _emailSender;
+    private readonly IAccountEmailJobQueue _emailJobs;
     private readonly ILogger<IndexModel> _logger;
 
     public IndexModel(
         IUserAccountService users,
         IUserProvisioningService provisioning,
         IKnowledgeService knowledge,
-        IAccountEmailService emailSender,
+        IAccountEmailJobQueue emailJobs,
         ILogger<IndexModel> logger)
     {
         _users = users;
         _provisioning = provisioning;
         _knowledge = knowledge;
-        _emailSender = emailSender;
+        _emailJobs = emailJobs;
         _logger = logger;
     }
 
@@ -123,27 +123,12 @@ public sealed class IndexModel : PageModel
                 warnings.Add("User was created, but lecturer subjects could not be assigned.");
             }
 
-            var emailSent = false;
-            try
-            {
-                await _emailSender.SendWelcomeEmailAsync(
-                    user,
-                    model.Password,
-                    BuildLoginUrl(),
-                    cancellationToken,
-                    assignedSubjectLabels);
-                emailSent = true;
-            }
-            catch (Exception emailEx)
-            {
-                _logger.LogWarning(emailEx, "Created user {Email}, but welcome email could not be sent.", user.Email);
-                warnings.Add("Welcome email could not be sent. Check SMTP configuration.");
-            }
+            _emailJobs.Enqueue(CreateWelcomeEmailJob(user, model.Password, assignedSubjectLabels));
 
             var subjectSummary = assignedSubjectLabels.Count > 0
                 ? $" Assigned {assignedSubjectLabels.Count} subject(s)."
                 : string.Empty;
-            var emailSummary = emailSent ? " Welcome email sent." : string.Empty;
+            const string emailSummary = " Welcome email queued.";
             TempData["Success"] = $"Created {user.Email} as {user.Role}.{subjectSummary}{emailSummary}";
             if (warnings.Count > 0)
             {
@@ -185,7 +170,7 @@ public sealed class IndexModel : PageModel
             }
 
             var createdCount = 0;
-            var emailSentCount = 0;
+            var emailQueuedCount = 0;
             var assignedSubjectCount = 0;
             var warnings = new List<string>();
 
@@ -227,21 +212,8 @@ public sealed class IndexModel : PageModel
                         importSubjectIndex++;
                     }
 
-                    try
-                    {
-                        await _emailSender.SendWelcomeEmailAsync(
-                            user,
-                            temporaryPassword,
-                            BuildLoginUrl(),
-                            cancellationToken,
-                            assignedSubjectLabels);
-                        emailSentCount++;
-                    }
-                    catch (Exception emailEx)
-                    {
-                        _logger.LogWarning(emailEx, "Imported user {Email}, but welcome email could not be sent.", user.Email);
-                        warnings.Add($"{user.Email}: welcome email could not be sent.");
-                    }
+                    _emailJobs.Enqueue(CreateWelcomeEmailJob(user, temporaryPassword, assignedSubjectLabels));
+                    emailQueuedCount++;
                 }
                 catch (Exception ex) when (ex is InvalidOperationException)
                 {
@@ -259,7 +231,7 @@ public sealed class IndexModel : PageModel
                 var subjectSummary = assignedSubjectCount > 0
                     ? $" Assigned {assignedSubjectCount} subject(s)."
                     : string.Empty;
-                TempData["Success"] = $"Imported {createdCount} user(s). Sent {emailSentCount} welcome email(s).{subjectSummary}";
+                TempData["Success"] = $"Imported {createdCount} user(s). Queued {emailQueuedCount} welcome email(s).{subjectSummary}";
             }
 
             if (warnings.Count > 0 || errors.Count > 0)
@@ -353,6 +325,21 @@ public sealed class IndexModel : PageModel
             values: null,
             protocol: Request.Scheme,
             host: Request.Host.ToUriComponent()) ?? string.Empty;
+    }
+
+    private WelcomeEmailJob CreateWelcomeEmailJob(
+        UserAccount user,
+        string temporaryPassword,
+        IReadOnlyList<string> assignedSubjectLabels)
+    {
+        return new WelcomeEmailJob(
+            user.Id,
+            user.Email,
+            user.FullName,
+            user.Role,
+            temporaryPassword,
+            BuildLoginUrl(),
+            assignedSubjectLabels.ToArray());
     }
 
     private static IReadOnlyList<ImportUserDraft> BuildImportDraftsFromExcel(

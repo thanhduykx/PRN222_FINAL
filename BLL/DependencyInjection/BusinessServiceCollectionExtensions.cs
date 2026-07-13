@@ -44,6 +44,7 @@ public static class BusinessServiceCollectionExtensions
             smtp["Password"] ?? string.Empty)));
         services.AddSingleton<IAccountEmailService>(provider => new AccountEmailService(
             provider.GetRequiredService<IEmailRepository>(), Path.Combine(contentRootPath, "wwwroot")));
+        services.AddSingleton<IAccountEmailJobQueue, AccountEmailJobQueue>();
         var seedAdmin = configuration.GetSection("SeedAdmin");
         services.AddSingleton<IUserAccountService>(provider => new UserAccountService(
             provider.GetRequiredService<IUserAccountRepository>(),
