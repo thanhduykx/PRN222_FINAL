@@ -7,6 +7,42 @@ const translations = {
         "documents.status.unknown": "Unknown",
         "documents.failedTooltip": "System error while processing document. Please check the file or try again.",
 
+        "documents.sourceChoiceAria": "Choose a document source",
+        "documents.sourceFile": "Upload file",
+        "documents.sourceUrl": "Enter URL",
+        "documents.indexFile": "Index file",
+        "documents.indexUrl": "Index URL",
+        "documents.indexing": "Indexing...",
+        "chat.startSessionHint": "Start a new session to chat with the assistant.",
+        "shell.navLearning": "Learning",
+        "shell.contact": "Contact",
+        "account.showPassword": "Show password",
+        "account.hidePassword": "Hide password",
+        "account.provisioningInfo": "Accounts are issued by the school. Please contact the school to request an account.",
+        "chat.sessionActions": "Session actions",
+        "chat.star": "Star",
+        "chat.unstar": "Unstar",
+        "chat.rename": "Rename",
+        "chat.delete": "Delete",
+        "confirm.title": "Confirm action",
+        "confirm.cancel": "Cancel",
+        "confirm.accept": "Continue",
+        "packages.learningPackage": "Learning packages",
+        "packages.viewAvailable": "View available packages",
+        "packages.buyPackage": "Buy package",
+        "packages.free": "Free",
+        "packages.discount": "Save",
+        "packages.studentRecommended": "Recommended for students",
+        "packages.profileEffect": "Special profile effect",
+        "packages.prioritySupport": "Priority support with faster responses",
+        "packages.cannotDowngrade": "Cannot downgrade",
+        "packages.lifetimeNoDowngrade": "A lifetime package cannot be downgraded.",
+        "packages.downgradeAfter": "You can choose a lower package after",
+        "packages.processing": "Processing...",
+        "packages.chooseSuitable": "Choose a suitable package",
+        "packages.lifetimeActive": "Active forever",
+        "packages.remaining": "Remaining",
+
 
         "chat.responsePaceAria": "Response speed",
         "chat.paceFast": "Fast",
@@ -1054,6 +1090,42 @@ const translations = {
         "documents.status.failed": "Thất bại",
         "documents.status.unknown": "Không rõ",
         "documents.failedTooltip": "Lỗi hệ thống khi xử lý tài liệu. Vui lòng kiểm tra lại file hoặc xoá đi tải lại.",
+
+        "documents.sourceChoiceAria": "Chọn nguồn tài liệu",
+        "documents.sourceFile": "Tải file",
+        "documents.sourceUrl": "Nhập URL",
+        "documents.indexFile": "Index file",
+        "documents.indexUrl": "Index URL",
+        "documents.indexing": "Đang index...",
+        "chat.startSessionHint": "Bắt đầu phiên mới để trao đổi cùng trợ lý.",
+        "shell.navLearning": "Học tập",
+        "shell.contact": "Liên hệ",
+        "account.showPassword": "Hiện mật khẩu",
+        "account.hidePassword": "Ẩn mật khẩu",
+        "account.provisioningInfo": "Tài khoản được cấp bởi Nhà trường. Vui lòng liên hệ Nhà trường để xin cấp tài khoản.",
+        "chat.sessionActions": "Thao tác với phiên",
+        "chat.star": "Đánh dấu",
+        "chat.unstar": "Bỏ đánh dấu",
+        "chat.rename": "Đổi tên",
+        "chat.delete": "Xóa",
+        "confirm.title": "Xác nhận thao tác",
+        "confirm.cancel": "Hủy",
+        "confirm.accept": "Tiếp tục",
+        "packages.learningPackage": "Gói học tập",
+        "packages.viewAvailable": "Xem các gói đang bán",
+        "packages.buyPackage": "Mua gói",
+        "packages.free": "Miễn phí",
+        "packages.discount": "Giảm",
+        "packages.studentRecommended": "Khuyên dùng cho sinh viên",
+        "packages.profileEffect": "Sở hữu hiệu ứng hồ sơ đặc biệt",
+        "packages.prioritySupport": "Hỗ trợ ưu tiên, phản hồi nhanh hơn",
+        "packages.cannotDowngrade": "Không thể hạ gói",
+        "packages.lifetimeNoDowngrade": "Gói trọn đời không hỗ trợ hạ gói.",
+        "packages.downgradeAfter": "Bạn có thể chọn gói thấp hơn sau",
+        "packages.processing": "Đang xử lý...",
+        "packages.chooseSuitable": "Chọn gói phù hợp",
+        "packages.lifetimeActive": "Hiệu lực vĩnh viễn",
+        "packages.remaining": "Còn",
 
 
         "chat.responsePaceAria": "Tốc độ hiển thị câu trả lời",
@@ -2247,6 +2319,7 @@ function applyLanguage() {
   if (latestOnlineUsersSnapshot) {
     renderOnlineUsersSnapshot(latestOnlineUsersSnapshot);
   }
+  applyOnlineUsersWidgetState();
   document.documentElement.classList.remove("i18n-pending");
   document.documentElement.classList.add("i18n-ready");
 }
@@ -2746,7 +2819,11 @@ function renderSessionList(sessions) {
   }
 
   if (!sessions || sessions.length === 0) {
-    chatSessionList.innerHTML = `<p class="session-empty" data-i18n="chat.noSessions">${escapeHtml(t("chat.noSessions"))}</p>`;
+    chatSessionList.innerHTML = `
+      <div class="session-empty">
+        <strong data-i18n="chat.noSessions">${escapeHtml(t("chat.noSessions"))}</strong>
+        <span data-i18n="chat.startSessionHint">${escapeHtml(t("chat.startSessionHint"))}</span>
+      </div>`;
     applyLanguage();
     return;
   }
@@ -3466,7 +3543,7 @@ async function toggleChatSessionStar(sessionId, isCurrentlyStarred) {
 }
 
 async function deleteChatSession(sessionId) {
-  if (!window.confirm(t("chat.deleteConfirm"))) {
+  if (!await showAppConfirm(t("chat.deleteConfirm"))) {
     return;
   }
 
@@ -4258,6 +4335,87 @@ function bindSuggestionButtons() {
   });
 }
 
+function initUploadSourceSwitchers() {
+  document.querySelectorAll(".ops-upload-form").forEach((form) => {
+    const choices = Array.from(form.querySelectorAll("[data-upload-source-choice]"));
+    const panels = Array.from(form.querySelectorAll("[data-upload-source-panel]"));
+    const fileInput = form.querySelector('input[name="File"]');
+    const urlInput = form.querySelector('input[name="SourceUrl"]');
+    if (!choices.length || !panels.length || !fileInput || !urlInput) return;
+
+    const setSource = (source) => {
+      choices.forEach((choice) => {
+        const isActive = choice.dataset.uploadSourceChoice === source;
+        choice.classList.toggle("is-active", isActive);
+        choice.setAttribute("aria-pressed", String(isActive));
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.uploadSourcePanel !== source;
+      });
+      fileInput.required = source === "file";
+      urlInput.required = source === "url";
+      if (source === "file") {
+        urlInput.value = "";
+      } else {
+        fileInput.value = "";
+        updateDropzoneDefaultText();
+      }
+    };
+
+    choices.forEach((choice) => {
+      choice.addEventListener("click", () => {
+        setSource(choice.dataset.uploadSourceChoice || "file");
+        const panel = panels.find((item) => !item.hidden);
+        panel?.querySelector("input")?.focus();
+      });
+    });
+    form.addEventListener("submit", (event) => {
+      const submitButton = event.submitter;
+      form.classList.add("is-submitting");
+      form.setAttribute("aria-busy", "true");
+      form.querySelectorAll("button[type='submit']").forEach((button) => {
+        button.disabled = true;
+      });
+      if (submitButton) {
+        submitButton.dataset.loadingLabel = t("documents.indexing");
+        submitButton.classList.add("is-loading");
+      }
+    });
+    setSource("file");
+  });
+}
+
+function initPasswordVisibilityToggles() {
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+    const input = document.getElementById(button.dataset.passwordToggle || "");
+    if (!input) return;
+    button.addEventListener("click", () => {
+      const isVisible = input.type === "text";
+      input.type = isVisible ? "password" : "text";
+      button.setAttribute("aria-label", t(isVisible ? "account.showPassword" : "account.hidePassword"));
+      const icon = button.querySelector(".material-symbols-outlined");
+      if (icon) icon.textContent = isVisible ? "visibility" : "visibility_off";
+      input.focus();
+      input.setSelectionRange?.(input.value.length, input.value.length);
+    });
+  });
+}
+
+function initCheckoutLoadingStates() {
+  document.querySelectorAll("[data-checkout-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const button = event.submitter || form.querySelector("button[type='submit']");
+      form.classList.add("is-submitting");
+      form.setAttribute("aria-busy", "true");
+      if (!button) return;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.dataset.loadingLabel = t("packages.processing");
+      button.classList.add("is-loading");
+    });
+  });
+}
+
 function initAdminCreateUserForm() {
   document.querySelectorAll("[data-admin-user-role-subject-form]").forEach((form) => {
     if (form.dataset.roleSubjectBound === "true") {
@@ -4288,6 +4446,109 @@ function initAdminCreateUserForm() {
   });
 }
 
+const modalFocusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])"
+].join(",");
+const modalAccessibilityState = new WeakMap();
+
+function openAccessibleModal(modal, initialFocus, trigger = document.activeElement) {
+  if (!modal) return;
+  const inerted = [];
+  let branch = modal;
+  let parent = modal.parentElement;
+
+  modal.hidden = false;
+  while (parent) {
+    Array.from(parent.children).forEach((sibling) => {
+      if (sibling === branch || sibling.tagName === "SCRIPT" || sibling.tagName === "LINK") return;
+      inerted.push({ element: sibling, wasInert: sibling.inert });
+      sibling.inert = true;
+    });
+    branch = parent;
+    parent = parent.parentElement;
+  }
+
+  modalAccessibilityState.set(modal, {
+    inerted,
+    trigger: trigger instanceof HTMLElement ? trigger : null
+  });
+  window.requestAnimationFrame(() => {
+    const target = initialFocus || modal.querySelector(modalFocusableSelector);
+    target?.focus();
+  });
+}
+
+function closeAccessibleModal(modal, restoreFocus = true) {
+  if (!modal) return;
+  const state = modalAccessibilityState.get(modal);
+  modal.hidden = true;
+  state?.inerted.forEach(({ element, wasInert }) => {
+    element.inert = wasInert;
+  });
+  modalAccessibilityState.delete(modal);
+  if (restoreFocus) state?.trigger?.focus();
+}
+
+function keepFocusInsideModal(event, modal) {
+  if (event.key !== "Tab" || !modal || modal.hidden) return;
+  const focusable = Array.from(modal.querySelectorAll(modalFocusableSelector))
+    .filter((element) => !element.hidden && element.getAttribute("aria-hidden") !== "true");
+  if (!focusable.length) {
+    event.preventDefault();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function showAppConfirm(message) {
+  const modal = document.querySelector("[data-app-confirm]");
+  if (!modal) {
+    console.error("Confirmation dialog is unavailable; the action was cancelled.");
+    return Promise.resolve(false);
+  }
+  const messageElement = modal.querySelector("[data-app-confirm-message]");
+  const acceptButton = modal.querySelector("[data-app-confirm-accept]");
+  const cancelButtons = Array.from(modal.querySelectorAll("[data-app-confirm-cancel]"));
+  const trigger = document.activeElement;
+  if (messageElement) messageElement.textContent = message;
+
+  return new Promise((resolve) => {
+    const controller = new AbortController();
+    const finish = (result) => {
+      controller.abort();
+      closeAccessibleModal(modal);
+      resolve(result);
+    };
+    const keydown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finish(false);
+        return;
+      }
+      keepFocusInsideModal(event, modal);
+    };
+
+    acceptButton?.addEventListener("click", () => finish(true), { signal: controller.signal });
+    cancelButtons.forEach((button) => button.addEventListener("click", () => finish(false), { signal: controller.signal }));
+    document.addEventListener("keydown", keydown, { signal: controller.signal });
+    openAccessibleModal(modal, acceptButton, trigger);
+  });
+}
+
 function initConfirmForms() {
   document.querySelectorAll("form[data-confirm], form[data-confirm-en], form[data-confirm-vi]").forEach((form) => {
     if (form.dataset.confirmBound === "true") {
@@ -4295,13 +4556,15 @@ function initConfirmForms() {
     }
 
     form.dataset.confirmBound = "true";
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
+      if (form.dataset.confirmConfirmed === "true") return;
+      event.preventDefault();
       const message = getLanguage() === "vi"
         ? (form.dataset.confirmVi || form.dataset.confirm || "Bạn có chắc muốn tiếp tục?")
         : (form.dataset.confirmEn || form.dataset.confirm || "Are you sure you want to continue?");
-      if (!window.confirm(message)) {
-        event.preventDefault();
-      }
+      if (!await showAppConfirm(message)) return;
+      form.dataset.confirmConfirmed = "true";
+      form.requestSubmit();
     });
   });
 }
@@ -4347,7 +4610,7 @@ function initAdminRoleUpdateForms() {
 
     select.dataset.roleUpdateBound = "true";
     select.dataset.previousValue = select.value || "";
-    select.addEventListener("change", () => {
+    select.addEventListener("change", async () => {
       const form = select.closest("[data-admin-role-update-form]");
       if (!form) {
         return;
@@ -4358,12 +4621,13 @@ function initAdminRoleUpdateForms() {
       const confirmMessage = t("admin.confirmRoleChange")
         .replace("{user}", userLabel)
         .replace("{role}", nextRole);
-      if (!window.confirm(confirmMessage)) {
+      if (!await showAppConfirm(confirmMessage)) {
         select.value = select.dataset.previousValue || "";
         return;
       }
 
       select.dataset.previousValue = nextRole;
+      form.dataset.confirmConfirmed = "true";
       form.requestSubmit();
     });
   });
@@ -4388,9 +4652,8 @@ function initPackagePricePublishing() {
   let triggerButton = null;
 
   const close = () => {
-    modal.hidden = true;
     document.body.classList.remove("package-price-review-open");
-    triggerButton?.focus();
+    closeAccessibleModal(modal);
     activeForm = null;
     triggerButton = null;
   };
@@ -4419,9 +4682,8 @@ function initPackagePricePublishing() {
       pendingWarning.textContent = `${pendingCount} payment đang chờ vẫn tiếp tục sử dụng số tiền đã được ghi nhận khi tạo checkout.`;
     }
     freeWarning.hidden = !(current > 0 && next === 0);
-    modal.hidden = false;
     document.body.classList.add("package-price-review-open");
-    confirmButton?.focus();
+    openAccessibleModal(modal, confirmButton, triggerButton);
   };
 
   forms.forEach((form) => {
@@ -4441,12 +4703,18 @@ function initPackagePricePublishing() {
     const confirmFreePrice = activeForm.querySelector("[data-confirm-free-price]");
     if (confirmFreePrice) confirmFreePrice.value = current > 0 && next === 0 ? "true" : "false";
     activeForm.dataset.pricePublishConfirmed = "true";
-    modal.hidden = true;
     document.body.classList.remove("package-price-review-open");
+    closeAccessibleModal(modal, false);
     activeForm.requestSubmit();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) close();
+    if (modal.hidden) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+    keepFocusInsideModal(event, modal);
   });
 }
 
@@ -4470,6 +4738,7 @@ function initSystemNotifications() {
   });
 
   let activeModal = null;
+  let notificationTrigger = null;
   const showNext = () => {
     activeModal = pendingModals.shift() || null;
     if (!activeModal) {
@@ -4477,20 +4746,27 @@ function initSystemNotifications() {
       return;
     }
 
-    activeModal.hidden = false;
+    notificationTrigger ??= document.activeElement;
     document.body.classList.add("price-change-modal-open");
-    activeModal.querySelector(".price-change-modal__dialog button")?.focus();
+    openAccessibleModal(
+      activeModal,
+      activeModal.querySelector(".price-change-modal__dialog button"),
+      notificationTrigger);
   };
 
   const close = (modal) => {
-    modal.hidden = true;
+    const hasNext = pendingModals.length > 0;
+    closeAccessibleModal(modal, !hasNext);
     try {
       localStorage.setItem(modal.dataset.storageKey, "acknowledged");
     } catch {
       // Dismiss for this page view when browser storage is unavailable.
     }
 
-    if (activeModal === modal) showNext();
+    if (activeModal === modal) {
+      if (!hasNext) notificationTrigger = null;
+      showNext();
+    }
   };
 
   modals.forEach((modal) => {
@@ -4499,7 +4775,13 @@ function initSystemNotifications() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && activeModal && !activeModal.hidden) close(activeModal);
+    if (!activeModal || activeModal.hidden) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close(activeModal);
+      return;
+    }
+    keepFocusInsideModal(event, activeModal);
   });
   showNext();
 }
@@ -4510,6 +4792,9 @@ bindSubjectFilterChips();
 applyInitialSubjectFromUrl();
 bindDocumentPreviewButtons();
 initSubjectCards();
+initUploadSourceSwitchers();
+initPasswordVisibilityToggles();
+initCheckoutLoadingStates();
 initAdminCreateUserForm();
 initConfirmForms();
 initAdminRoleUpdateForms();

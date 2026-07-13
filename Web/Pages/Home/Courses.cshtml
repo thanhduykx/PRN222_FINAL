@@ -60,6 +60,10 @@
         <section class="ops-panel ops-empty">
             <strong data-i18n="courses.emptyTitle">Chưa có môn học nào.</strong>
             <p data-i18n="courses.emptyHint">Hãy thêm và xử lý tài liệu môn học trước, sau đó quay lại đây.</p>
+            <a class="ops-button ops-button--primary" asp-page="/Home/Index" asp-route-section="@(isAdmin ? "catalog" : "upload")">
+                <span class="material-symbols-outlined" aria-hidden="true">@(isAdmin ? "topic" : "upload_file")</span>
+                <span data-i18n="@(isAdmin ? "courses.btnAdmin" : "courses.btnTeacher")">@(isAdmin ? "Quản lý danh mục" : "Tải tài liệu")</span>
+            </a>
         </section>
     }
     else

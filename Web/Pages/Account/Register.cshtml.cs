@@ -23,13 +23,13 @@ public sealed class RegisterModel : PageModel
 
     public IActionResult OnGet()
     {
-        TempData["AuthError"] = AccountProvisioningMessage;
+        TempData["AuthInfo"] = AccountProvisioningMessage;
         return RedirectToPage("/Account/Login");
     }
 
     public IActionResult OnPost()
     {
-        TempData["AuthError"] = AccountProvisioningMessage;
+        TempData["AuthInfo"] = AccountProvisioningMessage;
         return RedirectToPage("/Account/Login");
     }
 }

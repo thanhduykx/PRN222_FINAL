@@ -75,10 +75,6 @@ html.is-language-changing *::after {
   animation-duration: 0.001ms !important;
 }
 
-html.i18n-pending body {
-  visibility: hidden;
-}
-
 html.i18n-ready body {
   visibility: visible;
 }
@@ -5569,11 +5565,7 @@ body.rbl-body .rbl-topbar-actions {
 
 .rbl-topbar-package {
   display: inline-grid;
-<<<<<<< Updated upstream
-  grid-template-columns: 40px auto auto;
-=======
   grid-template-columns: 36px minmax(0, max-content) auto;
->>>>>>> Stashed changes
   align-items: center;
   gap: 10px;
   width: max-content;
@@ -5780,8 +5772,6 @@ body.rbl-body .rbl-main {
   }
 }
 
-<<<<<<< Updated upstream
-=======
 .rbl-topbar-package__status {
   padding: 4px 8px;
   border-radius: 999px;
@@ -6101,7 +6091,6 @@ body.price-change-modal-open {
   }
 }
 
->>>>>>> Stashed changes
 .ops-page {
   --ops-border: #d8e0ea;
   --ops-muted: #667085;
@@ -7442,11 +7431,8 @@ body.price-change-modal-open {
   }
 
   body.rbl-body .rbl-topbar-actions {
-<<<<<<< Updated upstream
-=======
     grid-column: 2;
     justify-self: end;
->>>>>>> Stashed changes
     flex-wrap: wrap;
     justify-content: flex-end;
   }
@@ -11831,15 +11817,6 @@ body.rbl-body:has(.rbl-chat-page) .learning-footer {
   content: "";
 }
 
-.rbl-session-list .session-empty::after {
-  display: block;
-  max-width: 220px;
-  color: #65758c;
-  font-size: .88rem;
-  white-space: pre-line;
-  content: "Chưa có phiên nào\A Bắt đầu phiên trò chuyện mới để trao đổi cùng AI nhé.";
-}
-
 @media (max-width: 1200px) {
   .rbl-chat-page {
     grid-template-columns: 1fr;
@@ -11865,4 +11842,349 @@ body.rbl-body:has(.rbl-chat-page) .learning-footer {
   .rbl-chat-form .rbl-submit-button {
     grid-column: 1;
   }
+}
+
+/* Keep the shared language and account controls anchored to the top-right. */
+@media (min-width: 901px) {
+  body.rbl-body .rbl-topbar-actions {
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 900px) {
+  body.rbl-body .rbl-topbar-actions {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
+
+/* Desktop UI/UX audit remediation: hierarchy, clarity and accessible feedback. */
+.auth-panel h1 {
+  margin-block: 8px 10px;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.google-button {
+  min-height: 46px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+}
+
+.google-button:hover,
+.google-button:focus-visible {
+  border-color: #7aaef0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.auth-password-field {
+  position: relative;
+  display: block;
+}
+
+.auth-password-field .form-control {
+  padding-inline-end: 48px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-end: 4px;
+  display: inline-grid;
+  width: 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #52657e;
+}
+
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+  background: #eef5ff;
+  color: #075fd0;
+}
+
+.auth-notice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid #b9d8ff;
+  border-radius: 10px;
+  background: #eff7ff;
+  color: #17466f;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.ops-upload-source-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid #d7e2ef;
+  border-radius: 10px;
+  background: #f3f7fb;
+}
+
+.ops-upload-source-switch button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #52657e;
+  font-size: .86rem;
+  font-weight: 800;
+}
+
+.ops-upload-source-switch button.is-active {
+  background: #ffffff;
+  color: #075fd0;
+  box-shadow: 0 2px 8px rgba(31, 55, 90, .1);
+}
+
+.ops-upload-file-card .ops-ingest-grid .ops-upload-submit {
+  width: 100%;
+  margin-top: 14px;
+  background: linear-gradient(135deg, #0875ee, #075fd0);
+}
+
+.ops-upload-url-card[hidden],
+[data-upload-source-panel][hidden] {
+  display: none !important;
+}
+
+.ops-url-field small,
+.ops-field small {
+  color: #52657e;
+  font-size: .82rem;
+}
+
+.rbl-related-strip .related-question-chip {
+  min-height: 44px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.35;
+}
+
+@media (min-width: 1201px) {
+  .rbl-chat-page:has(.session-empty) {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+
+.rbl-session-list .session-empty {
+  margin-top: 56px;
+  color: #52657e;
+  font-size: .88rem;
+}
+
+.rbl-session-list .session-empty strong {
+  color: #263b57;
+  font-size: .95rem;
+}
+
+.rbl-session-list .session-empty span {
+  max-width: 220px;
+}
+
+.rbl-session-list .session-empty::after {
+  display: none;
+  content: none;
+}
+
+.ops-kpi-label,
+.ops-kpi-sub,
+.rbl-session-header span,
+.package-membership__price span,
+.package-membership__downgrade-note {
+  font-size: .8125rem;
+}
+
+.learning-footer {
+  grid-template-columns: 1fr;
+  padding-block: 14px;
+}
+
+.app-confirm-dialog {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.app-confirm-dialog[hidden] {
+  display: none;
+}
+
+.app-confirm-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 26, 58, .52);
+  backdrop-filter: blur(3px);
+}
+
+.app-confirm-dialog__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  width: min(460px, 100%);
+  padding: 22px;
+  border: 1px solid #d7e2ef;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(7, 26, 58, .24);
+}
+
+.app-confirm-dialog__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff1f0;
+  color: #c92a2a;
+}
+
+.app-confirm-dialog__panel h2 {
+  margin: 0 0 6px;
+  color: #10213d;
+  font-size: 1.15rem;
+}
+
+.app-confirm-dialog__panel p {
+  margin: 0;
+  color: #52657e;
+  line-height: 1.55;
+}
+
+.app-confirm-dialog__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ops-button--danger {
+  border-color: #c92a2a;
+  background: #c92a2a;
+  color: #ffffff;
+}
+
+form.is-submitting {
+  opacity: .72;
+}
+
+form.is-submitting button[type="submit"] {
+  cursor: wait;
+}
+
+button.is-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+button.is-loading > * {
+  visibility: hidden;
+}
+
+button.is-loading::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  content: attr(data-loading-label);
+  font: inherit;
+}
+
+.ops-subject-assignment {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ops-chip--removable {
+  display: inline-flex;
+  align-items: center;
+  padding-inline-end: 4px;
+}
+
+.ops-inline-form {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.ops-inline-remove-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  margin-inline-start: 4px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #9f2525;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ops-inline-remove-button:hover,
+.ops-inline-remove-button:focus-visible {
+  background: #fff1f0;
+  color: #c92a2a;
+}
+
+.ops-assign-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ops-assign-form select {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid var(--admin-border, #d8e0ea);
+  border-radius: 7px;
+  background: #ffffff;
+  font-size: .85rem;
+}
+
+.ops-assign-form .ops-button {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: .85rem;
+}
+
+body.rbl-body:has(.lecturer-course-page) .learning-footer,
+body.rbl-body:has(.ops-documents-page) .learning-footer {
+  grid-template-columns: 1fr;
+}
+
+.rbl-current-plan__content small,
+.rbl-current-plan__content > span,
+.rbl-sidebar-online-users .online-users-widget__header p,
+.rbl-sidebar-online-users .online-users-widget__identity strong,
+.rbl-sidebar-online-users .online-users-widget__identity small,
+.chat-preference-control__copy small,
+.chat-usage > span,
+.chat-usage > small {
+  font-size: .8125rem;
 }
