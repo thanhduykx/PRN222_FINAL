@@ -23,15 +23,27 @@
         @foreach (var package in Model.Packages)
         {
             var pendingPaymentCount = Model.PendingPaymentCounts.TryGetValue(package.Id, out var count) ? count : 0;
-            <article class="ops-panel package-pricing-card">
+            var packageIcon = package.Code.ToUpperInvariant() switch
+            {
+                "FREE" => "school",
+                "STUDENT" => "person",
+                "PRO" => "workspace_premium",
+                "ANNUAL" => "event_available",
+                _ => "sell"
+            };
+            <article class="ops-panel package-pricing-card @(package.Code.Equals("PRO", StringComparison.OrdinalIgnoreCase) ? "is-featured" : "")">
                 <div class="package-pricing-card__heading">
                     <div>
                         <span class="ops-chip">@package.Code</span>
                         <h2>@package.Name</h2>
                     </div>
+                    <span class="package-pricing-card__icon material-symbols-outlined" aria-hidden="true">@packageIcon</span>
+                </div>
+                <div class="package-pricing-card__current-price">
+                    <span>Giá hiện tại</span>
                     <strong>@package.PriceVnd.ToString("N0")đ</strong>
                 </div>
-                <p>@package.Description</p>
+                <p class="package-pricing-card__description">@package.Description</p>
                 @if (pendingPaymentCount > 0)
                 {
                     <div class="package-pricing-card__pending" role="status">
@@ -58,7 +70,10 @@
                         <textarea name="Reason" minlength="5" maxlength="500" rows="2"
                                   placeholder="Ví dụ: Điều chỉnh giá cho học kỳ mới" required></textarea>
                     </label>
-                    <button type="submit" class="ops-button ops-button--primary">Phát hành giá mới</button>
+                    <button type="submit" class="ops-button package-price-form__submit">
+                        <span>Phát hành giá mới</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </button>
                 </form>
             </article>
         }
@@ -67,7 +82,6 @@
     <section class="ops-panel package-price-history" aria-labelledby="packagePriceHistoryTitle">
         <div class="package-price-history__heading">
             <div>
-                <span class="ops-eyebrow">Audit log</span>
                 <h2 id="packagePriceHistoryTitle">Lịch sử thay đổi giá</h2>
             </div>
             <span class="ops-chip">@Model.PriceHistory.Count thay đổi gần nhất</span>
