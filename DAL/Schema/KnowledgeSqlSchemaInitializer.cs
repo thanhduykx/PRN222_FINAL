@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using PRN222_FINAL.DAL.Context;
@@ -33,6 +33,53 @@ public static class KnowledgeSqlSchemaInitializer
         }
 
         EnsureBillingTablesCreated(context);
+        EnsureBenchmarkTablesCreated(context);
+    }
+
+    public static void EnsureBenchmarkTablesCreated(KnowledgeSqlDbContext context)
+    {
+        context.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS rag_test_questions (
+                "Id" uuid PRIMARY KEY,
+                "Subject" varchar(255) NOT NULL,
+                "Question" text NOT NULL,
+                "GroundTruth" text NOT NULL,
+                "Difficulty" varchar(64) NULL,
+                "Category" varchar(128) NULL,
+                "CreatedAt" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_rag_test_questions_Subject" ON rag_test_questions ("Subject");
+
+            CREATE TABLE IF NOT EXISTS rag_experiment_runs (
+                "Id" uuid PRIMARY KEY,
+                "RunName" varchar(255) NOT NULL,
+                "Subject" varchar(255) NOT NULL,
+                "ChatModel" varchar(128) NOT NULL,
+                "EmbeddingModel" varchar(128) NOT NULL,
+                "Status" varchar(64) NOT NULL,
+                "CreatedAt" timestamp with time zone NOT NULL,
+                "CompletedAt" timestamp with time zone NULL,
+                "AiAnalysisReport" text NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS "IX_rag_experiment_runs_Subject" ON rag_experiment_runs ("Subject");
+            ALTER TABLE rag_experiment_runs ADD COLUMN IF NOT EXISTS "AiAnalysisReport" text NOT NULL DEFAULT '';
+
+            CREATE TABLE IF NOT EXISTS rag_benchmark_results (
+                "Id" uuid PRIMARY KEY,
+                "RunId" uuid NOT NULL REFERENCES rag_experiment_runs ("Id") ON DELETE CASCADE,
+                "QuestionId" uuid NOT NULL REFERENCES rag_test_questions ("Id") ON DELETE CASCADE,
+                "GeneratedAnswer" text NOT NULL,
+                "Faithfulness" double precision NULL,
+                "AnswerRelevancy" double precision NULL,
+                "ContextPrecision" double precision NULL,
+                "ContextRecall" double precision NULL,
+                "RagasScore" double precision NULL,
+                "LatencyMs" integer NOT NULL,
+                "EvaluatedAt" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_rag_benchmark_results_RunId" ON rag_benchmark_results ("RunId");
+            CREATE INDEX IF NOT EXISTS "IX_rag_benchmark_results_QuestionId" ON rag_benchmark_results ("QuestionId");
+            """);
     }
 
     public static void EnsureBillingTablesCreated(KnowledgeSqlDbContext context)

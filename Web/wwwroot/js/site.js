@@ -1995,6 +1995,7 @@ const documentDropzone = document.getElementById("documentDropzone");
 const documentFileInput = document.getElementById("documentFileInput");
 const documentFileName = document.getElementById("documentFileName");
 const documentPreviewModal = document.getElementById("documentPreviewModal");
+if (documentPreviewModal) { document.body.appendChild(documentPreviewModal); }
 const documentPreviewTitle = document.getElementById("documentPreviewTitle");
 const documentPreviewMeta = document.getElementById("documentPreviewMeta");
 const documentPreviewBody = document.getElementById("documentPreviewBody");

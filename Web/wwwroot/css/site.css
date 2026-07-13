@@ -4128,7 +4128,7 @@ body.rbl-body {
 .rbl-document-preview-modal {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: 9999;
   display: none;
   align-items: center;
   justify-content: center;
