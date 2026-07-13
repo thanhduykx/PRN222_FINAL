@@ -1,4 +1,4 @@
-﻿namespace PRN222_FINAL.Web.ViewModels.Billing;
+namespace PRN222_FINAL.Web.ViewModels.Billing;
 
 public sealed class PackageViewModel
 {
@@ -11,6 +11,7 @@ public sealed class PackageViewModel
     public int MonthlyChatLimit { get; set; }
     public bool IsLifetime { get; set; }
     public bool IsCurrentPackage { get; set; }
+    public bool IsOwned { get; set; }
     public int DiscountPercent { get; set; }
     public bool IsFree => PriceVnd <= 0;
     public bool IsStudent => Code.Equals("STUDENT", StringComparison.OrdinalIgnoreCase);

@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.BLL.Security;
+using PRN222_FINAL.BLL.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -105,6 +105,9 @@ public sealed class IndexModel : PageModel
             var packages = await _packages.GetActivePackagesAsync(cancellationToken);
             var studentPackage = packages.FirstOrDefault(package =>
                 package.Code.Equals("STUDENT", StringComparison.OrdinalIgnoreCase));
+            
+            var unexpiredSubs = await _subscriptions.GetUnexpiredByUserAsync(GetUserId(), cancellationToken);
+            var highestPriceVnd = unexpiredSubs.Any() ? unexpiredSubs.Max(s => packages.FirstOrDefault(p => p.Id == s.PackageId)?.PriceVnd ?? 0m) : 0m;
 
             Packages = packages.Select(package => new PackageViewModel
             {
@@ -117,6 +120,7 @@ public sealed class IndexModel : PageModel
                 MonthlyChatLimit = package.MonthlyChatLimit,
                 IsLifetime = package.IsLifetime,
                 IsCurrentPackage = CurrentSubscription?.PackageId == package.Id,
+                IsOwned = highestPriceVnd >= package.PriceVnd,
                 DiscountPercent = CalculateDiscountPercent(package, studentPackage)
             }).ToList();
         }

@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using PRN222_FINAL.BLL.Models
 @model PRN222_FINAL.Web.Pages.Packages.IndexModel
 @{
@@ -98,7 +98,7 @@
                             Xem gói hiện tại
                         </a>
                     }
-                    else if (package.IsFree)
+                    else if (package.IsFree || package.IsOwned)
                     {
                         <form method="post" asp-page-handler="Checkout">
                             @Html.AntiForgeryToken()
@@ -106,7 +106,7 @@
                             <input type="hidden" name="provider" value="@PaymentProvider.MoMo" />
                             <button type="submit" class="package-membership__button">
                                 <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                                Kích hoạt ngay
+                                @(package.IsFree ? "Kích hoạt ngay" : "Chọn gói này")
                             </button>
                         </form>
                     }
