@@ -203,12 +203,8 @@
                 {
                 <section id="onlineUsersWidget" class="online-users-widget online-users-widget--inline rbl-sidebar-online-users" data-current-user-id="@currentUserId" data-current-user-email="@currentUserEmail" data-connection-state="connecting" aria-live="polite">
                     <div class="online-users-widget__header">
-                        <div>
-                            <h2 data-i18n="onlineUsers.title">Online users</h2>
-                            <p data-online-users-summary data-i18n="onlineUsers.connecting">Connecting...</p>
-                        </div>
+                        <h2 data-i18n="onlineUsers.title">Online users</h2>
                         <div class="online-users-widget__header-actions">
-                            <span class="online-users-widget__status" data-online-users-status aria-hidden="true"></span>
                             <button type="button" class="online-users-widget__toggle" data-online-users-toggle aria-expanded="true" aria-label="Collapse online users" data-i18n-aria-label="onlineUsers.collapse">
                                 <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
                             </button>
@@ -463,27 +459,45 @@
                 &copy; 2026 - Course Assistant
             </div>
         </footer>
-        @if (isAuthenticated && activeNotifications.Count > 0)
+    }
+    @if (isAuthenticated && activeNotifications.Count > 0)
+    {
+        @foreach (var notification in activeNotifications)
         {
-            @foreach (var notification in activeNotifications)
-            {
-                var notificationTitleId = $"systemNotificationTitle-{notification.Id:N}";
-                var notificationDescriptionId = $"systemNotificationDescription-{notification.Id:N}";
-                var isPackageNotification = notification.Type == PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged;
-                <div class="price-change-modal" data-system-notification data-notification-id="@notification.Id" data-viewer-id="@currentUserId" hidden>
-                    <div class="price-change-modal__backdrop" data-system-notification-close></div>
-                    <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="@notificationTitleId" aria-describedby="@notificationDescriptionId">
-                        <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">@(isPackageNotification ? "sell" : "school")</span>
-                        <div>
-                            <span class="ops-eyebrow">@(isPackageNotification ? "Thông báo giá gói" : "Thông báo môn học")</span>
+            var notificationTitleId = $"systemNotificationTitle-{notification.Id:N}";
+            var notificationDescriptionId = $"systemNotificationDescription-{notification.Id:N}";
+            var isPackageNotification = notification.Type == PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged;
+            var packagePriceMatch = isPackageNotification
+                ? System.Text.RegularExpressions.Regex.Match(
+                    notification.Message,
+                    @"^Giá gói (?<package>.+?) đã thay đổi từ (?<old>[\d.,]+đ) thành (?<new>[\d.,]+đ)\. (?<rest>.+)$")
+                : System.Text.RegularExpressions.Match.Empty;
+            <div class="price-change-modal" data-system-notification data-notification-id="@notification.Id" data-viewer-id="@currentUserId" hidden>
+                <div class="price-change-modal__backdrop" data-system-notification-close></div>
+                <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="@notificationTitleId" aria-describedby="@notificationDescriptionId">
+                    <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">@(isPackageNotification ? "sell" : "school")</span>
+                    <div>
+                        <span class="ops-eyebrow">@(isPackageNotification ? "Thông báo giá gói" : "Thông báo môn học")</span>
+                        @if (packagePriceMatch.Success)
+                        {
+                            <h2 id="@notificationTitleId">Cập nhật giá gói <span class="price-change-modal__package-name">@packagePriceMatch.Groups["package"].Value</span></h2>
+                            <p id="@notificationDescriptionId" class="price-change-modal__message">
+                                Giá gói <strong class="price-change-modal__package-name">@packagePriceMatch.Groups["package"].Value</strong>
+                                đã thay đổi từ <strong class="price-change-modal__old-price">@packagePriceMatch.Groups["old"].Value</strong>
+                                thành <strong class="price-change-modal__new-price">@packagePriceMatch.Groups["new"].Value</strong>.
+                                <span class="price-change-modal__effective-copy">@packagePriceMatch.Groups["rest"].Value</span>
+                            </p>
+                        }
+                        else
+                        {
                             <h2 id="@notificationTitleId">@notification.Title</h2>
                             <p id="@notificationDescriptionId">@notification.Message</p>
-                            <small>Cập nhật lúc @notification.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · Hiển thị trong 3 ngày</small>
-                        </div>
-                        <button type="button" class="ops-button ops-button--primary" data-system-notification-close>Đã hiểu</button>
-                    </section>
-                </div>
-            }
+                        }
+                        <small class="price-change-modal__effective-date">Áp dụng kể từ ngày: <strong>@notification.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong></small>
+                    </div>
+                    <button type="button" class="ops-button ops-button--primary" data-system-notification-close>Đã hiểu</button>
+                </section>
+            </div>
         }
     }
     <div class="app-confirm-dialog" data-app-confirm hidden>

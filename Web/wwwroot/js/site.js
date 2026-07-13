@@ -2903,7 +2903,7 @@ function formatOnlineUsersSummary(count) {
 }
 
 function renderOnlineUsersSnapshot(snapshot) {
-  if (!onlineUsersWidget || !onlineUsersList || !onlineUsersSummary) {
+  if (!onlineUsersWidget || !onlineUsersList) {
     return;
   }
 
@@ -2923,7 +2923,9 @@ function renderOnlineUsersSnapshot(snapshot) {
     return left.displayName.localeCompare(right.displayName, undefined, { sensitivity: "base" });
   });
 
-  onlineUsersSummary.textContent = formatOnlineUsersSummary(snapshot.onlineUserCount);
+  if (onlineUsersSummary) {
+    onlineUsersSummary.textContent = formatOnlineUsersSummary(snapshot.onlineUserCount);
+  }
 
   if (users.length === 0) {
     onlineUsersList.innerHTML = "<li class=\"online-users-widget__empty\">" + escapeHtml(t("onlineUsers.empty")) + "</li>";
@@ -2932,10 +2934,6 @@ function renderOnlineUsersSnapshot(snapshot) {
 
   onlineUsersList.innerHTML = users.map((user) => {
     const isCurrentUser = (currentUserId && user.userId === currentUserId) || (currentUserEmail && user.email.trim().toUpperCase() === currentUserEmail);
-    const statusIcon = isCurrentUser ? "visibility" : "chat";
-    const statusTitle = isCurrentUser ? t("onlineUsers.youAreOnline") : t("onlineUsers.online");
-    const roleLabel = user.role ? "<span class=\"online-users-widget__role\">" + escapeHtml(user.role) + "</span>" : "";
-    const connectionLabel = user.connectionCount > 1 ? "<span class=\"online-users-widget__connections\">" + escapeHtml(t("onlineUsers.tabs").replace("{count}", String(user.connectionCount))) + "</span>" : "";
     const premiumClass = user.isPremium ? " has-premium-effect" : "";
 
     return [
@@ -2943,9 +2941,7 @@ function renderOnlineUsersSnapshot(snapshot) {
       "  <span class=\"online-users-widget__avatar" + premiumClass + "\">" + escapeHtml(user.initials) + "</span>",
       "  <span class=\"online-users-widget__identity\">",
       "    <strong class=\"" + (user.isPremium ? "premium-user-name" : "") + "\">" + escapeHtml(user.displayName) + "</strong>",
-      "    <small>" + roleLabel + connectionLabel + "</small>",
       "  </span>",
-      "  <span class=\"material-symbols-outlined online-users-widget__icon\" title=\"" + escapeHtml(statusTitle) + "\" aria-hidden=\"true\">" + statusIcon + "</span>",
       "</li>"
     ].join("");
   }).join("");
@@ -4687,10 +4683,21 @@ function initPackagePricePublishing() {
   };
 
   forms.forEach((form) => {
+    const priceInput = form.querySelector('input[name="PriceVnd"]');
+    priceInput?.addEventListener("input", () => priceInput.setCustomValidity(""));
+
     form.addEventListener("submit", (event) => {
       if (form.dataset.pricePublishConfirmed === "true") return;
       event.preventDefault();
+      priceInput?.setCustomValidity("");
       if (!form.reportValidity()) return;
+      const current = Number(form.dataset.currentPrice || 0);
+      const next = Number(priceInput?.value || 0);
+      if (next === current) {
+        priceInput?.setCustomValidity("Giá mới phải khác giá hiện tại.");
+        priceInput?.reportValidity();
+        return;
+      }
       open(form);
     });
   });
