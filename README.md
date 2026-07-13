@@ -16,6 +16,7 @@ EduVietRAG là web app ASP.NET Core Razor Pages hỗ trợ quản lý tài liệ
 - [Hướng dẫn sử dụng](#hướng-dẫn-sử-dụng)
 - [Kiểm thử](#kiểm-thử)
 - [Lưu ý vận hành](#lưu-ý-vận-hành)
+- [Kiến Trúc Hệ Thống](#kiến-trúc-hệ-thống)
 
 ## Tính Năng Chính
 
@@ -103,6 +104,9 @@ C:\PRN222_FINAL
     |-- Program.cs
     `-- Web.csproj
 ```
+## Kiến Trúc Hệ Thống
+
+![Sơ đồ kiến trúc EduVietRAG](docs/architecture.jpg)
 
 ## Phân Quyền Người Dùng
 
