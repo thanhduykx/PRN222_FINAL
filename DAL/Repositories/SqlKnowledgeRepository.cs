@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using PRN222_FINAL.DAL.Context;
 using PRN222_FINAL.DAL.Entities;
 using PRN222_FINAL.DAL.Mapping;
@@ -998,23 +998,6 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
     public async Task RemoveSubjectLecturerAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
-
-        var subject = await context.CourseSubjects
-            .FirstOrDefaultAsync(s => s.Id == subjectId, cancellationToken);
-
-        if (subject is not null)
-        {
-            bool hasUploaded = await context.Documents.AnyAsync(d => 
-                d.UploadedByUserId == userId && 
-                (d.Subject == subject.Code || d.Subject.StartsWith(subject.Code + " - ")), 
-                cancellationToken);
-
-            if (hasUploaded)
-            {
-                throw new InvalidOperationException("Không thể gỡ bỏ vì giảng viên này đã upload tài liệu cho môn học.");
-            }
-        }
-
         bool changed = false;
 
         // 1. Remove teaching lecturer from junction table
@@ -1027,7 +1010,9 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
         }
 
         // 2. If this lecturer is also the Subject Leader (OwnerUserId), revoke that role too
-        if (subject is not null && subject.OwnerUserId == userId)
+        var subject = await context.CourseSubjects
+            .FirstOrDefaultAsync(s => s.Id == subjectId && s.OwnerUserId == userId, cancellationToken);
+        if (subject is not null)
         {
             subject.OwnerUserId = null;
             subject.OwnerName = null;

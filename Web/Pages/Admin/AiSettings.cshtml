@@ -5,7 +5,6 @@
     ViewData["UseRblShell"] = true;
     ViewData["ActiveNav"] = "assistant-settings";
     ViewData["ShellTitle"] = "Thiết lập trợ lý học tập";
-    ViewData["ShellTitleI18n"] = "aiSettings.shellTitle";
 }
 
 <style>
@@ -307,7 +306,7 @@
                 <p data-i18n="admin.readDocDesc">Chọn cách trợ lý ghi nhớ nội dung để tìm đúng đoạn liên quan khi có câu hỏi.</p>
             </div>
             <label class="ops-field">
-                <span data-i18n="admin.readingEngine">Bộ máy đọc tài liệu</span>
+                <span data-i18n="admin.readEngine">Bộ máy đọc tài liệu</span>
                 <select asp-for="Input.ReadingModel" class="modern-input">
                     @foreach (var modelName in Model.ReadingModelOptions)
                     {
@@ -468,24 +467,11 @@
             function updateVisualizer() {
                 const lenInput = document.getElementById('lenNumber');
                 const overlapInput = document.getElementById('overlapNumber');
-                const overlapSlider = document.getElementById('overlapSlider');
 
                 if(!lenInput || !overlapInput) return;
 
                 let len = parseInt(lenInput.value) || 1000;
-                
-                // Tự động giới hạn Overlap tối đa bằng 1/3 ChunkSize để tránh lỗi backend
-                const maxOverlap = Math.min(500, Math.floor(len / 3));
-                if (overlapSlider) overlapSlider.max = maxOverlap;
-                overlapInput.max = maxOverlap;
-                
-                let overlap = parseInt(overlapInput.value) || 0;
-                if (overlap > maxOverlap) {
-                    overlap = maxOverlap;
-                    overlapInput.value = maxOverlap;
-                    if (overlapSlider) overlapSlider.value = maxOverlap;
-                }
-
+                let overlap = parseInt(overlapInput.value) || 100;
 
                 // Chuẩn hóa tỷ lệ để hiển thị trên div 800px
                 const containerWidth = 800; // Chiều rộng giả định của thanh
