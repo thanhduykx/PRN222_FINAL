@@ -18,6 +18,8 @@ using PRN222_FINAL.DAL.Repositories;
 using PRN222_FINAL.DAL.Repositories.Analytics;
 using PRN222_FINAL.DAL.Repositories.Billing;
 using PRN222_FINAL.DAL.Repositories.Files;
+using PRN222_FINAL.DAL.Repositories.Notifications;
+using PRN222_FINAL.BLL.Services.Notifications;
 using PRN222_FINAL.BLL.Models;
 
 namespace PRN222_FINAL.BLL;
@@ -33,6 +35,7 @@ public static class BusinessServiceCollectionExtensions
 
         services.AddSingleton<IKnowledgeRepository>(_ => new SqlKnowledgeRepository(connectionString));
         services.AddSingleton<IUserAccountRepository>(_ => new PostgresUserAccountRepository(connectionString));
+        services.AddSingleton<IAccountEmailJobRepository>(_ => new PostgresAccountEmailJobRepository(connectionString));
         var smtp = configuration.GetSection("Smtp");
         services.AddSingleton<IEmailRepository>(_ => new SmtpEmailRepository(new SmtpSettingsData(
             smtp["Host"] ?? string.Empty,
@@ -43,7 +46,7 @@ public static class BusinessServiceCollectionExtensions
             smtp["UserName"] ?? string.Empty,
             smtp["Password"] ?? string.Empty)));
         services.AddSingleton<IAccountEmailService>(provider => new AccountEmailService(
-            provider.GetRequiredService<IEmailRepository>(), Path.Combine(contentRootPath, "wwwroot")));
+            provider.GetRequiredService<IEmailRepository>()));
         services.AddSingleton<IAccountEmailJobQueue, AccountEmailJobQueue>();
         var seedAdmin = configuration.GetSection("SeedAdmin");
         services.AddSingleton<IUserAccountService>(provider => new UserAccountService(
@@ -87,6 +90,8 @@ public static class BusinessServiceCollectionExtensions
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAnalyticsRecommendationService, AnalyticsRecommendationService>();
         services.AddScoped<IChatUsageService, ChatUsageService>();
+        services.AddSingleton<ISystemNotificationRepository>(_ => new SystemNotificationRepository(connectionString));
+        services.AddSingleton<ISystemNotificationService, SystemNotificationService>();
 
         return services;
     }

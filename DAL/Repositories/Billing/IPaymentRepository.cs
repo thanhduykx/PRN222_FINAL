@@ -6,9 +6,11 @@ namespace PRN222_FINAL.DAL.Repositories.Billing;
 public interface IPaymentRepository
 {
     Task AddAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default);
+    Task<bool> TryAddFreePaidAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default);
     Task UpdateAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default);
     Task<KnowledgeSqlPayment?> GetByIdAsync(Guid paymentId, CancellationToken cancellationToken = default);
     Task<KnowledgeSqlPayment?> GetByOrderCodeAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<KnowledgeSqlPayment>> GetByUserAsync(Guid userId, int limit, CancellationToken cancellationToken = default);
     Task<bool> HasSuccessfulPaymentAsync(Guid userId, Guid packageId, CancellationToken cancellationToken = default);
+    Task<KnowledgeSqlPayment?> GetLatestSuccessfulByUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }

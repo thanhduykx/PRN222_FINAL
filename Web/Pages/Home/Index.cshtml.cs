@@ -270,7 +270,7 @@ public sealed class IndexModel : HomePageModelBase
                         ContentType = model.File.ContentType,
                         Subject = model.Subject,
                         Chapter = model.Chapter,
-                        UploadsRoot = Path.Combine(_environment.WebRootPath, "uploads"),
+                        UploadsRoot = GetUploadsRoot(),
                         Uploader = uploader
                     },
                     cancellationToken);
@@ -287,7 +287,7 @@ public sealed class IndexModel : HomePageModelBase
                         ContentType = extracted.UsedBrowserRenderer ? "text/html+playwright" : "text/html",
                         Subject = model.Subject,
                         Chapter = model.Chapter,
-                        UploadsRoot = Path.Combine(_environment.WebRootPath, "uploads"),
+                        UploadsRoot = GetUploadsRoot(),
                         Uploader = uploader
                     },
                     cancellationToken);

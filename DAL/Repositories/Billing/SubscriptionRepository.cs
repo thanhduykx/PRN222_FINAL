@@ -66,12 +66,36 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
     {
         await using var context = CreateContext();
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var lockKey = $"subscription:{subscription.UserId:N}";
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))",
+            cancellationToken);
+
+        var target = await context.Subscriptions
+            .FirstOrDefaultAsync(item => item.Id == subscription.Id, cancellationToken);
+        if (target is not null
+            && target.Status == SubscriptionStatus.Active
+            && target.StartsAt <= activatedAt
+            && target.EndsAt > activatedAt)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return;
+        }
 
         var superseded = await context.Subscriptions
             .Where(item => item.UserId == subscription.UserId
                 && item.Status == SubscriptionStatus.Active
                 && item.Id != subscription.Id)
             .ToListAsync(cancellationToken);
+
+        var calculatedEnd = SubscriptionActivationPolicy.CalculateEnd(
+            activatedAt,
+            subscription.StartsAt,
+            subscription.EndsAt,
+            superseded.Where(item => item.StartsAt <= activatedAt).Select(item => item.EndsAt));
+        subscription.StartsAt = activatedAt;
+        subscription.EndsAt = calculatedEnd;
+
         foreach (var item in superseded)
         {
             item.Status = SubscriptionStatus.Canceled;
@@ -82,8 +106,6 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             item.EndsAt = item.EndsAt > activatedAt ? activatedAt : item.EndsAt;
         }
 
-        var target = await context.Subscriptions
-            .FirstOrDefaultAsync(item => item.Id == subscription.Id, cancellationToken);
         if (target is null)
         {
             context.Subscriptions.Add(subscription);

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
@@ -13,6 +14,7 @@ using PRN222_FINAL.Web.Services;
 namespace PRN222_FINAL.Web.Pages.Account;
 
 [AllowAnonymous]
+[EnableRateLimiting("auth")]
 public sealed class GoogleCallbackModel : PageModel
 {
     private const string AccountProvisioningMessage = "Tài khoản được cấp bởi Nhà trường. Vui lòng liên hệ Nhà trường để xin cấp tài khoản.";
@@ -41,13 +43,13 @@ public sealed class GoogleCallbackModel : PageModel
         }
 
         var user = await _users.FindByEmailAsync(email, cancellationToken);
-        if (user is null)
+        if (user is null || user.IsSuspended || user.LockoutEnd > DateTimeOffset.UtcNow)
         {
             TempData["AuthError"] = AccountProvisioningMessage;
             return RedirectToPage("/Account/Login", new { returnUrl });
         }
 
-        await _users.MarkActiveAsync(user.Id);
+        await _users.RecordLoginSuccessAsync(user.Id, cancellationToken);
         user.LastActiveAt = DateTimeOffset.UtcNow;
         await SignInAsync(user);
         await HttpContext.SignOutAsync("External");

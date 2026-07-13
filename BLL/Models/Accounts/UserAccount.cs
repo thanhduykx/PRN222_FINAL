@@ -13,5 +13,9 @@ public sealed class UserAccount
     public string Role { get; set; } = "Student";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastActiveAt { get; set; }
+    public bool IsSuspended { get; set; }
+    public DateTimeOffset? SuspendedAt { get; set; }
+    public int FailedLoginCount { get; set; }
+    public DateTimeOffset? LockoutEnd { get; set; }
 }
 

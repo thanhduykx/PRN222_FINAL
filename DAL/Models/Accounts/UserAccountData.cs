@@ -13,4 +13,8 @@ public sealed class UserAccountData
     public string Role { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastActiveAt { get; set; }
+    public bool IsSuspended { get; set; }
+    public DateTimeOffset? SuspendedAt { get; set; }
+    public int FailedLoginCount { get; set; }
+    public DateTimeOffset? LockoutEnd { get; set; }
 }
