@@ -103,6 +103,9 @@ public sealed class IndexModel : PageModel
                 };
 
             var packages = await _packages.GetActivePackagesAsync(cancellationToken);
+            var currentPackage = CurrentSubscription is null
+                ? null
+                : packages.FirstOrDefault(package => package.Id == CurrentSubscription.PackageId);
             var studentPackage = packages.FirstOrDefault(package =>
                 package.Code.Equals("STUDENT", StringComparison.OrdinalIgnoreCase));
 
@@ -117,6 +120,7 @@ public sealed class IndexModel : PageModel
                 MonthlyChatLimit = package.MonthlyChatLimit,
                 IsLifetime = package.IsLifetime,
                 IsCurrentPackage = CurrentSubscription?.PackageId == package.Id,
+                IsDowngrade = currentPackage is not null && package.SortOrder < currentPackage.SortOrder,
                 DiscountPercent = CalculateDiscountPercent(package, studentPackage)
             }).ToList();
         }

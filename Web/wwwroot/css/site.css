@@ -5494,23 +5494,24 @@ body.rbl-body .rbl-topbar-title {
 }
 
 body.rbl-body .rbl-topbar-actions {
-  grid-column: 3;
   justify-self: end;
   gap: 10px;
 }
 
 .rbl-topbar-package {
   display: inline-grid;
-  grid-template-columns: 36px auto;
+  grid-template-columns: 40px auto auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--rbl-text);
+  padding: 7px 10px;
+  border: 1px solid #9bc8ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #edf6ff 0%, #f4f0ff 100%);
+  color: #073b7a;
   text-decoration: none;
-  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 6px 18px rgba(10, 102, 216, .12);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .rbl-topbar-package:hover,
@@ -5520,6 +5521,7 @@ body.rbl-body .rbl-topbar-actions {
   background: #f5f9ff;
   color: var(--rbl-primary);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .rbl-topbar-package:focus-visible {
@@ -5528,12 +5530,12 @@ body.rbl-body .rbl-topbar-actions {
 
 .rbl-topbar-package__icon {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border-radius: 8px;
-  background: #e3f3ff;
-  color: #0879ba;
+  background: linear-gradient(135deg, #0879e8, #6d4ee8);
+  color: #fff;
   font-size: 21px;
 }
 
@@ -5687,6 +5689,18 @@ body.rbl-body .rbl-main {
   }
 }
 
+<<<<<<< Updated upstream
+=======
+.rbl-topbar-package__status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #0a66d8;
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
 .package-pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
@@ -5795,6 +5809,7 @@ body.price-change-modal-open {
   }
 }
 
+>>>>>>> Stashed changes
 .ops-page {
   --ops-border: #d8e0ea;
   --ops-muted: #667085;
@@ -7135,7 +7150,6 @@ body.price-change-modal-open {
   }
 
   body.rbl-body .rbl-topbar-actions {
-    grid-column: 2;
     flex-wrap: wrap;
     justify-content: flex-start;
   }
@@ -7942,114 +7956,6 @@ body.price-change-modal-open {
   line-height: 1.45;
 }
 
-.course-workspace-page .course-workspace-grid {
-  margin-top: 0;
-}
-
-.course-workspace-main-panel > .ops-panel-head h1 {
-  margin: 0;
-  color: #132238;
-  font-size: 1rem;
-  font-weight: 850;
-  line-height: 1.25;
-}
-
-.course-chapter-section {
-  overflow: hidden;
-  border: 1px solid var(--ops-border, #d9e3ed);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.course-chapter-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  background: #f8fbff;
-}
-
-.course-chapter-heading strong {
-  display: block;
-  color: #132238;
-}
-
-.course-chapter-heading p {
-  margin: 2px 0 0;
-  color: #65758a;
-  font-size: .82rem;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.course-chapter-heading > span {
-  flex: 0 0 auto;
-  color: #52657c;
-  font-size: .75rem;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.course-document-list {
-  border-top: 1px solid var(--ops-border, #d9e3ed);
-}
-
-.course-document-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-}
-
-.course-document-row + .course-document-row {
-  border-top: 1px solid #edf1f6;
-}
-
-.course-document-icon {
-  color: #0b67d1;
-  font-size: 21px;
-}
-
-.course-document-main {
-  min-width: 0;
-}
-
-.course-document-main strong,
-.course-document-main small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.course-document-main strong {
-  color: #132238;
-  font-size: .88rem;
-}
-
-.course-document-main small,
-.course-chapter-empty {
-  color: #65758a;
-  font-size: .75rem;
-}
-
-.course-chapter-empty {
-  margin: 0;
-  padding: 10px 12px;
-  border-top: 1px solid var(--ops-border, #d9e3ed);
-}
-
-.course-document-actions {
-  gap: 6px;
-}
-
-.course-document-actions .ops-mini-button {
-  min-height: 28px;
-  padding: 4px 8px;
-}
-
 .course-learner-row {
   padding: 10px 12px;
 }
@@ -8061,32 +7967,6 @@ body.price-change-modal-open {
 
   .course-chapter-row {
     grid-template-columns: 1fr;
-  }
-
-  .course-chapter-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .course-document-row {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .course-document-actions {
-    grid-column: 1 / -1;
-    flex-wrap: wrap;
-  }
-
-  .course-document-actions .ops-mini-button {
-    width: auto;
-    min-width: 68px;
-    flex: 1 1 68px;
-  }
-
-  .course-document-main strong,
-  .course-document-main small {
-    overflow-wrap: anywhere;
-    white-space: normal;
   }
 }
 
@@ -9545,6 +9425,9 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
 .package-membership__button { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: .45rem; padding: .65rem .9rem; border: 0; border-radius: 11px; background: var(--tone); color: #fff; font-weight: 750; text-decoration: none; box-shadow: 0 8px 18px color-mix(in srgb, var(--tone) 24%, transparent); }
 .package-membership__button:hover, .package-membership__button:focus-visible { filter: brightness(.94); color: #fff; transform: translateY(-1px); }
 .package-membership__button.is-secondary { border: 1px solid color-mix(in srgb, var(--tone) 45%, white); background: #fff; color: var(--tone); box-shadow: none; }
+.package-membership__button.is-disabled { cursor: not-allowed; background: #94a3b8; box-shadow: none; opacity: .82; }
+.package-membership__button.is-disabled:hover { filter: none; transform: none; }
+.package-membership__downgrade-note { color: #64748b; font-size: .72rem; font-weight: 650; text-align: center; }
 .package-membership__payment-options { display: grid; gap: .5rem; padding-top: .35rem; animation: paymentOptionsIn .18s ease-out both; }
 .package-membership__payment-options[hidden] { display: none; }
 .package-membership__payment-options > p { margin: 0 0 .15rem; color: #64748b; font-size: .75rem; font-weight: 700; text-align: center; }

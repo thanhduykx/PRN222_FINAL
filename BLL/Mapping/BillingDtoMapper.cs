@@ -81,7 +81,8 @@ public static class BillingDtoMapper
         MonthlyDocumentUploadLimit = package.MonthlyDocumentUploadLimit,
         StorageLimitMb = package.StorageLimitMb,
         IsLifetime = package.IsLifetime,
-        IsActive = package.IsActive
+        IsActive = package.IsActive,
+        SortOrder = package.SortOrder
     };
 
     public static SubscriptionDto ToDto(Subscription subscription)

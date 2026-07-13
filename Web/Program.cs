@@ -165,6 +165,17 @@ namespace PRN222_FINAL.Web
                     options.SignInScheme = "External";
                     options.SaveTokens = false;
 
+                    options.Events.OnRemoteFailure = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("GoogleAuthentication");
+                        logger.LogWarning(context.Failure, "Google OAuth callback failed.");
+                        context.HandleResponse();
+                        context.Response.Redirect("/Account/Login?googleError=oauth_failed");
+                        return Task.CompletedTask;
+                    };
+
                     if (!string.IsNullOrWhiteSpace(googlePublicOrigin))
                     {
                         var callbackUri = $"{googlePublicOrigin}{options.CallbackPath}";
@@ -251,6 +262,7 @@ namespace PRN222_FINAL.Web
             builder.Services.AddScoped<PRN222_FINAL.BLL.IDocumentIndexingService, PRN222_FINAL.BLL.DocumentIndexingService>();
             builder.Services.AddScoped<PRN222_FINAL.BLL.IRagChatService, PRN222_FINAL.BLL.RagChatService>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.DocumentIndexWorker>();
+            builder.Services.AddHostedService<PRN222_FINAL.Web.Services.AccountEmailWorker>();
 
             var app = builder.Build();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.Services.IAiSettingsService>();
