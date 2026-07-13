@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PRN222_FINAL.DAL.Entities.Billing;
 using PRN222_FINAL.DAL.Enums;
 
@@ -59,6 +59,20 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<KnowledgeSqlSubscription>> GetUnexpiredByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await using var context = CreateContext();
+        return await context.Subscriptions
+            .AsNoTracking()
+            .Include(subscription => subscription.Package)
+            .Where(subscription => subscription.UserId == userId
+                && (subscription.Status == SubscriptionStatus.Active || subscription.Status == SubscriptionStatus.Paused)
+                && subscription.EndsAt > now)
+            .OrderBy(subscription => subscription.StartsAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task ActivateExclusiveAsync(
         KnowledgeSqlSubscription subscription,
         DateTimeOffset activatedAt,
@@ -74,12 +88,11 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
             .ToListAsync(cancellationToken);
         foreach (var item in superseded)
         {
-            item.Status = SubscriptionStatus.Canceled;
+            item.Status = SubscriptionStatus.Paused;
             if (item.StartsAt > activatedAt)
             {
                 item.StartsAt = activatedAt;
             }
-            item.EndsAt = item.EndsAt > activatedAt ? activatedAt : item.EndsAt;
         }
 
         var target = await context.Subscriptions
