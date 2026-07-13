@@ -44,6 +44,18 @@ public sealed class PaymentService : IPaymentService
         {
             throw new InvalidOperationException("Package is not active.");
         }
+
+        var currentSubscriptionEntity = await _subscriptions.GetCurrentActiveAsync(request.UserId, cancellationToken);
+        if (currentSubscriptionEntity?.Package is not null)
+        {
+            var currentPackage = BillingDtoMapper.ToModel(currentSubscriptionEntity.Package);
+            if (package.SortOrder < currentPackage.SortOrder)
+            {
+                throw new InvalidOperationException(
+                    $"Không thể hạ từ gói {currentPackage.Name} xuống gói {package.Name} khi gói hiện tại còn hiệu lực.");
+            }
+        }
+
         if (package.PriceVnd <= 0
             && await _payments.HasSuccessfulPaymentAsync(request.UserId, package.Id, cancellationToken))
         {

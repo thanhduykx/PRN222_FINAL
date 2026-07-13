@@ -98,6 +98,14 @@
                             Xem gói hiện tại
                         </a>
                     }
+                    else if (package.IsDowngrade)
+                    {
+                        <button type="button" class="package-membership__button is-disabled" disabled aria-disabled="true">
+                            <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                            Không thể hạ gói
+                        </button>
+                        <small class="package-membership__downgrade-note">Gói hiện tại của bạn còn hiệu lực.</small>
+                    }
                     else if (package.IsFree)
                     {
                         <form method="post" asp-page-handler="Checkout">
