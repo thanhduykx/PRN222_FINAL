@@ -98,6 +98,7 @@ public sealed class PackageService : IPackageService
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
+        await _packages.RemoveRetiredAsync("LIFETIME", cancellationToken);
         var existingPackages = (await _packages.GetAllAsync(cancellationToken))
             .Select(BillingDtoMapper.ToModel).ToList();
         var defaults = new[]
@@ -148,22 +149,6 @@ public sealed class PackageService : IPackageService
                 IsLifetime = false,
                 IsActive = true,
                 SortOrder = 30,
-                CreatedAt = now
-            },
-            new Package
-            {
-                Id = Guid.NewGuid(),
-                Code = "LIFETIME",
-                Name = "Vĩnh viễn (đã ngừng bán)",
-                Description = "Gói cũ được giữ quyền lợi cho người đã đăng ký trước đây.",
-                PriceVnd = 0,
-                DurationDays = 0,
-                MonthlyChatLimit = 60,
-                MonthlyDocumentUploadLimit = 0,
-                StorageLimitMb = 0,
-                IsLifetime = true,
-                IsActive = false,
-                SortOrder = 40,
                 CreatedAt = now
             },
             new Package

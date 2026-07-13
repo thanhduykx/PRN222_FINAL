@@ -51,6 +51,20 @@ public sealed class AnalyticsService : IAnalyticsService
         return AnalyticsDtoMapper.ToDto(data);
     }
 
+    public async Task<AdminAnalyticsDashboardDto> GetAdminDashboardAsync(
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        if (toUtc < fromUtc)
+        {
+            throw new ArgumentException("The analytics end date must be on or after the start date.", nameof(toUtc));
+        }
+
+        var data = await _analytics.GetAdminDashboardAsync(fromUtc, toUtc, cancellationToken);
+        return AnalyticsDtoMapper.ToDto(data);
+    }
+
     private static string Normalize(string value, int maxLength)
     {
         var normalized = (value ?? string.Empty).Trim();
