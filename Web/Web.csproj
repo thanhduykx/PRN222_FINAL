@@ -12,4 +12,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>PRN222-FINAL-Web-LocalSecrets</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- User documents are private application data, never static web assets. -->
+    <Content Remove="wwwroot\uploads\**" />
+    <None Include="wwwroot\uploads\.gitkeep" />
+  </ItemGroup>
 </Project>

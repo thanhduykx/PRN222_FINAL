@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
@@ -16,19 +17,16 @@ using PRN222_FINAL.Web.Services;
 namespace PRN222_FINAL.Web.Pages.Account;
 
 [AllowAnonymous]
+[EnableRateLimiting("auth")]
 public sealed class LoginModel : PageModel
 {
-    private const string AccountProvisioningMessage = "Tài khoản được cấp bởi Nhà trường. Vui lòng liên hệ Nhà trường để xin cấp tài khoản.";
-
     private readonly IUserAccountService _users;
     private readonly IAuthenticationSchemeProvider _schemes;
-    private readonly string _googlePublicOrigin;
 
-    public LoginModel(IUserAccountService users, IAuthenticationSchemeProvider schemes, IConfiguration configuration)
+    public LoginModel(IUserAccountService users, IAuthenticationSchemeProvider schemes)
     {
         _users = users;
         _schemes = schemes;
-        _googlePublicOrigin = (configuration["Authentication:Google:PublicOrigin"] ?? string.Empty).Trim().TrimEnd('/');
     }
 
     [BindProperty]
@@ -72,21 +70,19 @@ public sealed class LoginModel : PageModel
         }
 
         var user = await _users.FindByEmailAsync(Email, cancellationToken);
-        if (user is null)
+        var isLocked = user?.LockoutEnd > DateTimeOffset.UtcNow;
+        if (user is null || user.IsSuspended || isLocked || !_users.VerifyPassword(user, Password))
         {
-            ModelState.AddModelError(string.Empty, AccountProvisioningMessage);
-            await ConfigureGoogleLoginStateAsync();
-            return Page();
-        }
-
-        if (!_users.VerifyPassword(user, Password))
-        {
+            if (user is not null && !user.IsSuspended && !isLocked)
+            {
+                await _users.RecordLoginFailureAsync(user.Id, cancellationToken);
+            }
             ModelState.AddModelError(string.Empty, "The email or password is incorrect.");
             await ConfigureGoogleLoginStateAsync();
             return Page();
         }
 
-        await _users.MarkActiveAsync(user.Id);
+        await _users.RecordLoginSuccessAsync(user.Id, cancellationToken);
         user.LastActiveAt = DateTimeOffset.UtcNow;
         await SignInAsync(user);
         return RedirectAfterSignIn(user, ReturnUrl);
@@ -98,16 +94,6 @@ public sealed class LoginModel : PageModel
         {
             TempData["AuthError"] = "Google sign-in is not configured.";
             return RedirectToPage("/Account/Login", new { returnUrl });
-        }
-
-        if (MustRebaseGoogleLoginToPublicOrigin())
-        {
-            var startUrl = $"{_googlePublicOrigin}/Account/Login?handler=GoogleStart";
-            if (!string.IsNullOrWhiteSpace(returnUrl))
-            {
-                startUrl += $"&returnUrl={Uri.EscapeDataString(returnUrl)}";
-            }
-            return Redirect(startUrl);
         }
 
         return CreateGoogleChallenge(returnUrl);
@@ -132,19 +118,6 @@ public sealed class LoginModel : PageModel
         };
 
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-    }
-
-    private bool MustRebaseGoogleLoginToPublicOrigin()
-    {
-        if (string.IsNullOrWhiteSpace(_googlePublicOrigin)
-            || !Uri.TryCreate(_googlePublicOrigin, UriKind.Absolute, out var publicOrigin))
-        {
-            return false;
-        }
-
-        return !Request.Scheme.Equals(publicOrigin.Scheme, StringComparison.OrdinalIgnoreCase)
-               || !Request.Host.Host.Equals(publicOrigin.Host, StringComparison.OrdinalIgnoreCase)
-               || Request.Host.Port != (publicOrigin.IsDefaultPort ? null : publicOrigin.Port);
     }
 
     private async Task SignInAsync(UserAccount user)

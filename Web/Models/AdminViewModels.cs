@@ -27,6 +27,8 @@ public sealed class AdminUserRowViewModel
     public bool HasAssignedSubjects { get; set; }
     public bool IsLastAdmin { get; set; }
     public bool IsCurrentUser { get; set; }
+    public bool IsSuspended { get; set; }
+    public DateTimeOffset? SuspendedAt { get; set; }
     public IReadOnlyList<string> AssignedSubjects { get; set; } = Array.Empty<string>();
     public IReadOnlyList<AdminAssignedSubjectViewModel> AssignedSubjectDetails { get; set; } = Array.Empty<AdminAssignedSubjectViewModel>();
 }
@@ -60,6 +62,12 @@ public sealed class DeleteAdminUserViewModel
     public Guid UserId { get; set; }
 }
 
+public sealed class SuspendAdminUserViewModel
+{
+    public Guid UserId { get; set; }
+    public bool Suspend { get; set; }
+}
+
 public sealed class RegisterLecturerSubjectViewModel
 {
     public Guid UserId { get; set; }
@@ -91,11 +99,6 @@ public sealed class CreateAdminUserViewModel
     [Required(ErrorMessage = "Email is required.")]
     [EmailAddress(ErrorMessage = "Enter a valid email address.")]
     public string Email { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Password is required.")]
-    [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
-    [DataType(DataType.Password)]
-    public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Role is required.")]
     public string Role { get; set; } = PRN222_FINAL.BLL.Security.AppRoles.Student;

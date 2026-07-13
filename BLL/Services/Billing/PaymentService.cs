@@ -56,12 +56,6 @@ public sealed class PaymentService : IPaymentService
             }
         }
 
-        if (package.PriceVnd <= 0
-            && await _payments.HasSuccessfulPaymentAsync(request.UserId, package.Id, cancellationToken))
-        {
-            throw new InvalidOperationException("Gói trải nghiệm chỉ được kích hoạt một lần cho mỗi tài khoản.");
-        }
-
         var now = DateTimeOffset.UtcNow;
         var payment = new Payment
         {
@@ -78,17 +72,27 @@ public sealed class PaymentService : IPaymentService
             CreatedAt = now
         };
 
-        await _payments.AddAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
-
         if (package.PriceVnd <= 0)
         {
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = now;
             payment.CheckoutUrl = request.ReturnUrl;
-            await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
+            if (!await _payments.TryAddFreePaidAsync(BillingDtoMapper.ToEntity(payment), cancellationToken))
+            {
+                var priorFreePayment = await _payments.GetLatestSuccessfulByUserAsync(request.UserId, cancellationToken);
+                if (priorFreePayment is not null && priorFreePayment.PackageId == package.Id)
+                {
+                    var priorPayment = BillingDtoMapper.ToModel(priorFreePayment);
+                    await EnsurePaidSubscriptionAsync(priorPayment, package, cancellationToken);
+                    return ToCheckoutResult(priorPayment, "Free package was already activated.");
+                }
+                throw new InvalidOperationException("Gói trải nghiệm chỉ được kích hoạt một lần cho mỗi tài khoản.");
+            }
             await ActivateSubscriptionAsync(payment, package, cancellationToken);
             return ToCheckoutResult(payment, "Free package activated.");
         }
+
+        await _payments.AddAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
 
         var gatewayRequest = new PaymentGatewayCreateRequest
         {
@@ -99,7 +103,7 @@ public sealed class PaymentService : IPaymentService
             Description = $"PRN222 {package.Code}",
             ReturnUrl = BuildReturnUrl(request.ReturnUrl, request.Provider, payment.OrderCode),
             CancelUrl = BuildReturnUrl(request.CancelUrl, request.Provider, payment.OrderCode),
-            IpnUrl = BuildWebhookUrl(request.Provider),
+            IpnUrl = BuildWebhookUrl(request.Provider, request.ReturnUrl),
             UserIpAddress = request.IpAddress
         };
 
@@ -146,7 +150,7 @@ public sealed class PaymentService : IPaymentService
             ?? throw new InvalidOperationException("Package not found.");
         var package = BillingDtoMapper.ToModel(packageEntity);
 
-        if (result.AmountVnd.HasValue && result.AmountVnd.Value != payment.AmountVnd)
+        if (!result.AmountVnd.HasValue || result.AmountVnd.Value != payment.AmountVnd)
         {
             throw new InvalidOperationException("Webhook amount does not match payment amount.");
         }
@@ -331,8 +335,7 @@ public sealed class PaymentService : IPaymentService
 
     private async Task ActivateSubscriptionAsync(Payment payment, Package package, CancellationToken cancellationToken)
     {
-        var latestPaidPayment = (await _payments.GetByUserAsync(payment.UserId, 100, cancellationToken))
-            .FirstOrDefault(item => item.Status == PRN222_FINAL.DAL.Enums.PaymentStatus.Paid);
+        var latestPaidPayment = await _payments.GetLatestSuccessfulByUserAsync(payment.UserId, cancellationToken);
         if (latestPaidPayment is not null && latestPaidPayment.Id != payment.Id)
         {
             return;
@@ -373,17 +376,44 @@ public sealed class PaymentService : IPaymentService
         await ActivateSubscriptionAsync(payment, package, cancellationToken);
     }
 
-    private string BuildWebhookUrl(PaymentProvider provider)
+    private string BuildWebhookUrl(PaymentProvider provider, string checkoutReturnUrl)
     {
-        var baseUrl = _options.BaseReturnUrl.TrimEnd('/');
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            throw new InvalidOperationException("Payment base return URL is not configured.");
-        }
+        var baseUrl = ResolvePublicBaseUrl(checkoutReturnUrl);
 
         return provider == PaymentProvider.MoMo
             ? $"{baseUrl}/Payments/MomoWebhook"
             : $"{baseUrl}/Payments/PayOsWebhook";
+    }
+
+    private string ResolvePublicBaseUrl(string checkoutReturnUrl)
+    {
+        var configured = (_options.BaseReturnUrl ?? string.Empty).Trim().TrimEnd('/');
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return ValidateAbsoluteHttpOrigin(configured, "Payment base return URL");
+        }
+
+        if (!Uri.TryCreate(checkoutReturnUrl, UriKind.Absolute, out var returnUri)
+            || (!returnUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && !returnUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("Checkout return URL must be an absolute HTTP(S) URL.");
+        }
+
+        return returnUri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
+    }
+
+    private static string ValidateAbsoluteHttpOrigin(string value, string name)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            || (!uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && !uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            || uri.PathAndQuery != "/")
+        {
+            throw new InvalidOperationException($"{name} must be an absolute HTTP(S) origin without a path.");
+        }
+
+        return uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
     }
 
     private static string BuildReturnUrl(string returnUrl, PaymentProvider provider, string orderCode)

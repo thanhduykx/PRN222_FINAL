@@ -120,7 +120,14 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
         var payments = await context.Payments
             .AsNoTracking()
             .Include(payment => payment.Package)
-            .Where(payment => payment.CreatedAt >= fromUtc && payment.CreatedAt <= toUtc)
+            .Where(payment =>
+                (payment.Status == PaymentStatus.Paid
+                    && payment.PaidAt.HasValue
+                    && payment.PaidAt.Value >= fromUtc
+                    && payment.PaidAt.Value <= toUtc)
+                || (payment.Status != PaymentStatus.Paid
+                    && payment.CreatedAt >= fromUtc
+                    && payment.CreatedAt <= toUtc))
             .Select(payment => new PaymentRow(
                 payment.Id,
                 payment.PackageId,

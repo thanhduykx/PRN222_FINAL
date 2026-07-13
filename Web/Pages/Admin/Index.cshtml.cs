@@ -107,7 +107,7 @@ public sealed class IndexModel : PageModel
             var user = await _provisioning.CreateLocalForAdminAsync(
                 model.FullName,
                 model.Email,
-                model.Password,
+                GenerateInitialPassword(),
                 role,
                 cancellationToken);
 
@@ -123,7 +123,7 @@ public sealed class IndexModel : PageModel
                 warnings.Add("User was created, but lecturer subjects could not be assigned.");
             }
 
-            _emailJobs.Enqueue(CreateWelcomeEmailJob(user, model.Password, assignedSubjectLabels));
+            await _emailJobs.EnqueueAsync(CreateWelcomeEmailJob(user, assignedSubjectLabels), cancellationToken);
 
             var subjectSummary = assignedSubjectLabels.Count > 0
                 ? $" Assigned {assignedSubjectLabels.Count} subject(s)."
@@ -187,13 +187,13 @@ public sealed class IndexModel : PageModel
 
             foreach (var draft in drafts)
             {
-                var temporaryPassword = "12345678";
+                var initialPassword = GenerateInitialPassword();
                 try
                 {
                     var user = await _provisioning.CreateLocalForAdminAsync(
                         draft.FullName,
                         draft.Email,
-                        temporaryPassword,
+                        initialPassword,
                         draft.Role,
                         cancellationToken);
                     createdCount++;
@@ -212,7 +212,7 @@ public sealed class IndexModel : PageModel
                         importSubjectIndex++;
                     }
 
-                    _emailJobs.Enqueue(CreateWelcomeEmailJob(user, temporaryPassword, assignedSubjectLabels));
+                    await _emailJobs.EnqueueAsync(CreateWelcomeEmailJob(user, assignedSubjectLabels), cancellationToken);
                     emailQueuedCount++;
                 }
                 catch (Exception ex) when (ex is InvalidOperationException)
@@ -317,28 +317,22 @@ public sealed class IndexModel : PageModel
         return assignedSubjectLabels;
     }
 
-    private string BuildLoginUrl()
+    private string BuildApplicationBaseUrl()
     {
-        return Url.Page(
-            "/Account/Login",
-            pageHandler: null,
-            values: null,
-            protocol: Request.Scheme,
-            host: Request.Host.ToUriComponent()) ?? string.Empty;
+        return $"{Request.Scheme}://{Request.Host.ToUriComponent()}";
     }
 
     private WelcomeEmailJob CreateWelcomeEmailJob(
         UserAccount user,
-        string temporaryPassword,
         IReadOnlyList<string> assignedSubjectLabels)
     {
         return new WelcomeEmailJob(
+            Guid.NewGuid(),
             user.Id,
             user.Email,
             user.FullName,
             user.Role,
-            temporaryPassword,
-            BuildLoginUrl(),
+            BuildApplicationBaseUrl(),
             assignedSubjectLabels.ToArray());
     }
 
@@ -579,7 +573,7 @@ public sealed class IndexModel : PageModel
         return fullName.Length <= 120 ? fullName : fullName[..120];
     }
 
-    private static string GenerateTemporaryPassword()
+    private static string GenerateInitialPassword()
     {
         return $"Cpms@{WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(9))}";
     }
@@ -633,6 +627,31 @@ public sealed class IndexModel : PageModel
     public IActionResult OnPostUpdateRole([FromForm] UpdateUserRoleViewModel model)
     {
         TempData["Error"] = "Role changes are disabled after account creation.";
+        return RedirectToPage("/Admin/Index");
+    }
+
+    public async Task<IActionResult> OnPostSetSuspendedAsync(
+        [FromForm] SuspendAdminUserViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (model.Suspend && IsCurrentUser(model.UserId))
+        {
+            TempData["Error"] = "You cannot suspend your own active account.";
+            return RedirectToPage("/Admin/Index");
+        }
+
+        try
+        {
+            var user = await _users.SetSuspendedAsync(model.UserId, model.Suspend, cancellationToken);
+            TempData["Success"] = model.Suspend
+                ? $"Suspended {user.Email}. Existing sessions are now revoked."
+                : $"Restored {user.Email}.";
+        }
+        catch (Exception ex) when (ex is InvalidOperationException)
+        {
+            TempData["Error"] = ToAdminUserError(ex.Message);
+        }
+
         return RedirectToPage("/Admin/Index");
     }
 
@@ -953,6 +972,8 @@ public sealed class IndexModel : PageModel
                 HasAssignedSubjects = user.Role == AppRoles.Lecturer && assignedDetails.Count > 0,
                 IsLastAdmin = user.Role == AppRoles.Admin && adminCount <= 1,
                 IsCurrentUser = IsCurrentUser(user.Id),
+                IsSuspended = user.IsSuspended,
+                SuspendedAt = user.SuspendedAt,
                 AssignedSubjectDetails = assignedDetails,
                 AssignedSubjects = ResolveAssignedSubjectLabels(user, assignedSubjectsByUser)
             };

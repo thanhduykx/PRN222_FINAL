@@ -66,9 +66,11 @@ public static class KnowledgeSqlSchemaInitializer
                 "OldPriceVnd" numeric(18,2) NOT NULL,
                 "NewPriceVnd" numeric(18,2) NOT NULL,
                 "ChangedBy" varchar(255) NOT NULL,
+                "Reason" varchar(500) NOT NULL DEFAULT '',
                 "ChangedAt" timestamp with time zone NOT NULL
             );
 
+            ALTER TABLE package_price_changes ADD COLUMN IF NOT EXISTS "Reason" varchar(500) NOT NULL DEFAULT '';
             CREATE INDEX IF NOT EXISTS "IX_package_price_changes_ChangedAt" ON package_price_changes ("ChangedAt");
             CREATE INDEX IF NOT EXISTS "IX_package_price_changes_PackageId" ON package_price_changes ("PackageId");
 
@@ -114,6 +116,20 @@ public static class KnowledgeSqlSchemaInitializer
 
             CREATE INDEX IF NOT EXISTS "IX_subscriptions_UserId_Status_EndsAt" ON subscriptions ("UserId", "Status", "EndsAt");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_subscriptions_PaymentId" ON subscriptions ("PaymentId") WHERE "PaymentId" IS NOT NULL;
+            WITH ranked_active AS (
+                SELECT "Id", ROW_NUMBER() OVER (
+                    PARTITION BY "UserId"
+                    ORDER BY ("EndsAt" > NOW()) DESC, "EndsAt" DESC, "CreatedAt" DESC, "Id" DESC
+                ) AS row_number
+                FROM subscriptions
+                WHERE "Status" = 'Active'
+            )
+            UPDATE subscriptions AS subscription
+            SET "Status" = 'Canceled', "EndsAt" = LEAST(subscription."EndsAt", NOW())
+            FROM ranked_active
+            WHERE subscription."Id" = ranked_active."Id" AND ranked_active.row_number > 1;
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_subscriptions_one_active_per_user"
+                ON subscriptions ("UserId") WHERE "Status" = 'Active';
 
             CREATE TABLE IF NOT EXISTS course_access_logs (
                 "Id" uuid PRIMARY KEY,
@@ -131,6 +147,18 @@ public static class KnowledgeSqlSchemaInitializer
             CREATE INDEX IF NOT EXISTS "IX_course_access_logs_UserId" ON course_access_logs ("UserId");
             CREATE INDEX IF NOT EXISTS "IX_course_access_logs_SubjectId" ON course_access_logs ("SubjectId");
             CREATE INDEX IF NOT EXISTS "IX_course_access_logs_AccessedAt" ON course_access_logs ("AccessedAt");
+
+            CREATE TABLE IF NOT EXISTS system_notifications (
+                "Id" uuid PRIMARY KEY,
+                "Type" varchar(64) NOT NULL,
+                "EntityId" uuid NULL,
+                "Title" varchar(200) NOT NULL,
+                "Message" varchar(1000) NOT NULL,
+                "OccurredAt" timestamp with time zone NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS "IX_system_notifications_OccurredAt" ON system_notifications ("OccurredAt");
+            CREATE INDEX IF NOT EXISTS "IX_system_notifications_Type" ON system_notifications ("Type");
             """);
     }
 

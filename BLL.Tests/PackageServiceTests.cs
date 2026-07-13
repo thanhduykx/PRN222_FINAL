@@ -13,7 +13,7 @@ public sealed class PackageServiceTests
     {
         var repository = Substitute.For<IPackageRepository>();
         var packageId = Guid.NewGuid();
-        repository.UpdatePriceAsync(packageId, 79_000m, "admin@example.com", Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+        repository.UpdatePriceAsync(packageId, 49_000m, 79_000m, "admin@example.com", "Điều chỉnh học kỳ mới", Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns(call => new KnowledgeSqlPackagePriceChange
             {
                 Id = Guid.NewGuid(),
@@ -22,16 +22,18 @@ public sealed class PackageServiceTests
                 OldPriceVnd = 49_000m,
                 NewPriceVnd = 79_000m,
                 ChangedBy = "admin@example.com",
-                ChangedAt = call.ArgAt<DateTimeOffset>(3)
+                Reason = "Điều chỉnh học kỳ mới",
+                ChangedAt = call.ArgAt<DateTimeOffset>(5)
             });
         var service = new PackageService(repository);
 
-        var result = await service.UpdatePriceAsync(packageId, 79_000m, "admin@example.com");
+        var result = await service.UpdatePriceAsync(packageId, 49_000m, 79_000m, "admin@example.com", "  Điều chỉnh học kỳ mới  ", false);
 
         Assert.NotNull(result);
         Assert.Equal("Student", result.PackageName);
         Assert.Equal(49_000m, result.OldPriceVnd);
         Assert.Equal(79_000m, result.NewPriceVnd);
+        Assert.Equal("Điều chỉnh học kỳ mới", result.Reason);
     }
 
     [Theory]
@@ -44,9 +46,34 @@ public sealed class PackageServiceTests
         var service = new PackageService(repository);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-            service.UpdatePriceAsync(Guid.NewGuid(), price, "admin@example.com"));
+            service.UpdatePriceAsync(Guid.NewGuid(), 49_000m, price, "admin@example.com", "Điều chỉnh giá", false));
         await repository.DidNotReceiveWithAnyArgs()
-            .UpdatePriceAsync(default, default, default!, default, default);
+            .UpdatePriceAsync(default, default, default, default!, default!, default, default);
+    }
+
+    [Fact]
+    public async Task UpdatePriceAsync_RequiresExplicitConfirmationWhenPaidPackageBecomesFree()
+    {
+        var repository = Substitute.For<IPackageRepository>();
+        var service = new PackageService(repository);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UpdatePriceAsync(Guid.NewGuid(), 49_000m, 0, "admin@example.com", "Chuyển sang miễn phí", false));
+
+        await repository.DidNotReceiveWithAnyArgs()
+            .UpdatePriceAsync(default, default, default, default!, default!, default, default);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("abc")]
+    public async Task UpdatePriceAsync_RejectsMissingOrShortReason(string reason)
+    {
+        var repository = Substitute.For<IPackageRepository>();
+        var service = new PackageService(repository);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.UpdatePriceAsync(Guid.NewGuid(), 49_000m, 59_000m, "admin@example.com", reason, false));
     }
 
     [Fact]

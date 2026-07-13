@@ -22,9 +22,14 @@ public sealed class WebPageTextExtractor : IWebPageTextExtractor
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
             throw new ArgumentException("A valid HTTP or HTTPS URL is required.", nameof(url));
-        var response = await _http.SendAsync(new HttpRequestData("GET", uri.ToString()), cancellationToken);
+        var response = await _http.SendAsync(new HttpRequestData("GET", uri.ToString())
+        {
+            RejectPrivateNetworks = true,
+            MaxResponseBytes = 5 * 1024 * 1024,
+            MaxRedirects = 5
+        }, cancellationToken);
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException($"Web request failed with HTTP {response.StatusCode}. {response.ReasonPhrase}");
-        return new WebPageExtractionResult("Web Page", uri.ToString(), response.Body);
+        return new WebPageExtractionResult("Web Page", response.FinalUrl ?? uri.ToString(), response.Body);
     }
 }

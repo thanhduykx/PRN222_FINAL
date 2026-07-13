@@ -3,12 +3,14 @@ using PRN222_FINAL.BLL.Services.Accounts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using PRN222_FINAL.Web.Models;
 using PRN222_FINAL.Web.Services;
 
 namespace PRN222_FINAL.Web.Pages.Account;
 
 [AllowAnonymous]
+[EnableRateLimiting("auth")]
 public sealed class ForgotPasswordModel : PageModel
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);

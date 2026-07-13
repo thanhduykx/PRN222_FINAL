@@ -17,6 +17,35 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<bool> TryAddFreePaidAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var lockKey = $"free-package:{payment.UserId:N}:{payment.PackageId:N}";
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({lockKey}, 0))",
+            cancellationToken);
+
+        var alreadyClaimed = await context.Payments.AnyAsync(item =>
+            item.UserId == payment.UserId
+            && item.PackageId == payment.PackageId
+            && item.Status == PaymentStatus.Paid,
+            cancellationToken)
+            || await context.Subscriptions.AnyAsync(item =>
+                item.UserId == payment.UserId && item.PackageId == payment.PackageId,
+                cancellationToken);
+        if (alreadyClaimed)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return false;
+        }
+
+        context.Payments.Add(payment);
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
     public async Task UpdateAsync(KnowledgeSqlPayment payment, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();
@@ -103,5 +132,19 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             && payment.PackageId == packageId
             && payment.Status == PaymentStatus.Paid,
             cancellationToken);
+    }
+
+    public async Task<KnowledgeSqlPayment?> GetLatestSuccessfulByUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments
+            .AsNoTracking()
+            .Where(payment => payment.UserId == userId && payment.Status == PaymentStatus.Paid)
+            .OrderByDescending(payment => payment.PaidAt ?? payment.CreatedAt)
+            .ThenByDescending(payment => payment.CreatedAt)
+            .ThenByDescending(payment => payment.Id)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
