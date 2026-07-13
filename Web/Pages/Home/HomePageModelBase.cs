@@ -1,4 +1,4 @@
-﻿using PRN222_FINAL.BLL.Services.Accounts;
+using PRN222_FINAL.BLL.Services.Accounts;
 using PRN222_FINAL.BLL.Security;
 using System.Security.Claims;
 using System.Text;
@@ -236,30 +236,46 @@ public abstract class HomePageModelBase : PageModel
             return subject?.OwnerUserId == userId;
         }
 
-        protected Task<bool> CanManageDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
+        protected async Task<bool> CanManageDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
         {
             if (DocumentBelongsToCurrentUser(document))
             {
-                return Task.FromResult(true);
+                return true;
             }
 
-            return Task.FromResult(false);
+            if (await CanManageSubjectAsync(document.Subject, cancellationToken))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         
-        protected Task<bool> CanEditDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
+        protected async Task<bool> CanEditDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
         {
             if (DocumentBelongsToCurrentUser(document))
             {
-                return Task.FromResult(true);
+                return true;
             }
 
-            return Task.FromResult(false);
+            if (await CanManageSubjectAsync(document.Subject, cancellationToken))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public bool CanEditDocumentMetadata(IndexedDocument document, IEnumerable<CourseSubject> catalog)
         {
             if (DocumentBelongsToCurrentUser(document))
+            {
+                return true;
+            }
+
+            var subject = FindSubjectForDocumentSubject(catalog, document.Subject);
+            if (IsLecturer() && CurrentUserId() is { } userId && subject?.OwnerUserId == userId)
             {
                 return true;
             }
@@ -270,6 +286,11 @@ public abstract class HomePageModelBase : PageModel
         public bool CanManageDocumentAction(IndexedDocument document, DocumentTreeSubjectViewModel subject)
         {
             if (DocumentBelongsToCurrentUser(document))
+            {
+                return true;
+            }
+
+            if (IsLecturer() && CurrentUserId() is { } userId && subject.OwnerUserId == userId)
             {
                 return true;
             }
