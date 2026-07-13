@@ -4,26 +4,181 @@
     ViewData["Title"] = "Error";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<style>
+    /* ==========================================================================
+           GIAO DIỆN TRANG LỖI (ERROR PAGE) HIỆN ĐẠI
+           ========================================================================== */
+    .err-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        padding: 2rem 1rem;
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: #f8fafc;
+    }
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+    .err-card {
+        background: #ffffff;
+        width: 100%;
+        max-width: 540px;
+        padding: 3rem 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+        border: 1px solid #f1f5f9;
+        text-align: center;
+    }
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> mode will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>Development mode shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, set <strong>Hosting:Environment</strong> to <strong>Development</strong> in <strong>appsettings.json</strong>
-    and restart the app.
-</p>
+    .err-icon {
+        width: 72px;
+        height: 72px;
+        background: #fef2f2;
+        color: #ef4444; /* Màu đỏ báo lỗi */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .err-card h1 {
+        font-size: 2.25rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.025em;
+    }
+
+    .err-card h2 {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin: 0 0 2rem 0;
+        line-height: 1.5;
+    }
+
+    .err-request-id {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+        .err-request-id p {
+            margin: 0;
+            color: #334155;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .err-request-id code {
+            background: #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: ui-monospace, monospace;
+            color: #0f172a;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+    .err-dev-mode {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 4px solid #f59e0b; /* Màu cam cảnh báo */
+        padding: 1.25rem;
+        border-radius: 6px;
+        text-align: left;
+    }
+
+        .err-dev-mode h3 {
+            color: #92400e;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .err-dev-mode p {
+            color: #92400e;
+            font-size: 0.875rem;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.5;
+        }
+
+            .err-dev-mode p:last-child {
+                margin-bottom: 0;
+            }
+
+    .err-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        padding: 0.75rem 1.5rem;
+        background: #0f172a;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: background-color 0.2s;
+    }
+
+        .err-back-btn:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+</style>
+
+<div class="err-wrapper">
+    <div class="err-card">
+
+        <div class="err-icon">
+            <span class="material-symbols-outlined" style="font-size: 36px;">warning</span>
+        </div>
+
+        <h1>Error.</h1>
+        <h2>An error occurred while processing your request.</h2>
+
+        @if (Model.ShowRequestId)
+        {
+            <div class="err-request-id">
+                <p>
+                    <span class="material-symbols-outlined" style="font-size: 20px; color: #64748b;">receipt_long</span>
+                    <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                </p>
+            </div>
+        }
+
+        <div class="err-dev-mode">
+            <h3>
+                <span class="material-symbols-outlined" style="font-size: 20px;">bug_report</span>
+                Development Mode
+            </h3>
+            <p>
+                Swapping to <strong>Development</strong> mode will display more detailed information about the error that occurred.
+            </p>
+            <p>
+                <strong>Development mode shouldn't be enabled for deployed applications.</strong>
+                It can result in displaying sensitive information from exceptions to end users.
+                For local debugging, set <strong>Hosting:Environment</strong> to <strong>Development</strong> in <strong>appsettings.json</strong>
+                and restart the app.
+            </p>
+        </div>
+
+        <a href="/" class="err-back-btn">
+            <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+            Quay lại Trang chủ
+        </a>
+
+    </div>
+</div>
 // BEGIN: 500 dummy lines for Git visibility
 // Line 127: dummy code for git visibility
 // Line 128: dummy code for git visibility
