@@ -36,6 +36,8 @@ EduVietRAG là web app ASP.NET Core Razor Pages hỗ trợ quản lý tài liệ
 
 ![Sơ đồ kiến trúc EduVietRAG](docs/architecture.jpg)
 
+
+
 Hệ thống tuân thủ luồng một chiều `Web → BLL → DAL`. `Web` chỉ nhận input và hiển thị; `BLL` validate, xử lý nghiệp vụ và map raw data sang DTO/model; `DAL` thực hiện PostgreSQL, filesystem, SMTP và HTTP API. Kết quả quay về theo chiều `DAL → BLL → Web`; không có tham chiếu ngược lớp.
 
 ### Luồng RAG Tóm Tắt
