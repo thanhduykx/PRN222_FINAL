@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using PRN222_FINAL.BLL.Mapping;
 using PRN222_FINAL.BLL.Options;
 using PRN222_FINAL.BLL.Services.Billing.Gateways;
@@ -44,10 +44,23 @@ public sealed class PaymentService : IPaymentService
         {
             throw new InvalidOperationException("Package is not active.");
         }
-        if (package.PriceVnd <= 0
+        var unexpiredSubs = await _subscriptions.GetUnexpiredByUserAsync(request.UserId, cancellationToken);
+        var highestSub = unexpiredSubs.OrderByDescending(s => s.Package?.PriceVnd ?? 0).FirstOrDefault();
+        var highestPriceVnd = highestSub?.Package?.PriceVnd ?? 0m;
+        
+        var currentActiveSub = unexpiredSubs.FirstOrDefault(s => s.Status == PRN222_FINAL.DAL.Enums.SubscriptionStatus.Active);
+        bool isSwitch = currentActiveSub is not null && package.Id != currentActiveSub.PackageId;
+        
+        if (package.PriceVnd <= 0 && !isSwitch
             && await _payments.HasSuccessfulPaymentAsync(request.UserId, package.Id, cancellationToken))
         {
             throw new InvalidOperationException("Gói trải nghiệm chỉ được kích hoạt một lần cho mỗi tài khoản.");
+        }
+        
+        var amountToPay = package.PriceVnd;
+        if (isSwitch)
+        {
+            amountToPay = Math.Max(0, package.PriceVnd - highestPriceVnd);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -60,7 +73,7 @@ public sealed class PaymentService : IPaymentService
             UserEmail = Normalize(request.UserEmail, 255),
             Provider = request.Provider,
             Status = PaymentStatus.Pending,
-            AmountVnd = package.PriceVnd,
+            AmountVnd = amountToPay,
             Currency = "VND",
             OrderCode = GenerateOrderCode(request.Provider),
             CreatedAt = now
@@ -68,14 +81,14 @@ public sealed class PaymentService : IPaymentService
 
         await _payments.AddAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
 
-        if (package.PriceVnd <= 0)
+        if (payment.AmountVnd <= 0)
         {
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = now;
             payment.CheckoutUrl = request.ReturnUrl;
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
             await ActivateSubscriptionAsync(payment, package, cancellationToken);
-            return ToCheckoutResult(payment, "Free package activated.");
+            return ToCheckoutResult(payment, "Switched package successfully.");
         }
 
         var gatewayRequest = new PaymentGatewayCreateRequest
@@ -83,7 +96,7 @@ public sealed class PaymentService : IPaymentService
             Provider = request.Provider,
             OrderCode = payment.OrderCode,
             PayOsOrderCode = BuildPayOsOrderCode(payment.OrderCode),
-            AmountVnd = package.PriceVnd,
+            AmountVnd = payment.AmountVnd,
             Description = $"PRN222 {package.Code}",
             ReturnUrl = BuildReturnUrl(request.ReturnUrl, request.Provider, payment.OrderCode),
             CancelUrl = BuildReturnUrl(request.CancelUrl, request.Provider, payment.OrderCode),
@@ -327,6 +340,11 @@ public sealed class PaymentService : IPaymentService
         }
 
         var now = DateTimeOffset.UtcNow;
+        var unexpiredSubs = await _subscriptions.GetUnexpiredByUserAsync(payment.UserId, cancellationToken);
+        var highestSub = unexpiredSubs.OrderByDescending(s => s.Package?.PriceVnd ?? 0).FirstOrDefault();
+        var currentActiveSub = unexpiredSubs.FirstOrDefault(s => s.Status == PRN222_FINAL.DAL.Enums.SubscriptionStatus.Active);
+        bool isUpgradeOrSwitch = currentActiveSub is not null && package.Id != currentActiveSub.PackageId;
+
         var existingEntity = await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken);
         var existing = existingEntity is null ? null : BillingDtoMapper.ToModel(existingEntity);
         var isAlreadyEffective = existing is not null
@@ -338,6 +356,8 @@ public sealed class PaymentService : IPaymentService
             ? existing!.EndsAt
             : package.IsLifetime
             ? new DateTimeOffset(9999, 12, 31, 23, 59, 59, TimeSpan.Zero)
+            : isUpgradeOrSwitch && highestSub is not null
+            ? highestSub.EndsAt
             : startsAt.AddDays(Math.Max(1, package.DurationDays));
         var subscription = new Subscription
         {
