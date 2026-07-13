@@ -12,7 +12,7 @@
         <div>
             <span class="ops-eyebrow">Billing</span>
             <h1>Quản lý giá gói</h1>
-            <p>Mỗi lần thay đổi giá thành công sẽ tạo một thông báo popup cho người dùng khi vào web.</p>
+            <p>Mỗi lần thay đổi giá thành công sẽ hiển thị thông báo cho mọi người dùng đăng nhập trong 3 ngày.</p>
         </div>
     </header>
 
@@ -28,6 +28,7 @@
     <div class="package-pricing-grid">
         @foreach (var package in Model.Packages)
         {
+            var pendingPaymentCount = Model.PendingPaymentCounts.TryGetValue(package.Id, out var count) ? count : 0;
             <article class="ops-panel package-pricing-card">
                 <div class="package-pricing-card__heading">
                     <div>
@@ -37,17 +38,111 @@
                     <strong>@package.PriceVnd.ToString("N0")đ</strong>
                 </div>
                 <p>@package.Description</p>
-                <form asp-page-handler="UpdatePrice" method="post" class="package-price-form">
+                @if (pendingPaymentCount > 0)
+                {
+                    <div class="package-pricing-card__pending" role="status">
+                        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                        <span><strong>@pendingPaymentCount payment đang chờ.</strong> Các payment này vẫn giữ số tiền đã tạo.</span>
+                    </div>
+                }
+                <form asp-page-handler="UpdatePrice" method="post" class="package-price-form"
+                      data-package-price-form
+                      data-package-name="@package.Name"
+                      data-current-price="@package.PriceVnd.ToString("0", System.Globalization.CultureInfo.InvariantCulture)"
+                      data-pending-count="@pendingPaymentCount">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="PackageId" value="@package.Id" />
+                    <input type="hidden" name="ExpectedCurrentPriceVnd" value="@package.PriceVnd.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input type="hidden" name="ConfirmFreePrice" value="false" data-confirm-free-price />
                     <label class="ops-field">
                         <span>Giá mới (VNĐ)</span>
                         <input name="PriceVnd" type="number" min="0" max="1000000000" step="1"
                                value="@package.PriceVnd.ToString("0")" required />
                     </label>
-                    <button type="submit" class="ops-button ops-button--primary">Cập nhật giá</button>
+                    <label class="ops-field package-price-form__reason">
+                        <span>Lý do thay đổi</span>
+                        <textarea name="Reason" minlength="5" maxlength="500" rows="2"
+                                  placeholder="Ví dụ: Điều chỉnh giá cho học kỳ mới" required></textarea>
+                    </label>
+                    <button type="submit" class="ops-button ops-button--primary">Phát hành giá mới</button>
                 </form>
             </article>
         }
     </div>
+
+    <section class="ops-panel package-price-history" aria-labelledby="packagePriceHistoryTitle">
+        <div class="package-price-history__heading">
+            <div>
+                <span class="ops-eyebrow">Audit log</span>
+                <h2 id="packagePriceHistoryTitle">Lịch sử thay đổi giá</h2>
+            </div>
+            <span class="ops-chip">@Model.PriceHistory.Count thay đổi gần nhất</span>
+        </div>
+        @if (Model.PriceHistory.Count == 0)
+        {
+            <p class="package-price-history__empty">Chưa có thay đổi giá nào.</p>
+        }
+        else
+        {
+            <div class="package-price-history__table-wrap">
+                <table class="package-price-history__table">
+                    <thead>
+                        <tr>
+                            <th>Gói</th>
+                            <th>Thay đổi</th>
+                            <th>Lý do</th>
+                            <th>Người thực hiện</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var change in Model.PriceHistory)
+                        {
+                            <tr>
+                                <td><strong>@change.PackageName</strong></td>
+                                <td>
+                                    <span class="package-price-history__old">@change.OldPriceVnd.ToString("N0")đ</span>
+                                    <span aria-hidden="true">→</span>
+                                    <strong>@change.NewPriceVnd.ToString("N0")đ</strong>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(change.Reason) ? "Không có lý do (dữ liệu cũ)" : change.Reason)</td>
+                                <td>@change.ChangedBy</td>
+                                <td><time datetime="@change.ChangedAt.ToString("O")">@change.ChangedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </section>
+
+<div class="package-price-review" data-package-price-review hidden>
+    <div class="package-price-review__backdrop" data-package-price-review-cancel></div>
+    <section class="package-price-review__dialog" role="dialog" aria-modal="true"
+             aria-labelledby="packagePriceReviewTitle" aria-describedby="packagePriceReviewDescription">
+        <div class="package-price-review__heading">
+            <span class="material-symbols-outlined" aria-hidden="true">price_change</span>
+            <div>
+                <span class="ops-eyebrow">Kiểm tra trước khi phát hành</span>
+                <h2 id="packagePriceReviewTitle">Phát hành giá mới cho <span data-review-package-name></span></h2>
+            </div>
+        </div>
+        <p id="packagePriceReviewDescription">Giá mới chỉ áp dụng cho checkout được tạo sau thời điểm phát hành.</p>
+        <dl class="package-price-review__summary">
+            <div><dt>Giá hiện tại</dt><dd data-review-current-price></dd></div>
+            <div><dt>Giá mới</dt><dd data-review-new-price></dd></div>
+            <div><dt>Mức thay đổi</dt><dd data-review-price-delta></dd></div>
+            <div><dt>Lý do</dt><dd data-review-reason></dd></div>
+        </dl>
+        <div class="package-price-review__warning" data-review-pending-warning hidden></div>
+        <div class="package-price-review__danger" data-review-free-warning hidden>
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <span>Bạn đang chuyển một gói trả phí thành <strong>miễn phí</strong>. Hãy kiểm tra kỹ trước khi xác nhận.</span>
+        </div>
+        <div class="package-price-review__actions">
+            <button type="button" class="ops-button" data-package-price-review-cancel>Quay lại chỉnh sửa</button>
+            <button type="button" class="ops-button ops-button--primary" data-package-price-review-confirm>Phát hành giá mới</button>
+        </div>
+    </section>
+</div>

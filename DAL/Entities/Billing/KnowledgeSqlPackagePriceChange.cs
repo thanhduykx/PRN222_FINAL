@@ -23,5 +23,8 @@ public sealed class KnowledgeSqlPackagePriceChange
     [Required, MaxLength(255)]
     public string ChangedBy { get; set; } = string.Empty;
 
+    [Required, MaxLength(500)]
+    public string Reason { get; set; } = string.Empty;
+
     public DateTimeOffset ChangedAt { get; set; }
 }

@@ -1,6 +1,6 @@
 @using System.Security.Claims
 @inject PRN222_FINAL.BLL.Services.Billing.ISubscriptionService SubscriptionService
-@inject PRN222_FINAL.BLL.Services.Billing.IPackageService PackageService
+@inject PRN222_FINAL.BLL.Services.Notifications.ISystemNotificationService SystemNotificationService
 @{
     var useRblShell = ViewData["UseRblShell"] as bool? ?? false;
     var activeNav = (ViewData["ActiveNav"] as string ?? string.Empty).ToLowerInvariant();
@@ -23,13 +23,13 @@
     var showLearningFooter = currentRole == AppRoles.Student || currentRole == AppRoles.Lecturer;
     var homePage = currentRole == AppRoles.Student ? "/Home/Chat" : "/Home/Index";
     var hasPremiumIdentity = false;
-    PRN222_FINAL.BLL.Contracts.Billing.SubscriptionDto? currentTopbarSubscription = null;
+    PRN222_FINAL.BLL.Contracts.Billing.SubscriptionDto? currentSubscription = null;
     if (isAuthenticated && currentRole == AppRoles.Student && Guid.TryParse(currentUserId, out var subscriptionUserId))
     {
         try
         {
-            currentTopbarSubscription = await SubscriptionService.GetCurrentSubscriptionAsync(subscriptionUserId, Context.RequestAborted);
-            hasPremiumIdentity = currentTopbarSubscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
+            currentSubscription = await SubscriptionService.GetCurrentSubscriptionAsync(subscriptionUserId, Context.RequestAborted);
+            hasPremiumIdentity = currentSubscription?.PackageCode?.ToUpperInvariant() is "PRO" or "ANNUAL";
         }
         catch
         {
@@ -49,14 +49,18 @@
     var reportsNavClass = activeNav == "reports" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var assistantSettingsNavClass = activeNav == "assistant-settings" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var packagePricingNavClass = activeNav == "package-pricing" ? "rbl-nav-link is-active" : "rbl-nav-link";
-    PRN222_FINAL.BLL.Contracts.Billing.PackagePriceChangeDto? latestPriceChange = null;
-    try
+    IReadOnlyList<PRN222_FINAL.BLL.Contracts.Notifications.SystemNotificationDto> activeNotifications =
+        Array.Empty<PRN222_FINAL.BLL.Contracts.Notifications.SystemNotificationDto>();
+    if (isAuthenticated)
     {
-        latestPriceChange = await PackageService.GetLatestPriceChangeAsync(Context.RequestAborted);
-    }
-    catch
-    {
-        // A billing notification failure must not prevent the page from rendering.
+        try
+        {
+            activeNotifications = await SystemNotificationService.GetActiveAsync(Context.RequestAborted);
+        }
+        catch
+        {
+            // Notification loading must not prevent authenticated pages from rendering.
+        }
     }
     var currentDocumentSection = (ViewData["DocumentSection"] as string ?? Context.Request.Query["section"].ToString() ?? string.Empty).ToLowerInvariant();
     if (string.IsNullOrWhiteSpace(currentDocumentSection))
@@ -215,6 +219,22 @@
                 }
 
                 <div class="rbl-sidebar-footer">
+                    @if (isAuthenticated && currentRole == AppRoles.Student)
+                    {
+                        <a class="rbl-current-plan" asp-page="/Subscriptions/Current" aria-label="Xem gói dịch vụ hiện tại">
+                            <span class="rbl-current-plan__icon material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+                            <span class="rbl-current-plan__content">
+                                <small>Gói đang dùng</small>
+                                <strong>@(currentSubscription?.PackageName ?? "Chưa có gói")</strong>
+                                <span>@(currentSubscription is null
+                                    ? "Chọn gói phù hợp"
+                                    : currentSubscription.IsLifetime
+                                        ? "Hiệu lực vĩnh viễn"
+                                        : $"Còn {Math.Max(0, (currentSubscription.EndsAt - DateTimeOffset.UtcNow).Days)} ngày")</span>
+                            </span>
+                            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                        </a>
+                    }
                     <a class="rbl-nav-link compact" asp-page="/Home/Privacy">
                         <span class="material-symbols-outlined" aria-hidden="true">help</span>
                         <span data-i18n="shell.help">Help</span>
@@ -237,20 +257,12 @@
                     @if (isAuthenticated && currentRole == AppRoles.Student)
                     {
                         <a class="rbl-topbar-package" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
-                            <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">payments</span>
+                            <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">sell</span>
                             <span class="rbl-topbar-package__text">
-                                @if (currentTopbarSubscription is not null)
-                                {
-                                    <strong>Gói @currentTopbarSubscription.PackageName</strong>
-                                    <small>@(currentTopbarSubscription.IsLifetime ? "Hiệu lực vĩnh viễn" : $"Còn {Math.Max(0, (currentTopbarSubscription.EndsAt - DateTimeOffset.UtcNow).Days)} ngày")</small>
-                                }
-                                else
-                                {
-                                    <strong>Gói dịch vụ</strong>
-                                    <small>Chọn gói học tập</small>
-                                }
+                                <strong>Gói học tập</strong>
+                                <small>Xem các gói đang bán</small>
                             </span>
-                            <span class="rbl-topbar-package__status">@(currentTopbarSubscription is null ? "Xem gói" : "Đang dùng")</span>
+                            <span class="rbl-topbar-package__status">Mua gói</span>
                         </a>
                     }
                     <div class="rbl-topbar-actions">
@@ -446,25 +458,27 @@
                 &copy; 2026 - Course Assistant
             </div>
         </footer>
-        @if (latestPriceChange is not null)
+        @if (isAuthenticated && activeNotifications.Count > 0)
         {
-            <div class="price-change-modal" data-price-change-modal data-notification-id="@latestPriceChange.Id" data-viewer-id="@(string.IsNullOrWhiteSpace(currentUserId) ? "anonymous" : currentUserId)" hidden>
-                <div class="price-change-modal__backdrop" data-price-change-close></div>
-                <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="priceChangeTitle" aria-describedby="priceChangeDescription">
-                    <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">campaign</span>
-                    <div>
-                        <span class="ops-eyebrow">Thông báo giá gói</span>
-                        <h2 id="priceChangeTitle">Giá gói @latestPriceChange.PackageName đã thay đổi</h2>
-                        <p id="priceChangeDescription">
-                            Từ <strong>@latestPriceChange.OldPriceVnd.ToString("N0")đ</strong>
-                            thành <strong>@latestPriceChange.NewPriceVnd.ToString("N0")đ</strong>.
-                            Giá mới áp dụng cho các giao dịch tiếp theo.
-                        </p>
-                        <small>Cập nhật lúc @latestPriceChange.ChangedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
-                    </div>
-                    <button type="button" class="ops-button ops-button--primary" data-price-change-close>Đã hiểu</button>
-                </section>
-            </div>
+            @foreach (var notification in activeNotifications)
+            {
+                var notificationTitleId = $"systemNotificationTitle-{notification.Id:N}";
+                var notificationDescriptionId = $"systemNotificationDescription-{notification.Id:N}";
+                var isPackageNotification = notification.Type == PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged;
+                <div class="price-change-modal" data-system-notification data-notification-id="@notification.Id" data-viewer-id="@currentUserId" hidden>
+                    <div class="price-change-modal__backdrop" data-system-notification-close></div>
+                    <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="@notificationTitleId" aria-describedby="@notificationDescriptionId">
+                        <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">@(isPackageNotification ? "sell" : "school")</span>
+                        <div>
+                            <span class="ops-eyebrow">@(isPackageNotification ? "Thông báo giá gói" : "Thông báo môn học")</span>
+                            <h2 id="@notificationTitleId">@notification.Title</h2>
+                            <p id="@notificationDescriptionId">@notification.Message</p>
+                            <small>Cập nhật lúc @notification.OccurredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · Hiển thị trong 3 ngày</small>
+                        </div>
+                        <button type="button" class="ops-button ops-button--primary" data-system-notification-close>Đã hiểu</button>
+                    </section>
+                </div>
+            }
         }
     }
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
