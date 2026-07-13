@@ -28,6 +28,8 @@
   --ds-radius-sm: .5rem;
   --ds-radius-md: .75rem;
   --ds-radius-lg: 1rem;
+  --ds-font-xs: .8125rem;
+  --ds-font-sm: .875rem;
 
   --ds-text: var(--ds-slate-900);
   --ds-text-muted: var(--ds-slate-500);
@@ -128,7 +130,7 @@ body {
   display: block;
   padding: var(--ds-space-4) var(--ds-space-3) var(--ds-space-1);
   color: var(--ds-text-muted);
-  font-size: .68rem;
+  font-size: .75rem;
   font-weight: 800;
   letter-spacing: .08em;
   line-height: 1.2;
@@ -515,7 +517,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
 .role-overview-card small,
 .role-overview-card span {
   color: var(--ds-text-muted);
-  font-size: .72rem;
+  font-size: var(--ds-font-xs);
 }
 
 .role-overview-card strong {
@@ -539,7 +541,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
   border-radius: 999px;
   background: var(--ds-orange-50);
   color: var(--ds-orange-700);
-  font-size: .68rem;
+  font-size: .75rem;
   font-weight: 800;
 }
 
@@ -557,7 +559,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
   border-radius: var(--ds-radius-sm);
   color: var(--ds-text-muted);
   background: var(--ds-surface-subtle);
-  font-size: .75rem;
+  font-size: var(--ds-font-xs);
   font-weight: 700;
 }
 
@@ -584,7 +586,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
   gap: var(--ds-space-2);
   margin-top: var(--ds-space-2);
   color: var(--ds-text-muted);
-  font-size: .75rem;
+  font-size: var(--ds-font-xs);
 }
 
 .message .citation-cards {
@@ -632,7 +634,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
   padding-bottom: var(--ds-space-2);
   border-bottom: 1px solid var(--ds-border);
   color: var(--ds-blue-700);
-  font-size: .78rem;
+  font-size: var(--ds-font-xs);
   letter-spacing: .02em;
   text-transform: uppercase;
 }
@@ -646,7 +648,7 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
 
 .chat-follow-up-suggestions > strong {
   color: var(--ds-slate-700);
-  font-size: .78rem;
+  font-size: var(--ds-font-xs);
 }
 
 .chat-follow-up-suggestions > div {
@@ -656,13 +658,13 @@ body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis {
 }
 
 .chat-follow-up-suggestions button {
-  min-height: 2rem;
+  min-height: 2.5rem;
   padding: .35rem .65rem;
   border: 1px solid var(--ds-blue-100);
   border-radius: 999px;
   background: var(--ds-blue-50);
   color: var(--ds-blue-700);
-  font-size: .72rem;
+  font-size: var(--ds-font-xs);
   font-weight: 750;
   text-align: start;
 }
