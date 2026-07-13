@@ -1,0 +1,433 @@
+@page
+@model PRN222_FINAL.Web.Pages.Admin.BenchmarksModel
+@{
+    ViewData["Title"] = "Đánh giá & So sánh Model";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "benchmarks";
+    ViewData["ShellTitle"] = "Benchmarks";
+}
+
+<style>
+    /* BỘ CSS HIỆN ĐẠI HÓA GIAO DIỆN ADMIN */
+    :root {
+        --admin-primary: #4F46E5;
+        --admin-primary-hover: #4338ca;
+        --admin-surface: #ffffff;
+        --admin-bg: #f3f4f6;
+        --admin-text-main: #111827;
+        --admin-text-muted: #6b7280;
+        --admin-border: #e5e7eb;
+        --radius-xl: 16px;
+        --radius-lg: 12px;
+        --radius-md: 8px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .ops-admin-page {
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: var(--admin-bg);
+        padding: 2rem;
+        min-height: 100vh;
+        color: var(--admin-text-main);
+    }
+
+    /* Panels / Cards */
+    .ops-panel {
+        background: var(--admin-surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--admin-border);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .ops-panel-head {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--admin-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .ops-eyebrow {
+        color: var(--admin-primary);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .ops-panel-head h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--admin-text-main);
+    }
+
+    .ops-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 200px;
+    }
+
+        .ops-field span {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--admin-text-main);
+        }
+
+        .ops-field input, .ops-field select {
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+            .ops-field input:focus, .ops-field select:focus {
+                border-color: var(--admin-primary);
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+            }
+
+    /* Tables */
+    .ops-table-wrap {
+        overflow-x: auto;
+    }
+
+    .ops-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+        .ops-table th {
+            background-color: #f9fafb;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--admin-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--admin-border);
+        }
+
+        .ops-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--admin-border);
+            vertical-align: middle;
+        }
+
+        .ops-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+    /* Alerts */
+    .rbl-alert {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .rbl-alert.is-success {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .rbl-alert.is-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    /* Bridge legacy page styles */
+    .ops-admin-page {
+        min-height: auto;
+        padding: 0;
+        background: transparent;
+        color: var(--ds-text);
+        font-family: var(--app-font-sans);
+    }
+
+    .ops-admin-page > .ops-panel {
+        margin-bottom: var(--ds-space-4);
+        border-radius: var(--ds-radius-md);
+    }
+
+    .ops-admin-page .ops-panel-head {
+        align-items: center;
+        padding: 1rem 1.15rem;
+    }
+
+    .ops-admin-page .ops-panel-head h2 {
+        font-size: 1.05rem;
+    }
+</style>
+
+<section class="ops-page ops-admin-page">
+    <header class="ops-page-header ops-admin-heading" style="margin-bottom: 2rem;">
+        <div>
+            <span class="ops-eyebrow">Hệ thống</span>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--admin-text-main); margin: 0.5rem 0;">Đánh giá &amp; So sánh Model</h1>
+            <p style="font-size: 1.125rem; color: var(--admin-text-muted); max-width: 42rem;">Chạy các bài đánh giá theo tiêu chuẩn Ragas (Faithfulness, Relevancy, Precision, Recall) để so sánh các LLM.</p>
+        </div>
+    </header>
+
+    @Html.AntiForgeryToken()
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <section class="ops-panel" style="margin-bottom: 0;">
+            <div class="ops-panel-head">
+                <div>
+                    <h2>Khởi tạo Benchmark mới</h2>
+                    <p class="ops-muted mb-0" style="color: var(--admin-text-muted); font-size: 0.875rem;">Hệ thống sẽ chạy ngầm và tính điểm tự động.</p>
+                </div>
+            </div>
+            <div class="ops-panel-body" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div class="ops-field">
+                        <span>Môn học:</span>
+                        <select id="bmSubject">
+                            @if (Model.IndexedSubjects.Count == 0)
+                            {
+                                <option value="">Chưa có tài liệu Indexed</option>
+                            }
+                            else
+                            {
+                                foreach (var sub in Model.IndexedSubjects)
+                                {
+                                    <option value="@sub">@sub</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="ops-field">
+                        <span>Chat Model:</span>
+                        <select id="bmChatModel">
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            <option value="llama3-8b-8192">Llama 3 8B (Groq)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" id="btnRunBenchmark" style="background-color: var(--admin-primary); color: white; padding: 0.625rem 1.25rem; border: none; border-radius: var(--radius-md); font-weight: 500; cursor: pointer; transition: background-color 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.backgroundColor='var(--admin-primary-hover)'" onmouseout="this.style.backgroundColor='var(--admin-primary)'">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem;">play_arrow</span> Chạy Benchmark
+                </button>
+
+                <div id="bmProgressContainer" style="display:none; margin-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500;">
+                        <span id="bmProgressText" style="color: var(--admin-text-main);">Đang khởi tạo...</span>
+                        <span id="bmProgressPercent" style="color: var(--admin-primary);">0%</span>
+                    </div>
+                    <div class="ops-progress" style="height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden;">
+                        <div id="bmProgressBar" style="height: 100%; width: 0%; background: var(--admin-primary); transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ops-panel" style="margin-bottom: 0;">
+            <div class="ops-panel-head">
+                <div>
+                    <h2>Biểu đồ so sánh</h2>
+                    <p class="ops-muted mb-0" style="color: var(--admin-text-muted); font-size: 0.875rem;">Ragas Score trung bình của các đợt chạy gần nhất.</p>
+                </div>
+            </div>
+            <div class="ops-panel-body" style="padding: 1.5rem;">
+                <canvas id="benchmarkChart" style="width:100%; height:300px;"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <section class="ops-panel">
+        <div class="ops-panel-head">
+            <div>
+                <h2>Lịch sử chạy</h2>
+            </div>
+        </div>
+        <div class="ops-table-wrap">
+            <table class="ops-table ops-user-table">
+                <thead>
+                    <tr>
+                        <th>Tên Run</th>
+                        <th>Môn học</th>
+                        <th>Model</th>
+                        <th>Thời gian chạy</th>
+                        <th>Trạng thái</th>
+                        <th>Ragas Score</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="bmTableBody">
+                    @if(Model.Runs.Count == 0)
+                    {
+                        <tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--admin-text-muted);">Chưa có dữ liệu</td></tr>
+                    }
+                    @foreach(var run in Model.Runs)
+                    {
+                        <tr>
+                            <td style="font-weight: 600; color: var(--admin-text-main);">@run.RunName</td>
+                            <td>@run.Subject</td>
+                            <td>@run.ChatModel</td>
+                            <td style="color: var(--admin-text-muted);">@run.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (run.Status == "Completed") { <span class="rbl-alert is-success">Hoàn thành</span> }
+                                else if (run.Status == "Running") { <span style="background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 500; font-size: 0.75rem; border: 1px solid #fde68a;">Đang chạy</span> }
+                                else { <span class="rbl-alert is-error">@run.Status</span> }
+                            </td>
+                            <td style="font-weight: 700; color: var(--admin-primary);">@(run.AvgRagasScore.HasValue ? run.AvgRagasScore.Value.ToString("0.00") : "-")</td>
+                            <td>
+                                <button type="button" onclick="viewDetails('@run.Id')" style="background-color: white; border: 1px solid #d1d5db; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; cursor: pointer; font-size: 0.75rem; font-weight: 500;">
+                                    Xem chi tiết
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+
+<!-- Modal -->
+<div id="bmModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999999; justify-content: center; align-items: center; overflow-y: auto;">
+    <div style="background: white; border-radius: var(--radius-md); max-width: 800px; width: 100%; margin: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-height: calc(100vh - 4rem); overflow: hidden;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 10;">
+            <h2 style="margin: 0; font-size: 1.25rem;">Chi tiết Benchmark</h2>
+            <button onclick="closeModal()" style="background: none; border: none; cursor: pointer; font-size: 1.5rem;">&times;</button>
+        </div>
+        <div style="padding: 1.5rem; overflow-y: auto;">
+            <h3 style="margin-top: 0; margin-bottom: 1rem;">Danh sách câu hỏi</h3>
+            <div id="bmModalQuestions" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Questions will be injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.body.appendChild(document.getElementById('bmModal'));
+            
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/hubs/benchmarks")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("OnProgressUpdate", function (runId, percent, text) {
+                document.getElementById('bmProgressText').innerText = text;
+                document.getElementById('bmProgressPercent').innerText = percent + '%';
+                document.getElementById('bmProgressBar').style.width = percent + '%';
+            });
+
+            connection.on("OnBenchmarkCompleted", function (runId) {
+                setTimeout(() => { location.reload(); }, 1500);
+            });
+
+            connection.start().catch(err => console.error(err.toString()));
+
+            const runsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Runs.Where(r => r.AvgRagasScore != null).Select(r => new { r.RunName, Score = r.AvgRagasScore ?? 0 })));
+            
+            if(runsData && runsData.length > 0) {
+                const ctx = document.getElementById('benchmarkChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: runsData.map(r => r.RunName),
+                        datasets: [{
+                            label: 'Ragas Score',
+                            data: runsData.map(r => r.Score),
+                            backgroundColor: '#0a7cf5'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { min: 0, max: 1 } }
+                    }
+                });
+            }
+
+            document.getElementById('btnRunBenchmark').addEventListener('click', function () {
+                const subject = document.getElementById('bmSubject').value;
+                const chatModel = document.getElementById('bmChatModel').value;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                if (!subject) return alert("Nhập môn học");
+
+                this.disabled = true;
+                document.getElementById('bmProgressContainer').style.display = 'block';
+
+                fetch('?handler=RunBenchmark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token
+                    },
+                    body: new URLSearchParams({
+                        subject: subject,
+                        chatModel: chatModel,
+                        embeddingModel: 'gemini-embedding-2'
+                    })
+                }).then(res => res.json()).then(data => {
+                    if(!data.success) {
+                        alert("Lỗi: " + data.message);
+                        this.disabled = false;
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    this.disabled = false;
+                });
+            });
+        });
+
+        function viewDetails(runId) {
+            document.getElementById('bmModal').style.display = 'flex';
+            document.getElementById('bmModalQuestions').innerHTML = '';
+
+            fetch(`?handler=RunDetails&runId=${runId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        const run = data.run;
+                        const results = data.results;
+
+                        let html = '';
+                        results.forEach((r, idx) => {
+                            html += `
+                                <div style="border: 1px solid #e5e7eb; border-radius: var(--radius-md); padding: 1rem;">
+                                    <div style="font-weight: 600; margin-bottom: 0.5rem;">Câu ${idx + 1}: ${r.question ? r.question.question : 'N/A'}</div>
+                                    <div style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.5rem;">
+                                        <strong>Mẫu:</strong> ${r.question ? r.question.groundTruth : 'N/A'}
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: #4b5563; margin-bottom: 0.75rem; background: #f3f4f6; padding: 0.75rem; border-radius: 4px;">
+                                        <strong>Trả lời:</strong> ${r.generatedAnswer}
+                                    </div>
+                                    <div style="display: flex; gap: 1rem; font-size: 0.75rem;">
+                                        <span class="rbl-alert is-success">Ragas: ${r.ragasScore ? r.ragasScore.toFixed(2) : '-'}</span>
+                                        <span class="rbl-alert" style="background:#f0f9ff; color:#0369a1; border: 1px solid #bae6fd;">Faithfulness: ${r.faithfulness ? r.faithfulness.toFixed(2) : '-'}</span>
+                                        <span class="rbl-alert" style="background:#fdf4ff; color:#86198f; border: 1px solid #fae8ff;">Relevancy: ${r.answerRelevancy ? r.answerRelevancy.toFixed(2) : '-'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        document.getElementById('bmModalQuestions').innerHTML = html;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function closeModal() {
+            document.getElementById('bmModal').style.display = 'none';
+        }
+    </script>
+}
