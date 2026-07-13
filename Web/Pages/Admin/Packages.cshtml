@@ -1,0 +1,53 @@
+@page
+@model PRN222_FINAL.Web.Pages.Admin.PackagesModel
+@{
+    ViewData["Title"] = "Quản lý giá gói";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "package-pricing";
+    ViewData["ShellTitle"] = "Quản lý giá gói";
+}
+
+<section class="ops-page package-pricing-page">
+    <header class="ops-page-header">
+        <div>
+            <span class="ops-eyebrow">Billing</span>
+            <h1>Quản lý giá gói</h1>
+            <p>Mỗi lần thay đổi giá thành công sẽ tạo một thông báo popup cho người dùng khi vào web.</p>
+        </div>
+    </header>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="rbl-alert is-success">@success</div>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <div class="rbl-alert is-error">@error</div>
+    }
+
+    <div class="package-pricing-grid">
+        @foreach (var package in Model.Packages)
+        {
+            <article class="ops-panel package-pricing-card">
+                <div class="package-pricing-card__heading">
+                    <div>
+                        <span class="ops-chip">@package.Code</span>
+                        <h2>@package.Name</h2>
+                    </div>
+                    <strong>@package.PriceVnd.ToString("N0")đ</strong>
+                </div>
+                <p>@package.Description</p>
+                <form asp-page-handler="UpdatePrice" method="post" class="package-price-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="PackageId" value="@package.Id" />
+                    <label class="ops-field">
+                        <span>Giá mới (VNĐ)</span>
+                        <input name="PriceVnd" type="number" min="0" max="1000000000" step="1"
+                               value="@package.PriceVnd.ToString("0")" required />
+                    </label>
+                    <button type="submit" class="ops-button ops-button--primary">Cập nhật giá</button>
+                </form>
+            </article>
+        }
+    </div>
+</section>

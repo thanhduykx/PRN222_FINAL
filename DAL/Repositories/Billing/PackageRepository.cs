@@ -60,4 +60,49 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
 
         await context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<KnowledgeSqlPackagePriceChange?> UpdatePriceAsync(
+        Guid packageId,
+        decimal newPriceVnd,
+        string changedBy,
+        DateTimeOffset changedAt,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        await using var transaction = await context.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable,
+            cancellationToken);
+        var package = await context.Packages.FirstOrDefaultAsync(item => item.Id == packageId, cancellationToken)
+            ?? throw new InvalidOperationException("Package not found.");
+        if (package.PriceVnd == newPriceVnd)
+        {
+            return null;
+        }
+
+        var change = new KnowledgeSqlPackagePriceChange
+        {
+            Id = Guid.NewGuid(),
+            PackageId = package.Id,
+            PackageName = package.Name,
+            OldPriceVnd = package.PriceVnd,
+            NewPriceVnd = newPriceVnd,
+            ChangedBy = changedBy,
+            ChangedAt = changedAt
+        };
+        package.PriceVnd = newPriceVnd;
+        context.PackagePriceChanges.Add(change);
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return change;
+    }
+
+    public async Task<KnowledgeSqlPackagePriceChange?> GetLatestPriceChangeAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.PackagePriceChanges
+            .AsNoTracking()
+            .OrderByDescending(change => change.ChangedAt)
+            .ThenByDescending(change => change.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

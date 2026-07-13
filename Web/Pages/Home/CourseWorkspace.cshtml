@@ -7,6 +7,29 @@
     ViewData["ActiveNav"] = "courses";
     ViewData["ShellTitle"] = "Course workspace";
     ViewData["ShellTitleI18n"] = "home.shellTitleWorkspace";
+
+    string FormatBytes(long bytes)
+    {
+        var units = new[] { "B", "KB", "MB", "GB", "TB" };
+        var size = Math.Max(0, bytes);
+        var unitIndex = 0;
+        var value = (double)size;
+        while (value >= 1024 && unitIndex < units.Length - 1)
+        {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return unitIndex == 0 ? $"{size} {units[unitIndex]}" : $"{value:0.##} {units[unitIndex]}";
+    }
+
+    string StatusLabel(IndexedDocument document) => document.Status switch
+    {
+        DocumentIndexStatus.Indexed => "Đã index",
+        DocumentIndexStatus.Processing => "Đang xử lý",
+        DocumentIndexStatus.Failed => "Lỗi",
+        _ => string.IsNullOrWhiteSpace(document.Status) ? "Chưa index" : document.Status
+    };
 }
 
 <section class="ops-page course-workspace-page">
@@ -20,73 +43,10 @@
         <div class="rbl-alert is-error">@Model.LoadErrorMessage</div>
     }
 
-    <header class="ops-page-header course-workspace-hero">
-        <div>
-            <span class="ops-eyebrow" data-i18n="courses.eyebrow">Course workspace</span>
-            <h1>@Model.Subject.DisplayName</h1>
-            @if (string.IsNullOrWhiteSpace(Model.Subject.Description))
-            {
-                <p data-i18n="courseWorkspace.defaultDescription">Course workspace for documents, chapters, and subject chat.</p>
-            }
-            else
-            {
-                <p>@Model.Subject.Description</p>
-            }
-        </div>
-        <div class="ops-subject-header-actions">
-            <a class="ops-button ops-button--primary" asp-page="/Home/Chat" asp-route-subject="@Model.Subject.DisplayName">
-                <span class="material-symbols-outlined" aria-hidden="true">chat</span>
-                <span data-i18n="courseWorkspace.chatCourse">Chat this course</span>
-            </a>
-            @if (Model.CanManageCourse)
-            {
-                <a class="ops-button ops-button--secondary" asp-page="/Home/SubjectDocuments" asp-route-id="@Model.Subject.Id">
-                    <span class="material-symbols-outlined" aria-hidden="true">folder_managed</span>
-                    <span data-i18n="courseWorkspace.manageDocuments">Manage documents</span>
-                </a>
-            }
-        </div>
-    </header>
-
-    <section class="ops-kpi-grid course-workspace-kpis" aria-label="Course metrics">
-        <article class="ops-kpi">
-            <span data-i18n="courseWorkspace.documents">Documents</span>
-            <strong>@Model.Documents.Count</strong>
-            <small>@Model.Documents.Count(document => document.Status == DocumentIndexStatus.Indexed) <span data-i18n="documents.indexedStatus">indexed</span></small>
-        </article>
-        <article class="ops-kpi">
-            <span data-i18n="courseWorkspace.chapters">Chapters</span>
-            <strong>@Model.Chapters.Count</strong>
-            <small>@Model.Chapters.Sum(chapter => chapter.ChunkCount) <span data-i18n="courseWorkspace.chunksUnit">chunks</span></small>
-        </article>
-        <article class="ops-kpi">
-            <span data-i18n="courseWorkspace.lecturer">Lecturer</span>
-            @if (string.IsNullOrWhiteSpace(Model.Subject.OwnerName))
-            {
-                <strong data-i18n="courses.unassigned">Unassigned</strong>
-            }
-            else
-            {
-                <strong>@Model.Subject.OwnerName</strong>
-            }
-            @if (string.IsNullOrWhiteSpace(Model.Subject.OwnerEmail))
-            {
-                <small data-i18n="courseWorkspace.noEmail">No owner email</small>
-            }
-            else
-            {
-                <small>@Model.Subject.OwnerEmail</small>
-            }
-        </article>
-    </section>
-
     <section class="course-workspace-grid">
         <section class="ops-panel course-workspace-main-panel">
             <div class="ops-panel-head">
-                <div>
-                    <span class="ops-eyebrow" data-i18n="courseWorkspace.courseMap">Course map</span>
-                    <h2 data-i18n="courseWorkspace.chaptersAndDocs">Chapters and documents</h2>
-                </div>
+                <h1 data-i18n="courseWorkspace.chaptersAndDocs">Chương và tài liệu</h1>
             </div>
             @if (Model.Chapters.Count == 0)
             {
@@ -100,18 +60,87 @@
                 <div class="course-chapter-list">
                     @foreach (var chapter in Model.Chapters)
                     {
-                        <article class="course-chapter-row">
-                            <div>
+                        var chapterDocuments = Model.Documents
+                            .Where(document => string.Equals(document.Chapter, chapter.Title, StringComparison.OrdinalIgnoreCase))
+                            .OrderByDescending(document => document.UploadedAt)
+                            .ToList();
+
+                        <article class="course-chapter-section">
+                            <header class="course-chapter-heading">
+                                <div>
                                 <strong>@chapter.Title</strong>
                                 <p>@chapter.Summary</p>
-                            </div>
-                            <span>@chapter.DocumentCount <span data-i18n="courseWorkspace.docsUnit">docs</span></span>
-                            <span>@chapter.ChunkCount <span data-i18n="courseWorkspace.chunksUnit">chunks</span></span>
+                                </div>
+                                <span>@chapter.DocumentCount <span data-i18n="courseWorkspace.docsUnit">tài liệu</span> · @chapter.ChunkCount <span data-i18n="courseWorkspace.chunksUnit">chunks</span></span>
+                            </header>
+
+                            @if (chapterDocuments.Count == 0)
+                            {
+                                <p class="course-chapter-empty" data-i18n="documents.emptyChapter">Chưa có tài liệu trong chương/mục này.</p>
+                            }
+                            else
+                            {
+                                <div class="course-document-list">
+                                    @foreach (var document in chapterDocuments)
+                                    {
+                                        <div class="course-document-row" data-document-id="@document.Id" data-document-status-value="@document.Status" data-document-size-label="@FormatBytes(document.FileSizeBytes)">
+                                            <span class="material-symbols-outlined course-document-icon" aria-hidden="true">description</span>
+                                            <div class="course-document-main">
+                                                <strong title="@document.FileName">@document.FileName</strong>
+                                                <small data-document-tree-meta>@StatusLabel(document) · @document.ChunkCount chunks · @FormatBytes(document.FileSizeBytes)</small>
+                                            </div>
+                                            <div class="ops-row-actions course-document-actions" data-document-actions>
+                                                <button type="button"
+                                                        class="ops-mini-button"
+                                                        data-document-preview-action
+                                                        data-document-preview-url="/Home/DocumentPreview/@document.Id"
+                                                        disabled="@(document.Status != DocumentIndexStatus.Indexed ? "disabled" : null)"
+                                                        aria-label="Xem @document.FileName">
+                                                    Xem
+                                                </button>
+                                                @if (Model.CanManageCourse)
+                                                {
+                                                    <a class="ops-mini-button" asp-page="/Home/EditDocument" asp-route-id="@document.Id">Sửa</a>
+                                                    <form asp-page-handler="ReindexDocument" method="post" data-confirm="Re-index tài liệu này?">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="documentId" value="@document.Id" />
+                                                        <button type="submit" class="ops-mini-button">Re-index</button>
+                                                    </form>
+                                                    <form asp-page-handler="DeleteDocument" method="post" data-confirm="Xóa tài liệu này? Thao tác không thể hoàn tác.">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="documentId" value="@document.Id" />
+                                                        <button type="submit" class="ops-mini-button ops-mini-button--danger">Xóa</button>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </article>
                     }
                 </div>
             }
         </section>
     </section>
+
+    <div id="documentPreviewModal" class="rbl-document-preview-modal" aria-hidden="true">
+        <div class="rbl-document-preview-backdrop" data-document-preview-close></div>
+        <section class="rbl-document-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="documentPreviewTitle">
+            <header class="rbl-document-preview-header">
+                <div>
+                    <span class="rbl-section-label">Nội dung đã index</span>
+                    <h2 id="documentPreviewTitle">Tài liệu</h2>
+                    <p id="documentPreviewMeta"></p>
+                </div>
+                <button type="button" class="rbl-icon-button" aria-label="Đóng" data-document-preview-close>
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </header>
+            <div id="documentPreviewBody" class="rbl-document-preview-body">
+                <p class="rbl-catalog-muted">Đang tải nội dung đã index...</p>
+            </div>
+        </section>
+    </div>
 </section>
 

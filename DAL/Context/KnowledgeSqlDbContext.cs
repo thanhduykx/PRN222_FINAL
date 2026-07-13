@@ -23,6 +23,7 @@ public sealed class KnowledgeSqlDbContext : DbContext
     public DbSet<KnowledgeSqlPackage> Packages => Set<KnowledgeSqlPackage>();
     public DbSet<KnowledgeSqlPayment> Payments => Set<KnowledgeSqlPayment>();
     public DbSet<KnowledgeSqlSubscription> Subscriptions => Set<KnowledgeSqlSubscription>();
+    public DbSet<KnowledgeSqlPackagePriceChange> PackagePriceChanges => Set<KnowledgeSqlPackagePriceChange>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -114,6 +115,14 @@ public sealed class KnowledgeSqlDbContext : DbContext
             entity.HasIndex(package => package.Code).IsUnique();
             entity.HasIndex(package => package.IsActive);
             entity.HasIndex(package => package.SortOrder);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlPackagePriceChange>(entity =>
+        {
+            entity.Property(change => change.OldPriceVnd).HasColumnType("numeric(18,2)");
+            entity.Property(change => change.NewPriceVnd).HasColumnType("numeric(18,2)");
+            entity.HasIndex(change => change.ChangedAt);
+            entity.HasIndex(change => change.PackageId);
         });
 
         modelBuilder.Entity<KnowledgeSqlPayment>(entity =>

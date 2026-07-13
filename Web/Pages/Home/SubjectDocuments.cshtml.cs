@@ -66,18 +66,6 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
         return RedirectToPage("/Home/SubjectDocuments", new { id });
     }
 
-    public async Task<IActionResult> OnPostDeleteSubjectAsync(Guid id, CancellationToken cancellationToken)
-    {
-        if (!base.IsAdmin())
-        {
-            return Forbid();
-        }
-
-        await _knowledge.DeleteSubjectAsync(id, cancellationToken);
-        TempData["Success"] = "Da xoa mon hoc.";
-        return RedirectToPage("/Home/Index");
-    }
-
     public async Task<IActionResult> OnPostSaveChapterAsync(Guid id, [FromForm] ChapterCatalogViewModel model, CancellationToken cancellationToken)
     {
         try

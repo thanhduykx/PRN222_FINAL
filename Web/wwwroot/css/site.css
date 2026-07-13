@@ -5687,6 +5687,114 @@ body.rbl-body .rbl-main {
   }
 }
 
+.package-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 16px;
+}
+
+.package-pricing-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.package-pricing-card__heading,
+.package-price-form {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.package-pricing-card__heading h2 {
+  margin: 8px 0 0;
+}
+
+.package-pricing-card__heading > strong {
+  color: #0967dc;
+  font-size: 1.35rem;
+}
+
+.package-price-form .ops-field {
+  flex: 1;
+}
+
+body.price-change-modal-open {
+  overflow: hidden;
+}
+
+.price-change-modal {
+  position: fixed;
+  z-index: 5000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.price-change-modal[hidden] {
+  display: none;
+}
+
+.price-change-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 26, 58, .6);
+  backdrop-filter: blur(3px);
+}
+
+.price-change-modal__dialog {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  width: min(560px, 100%);
+  padding: 28px;
+  border: 1px solid #d8e5f5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(7, 26, 58, .25);
+}
+
+.price-change-modal__dialog h2 {
+  margin: 5px 0 10px;
+  color: #071a3a;
+  font-size: 1.35rem;
+}
+
+.price-change-modal__dialog p,
+.price-change-modal__dialog small {
+  color: #596b83;
+}
+
+.price-change-modal__dialog button {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.price-change-modal__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e8f2ff;
+  color: #0967dc;
+  font-size: 28px;
+}
+
+@media (max-width: 620px) {
+  .package-price-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .price-change-modal__dialog {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ops-page {
   --ops-border: #d8e0ea;
   --ops-muted: #667085;
@@ -7834,6 +7942,113 @@ body.rbl-body .rbl-main {
   line-height: 1.45;
 }
 
+.course-workspace-page .course-workspace-grid {
+  margin-top: 0;
+}
+
+.course-workspace-main-panel > .ops-panel-head h1 {
+  margin: 0;
+  color: #132238;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.course-chapter-section {
+  overflow: hidden;
+  border: 1px solid var(--ops-border, #d9e3ed);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.course-chapter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fbff;
+}
+
+.course-chapter-heading strong {
+  display: block;
+  color: #132238;
+}
+
+.course-chapter-heading p {
+  margin: 2px 0 0;
+  color: #65758a;
+  font-size: .82rem;
+  line-height: 1.35;
+}
+
+.course-chapter-heading > span {
+  flex: 0 0 auto;
+  color: #52657c;
+  font-size: .75rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.course-document-list {
+  border-top: 1px solid var(--ops-border, #d9e3ed);
+}
+
+.course-document-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+}
+
+.course-document-row + .course-document-row {
+  border-top: 1px solid #edf1f6;
+}
+
+.course-document-icon {
+  color: #0b67d1;
+  font-size: 21px;
+}
+
+.course-document-main {
+  min-width: 0;
+}
+
+.course-document-main strong,
+.course-document-main small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-document-main strong {
+  color: #132238;
+  font-size: .88rem;
+}
+
+.course-document-main small,
+.course-chapter-empty {
+  color: #65758a;
+  font-size: .75rem;
+}
+
+.course-chapter-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--ops-border, #d9e3ed);
+}
+
+.course-document-actions {
+  gap: 6px;
+}
+
+.course-document-actions .ops-mini-button {
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
 .course-learner-row {
   padding: 10px 12px;
 }
@@ -7845,6 +8060,20 @@ body.rbl-body .rbl-main {
 
   .course-chapter-row {
     grid-template-columns: 1fr;
+  }
+
+  .course-chapter-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .course-document-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .course-document-actions {
+    grid-column: 2;
+    flex-wrap: wrap;
   }
 }
 

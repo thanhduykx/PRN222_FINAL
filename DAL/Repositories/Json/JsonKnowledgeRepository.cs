@@ -422,21 +422,6 @@ public sealed class JsonKnowledgeRepository : IKnowledgeRepository
         }
     }
 
-    public async Task DeleteSubjectAsync(Guid subjectId, CancellationToken cancellationToken = default)
-    {
-        await _gate.WaitAsync(cancellationToken);
-        try
-        {
-            var store = await LoadAsync(cancellationToken);
-            store.CourseSubjects.RemoveAll(item => item.Id == subjectId);
-            await SaveAsync(store, cancellationToken);
-        }
-        finally
-        {
-            _gate.Release();
-        }
-    }
-
     public async Task<CourseChapter> UpsertChapterAsync(
         Guid? chapterId,
         Guid subjectId,

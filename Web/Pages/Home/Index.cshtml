@@ -504,13 +504,6 @@
                                                     <input name="Description" value="@subject.Description" />
                                                     <button type="submit" class="ops-mini-button">Update</button>
                                                 </form>
-                                                <form asp-page-handler="DeleteSubject" method="post" class="ops-danger-form"
-                                                      data-confirm="Delete this subject and all its chapters? This cannot be undone." data-confirm-i18n="documents.deleteSubjectConfirm">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@subject.SubjectId" />
-                                                    <button type="submit" class="ops-mini-button ops-mini-button--danger">Delete
-                                                        subject</button>
-                                                    </form>
                                                 }
 
                                                 @if (Model.IsLecturer)

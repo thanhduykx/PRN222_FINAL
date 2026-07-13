@@ -8,4 +8,6 @@ public interface IPackageRepository
     Task<IReadOnlyList<KnowledgeSqlPackage>> GetActiveAsync(CancellationToken cancellationToken = default);
     Task<KnowledgeSqlPackage?> GetByIdAsync(Guid packageId, CancellationToken cancellationToken = default);
     Task UpsertAsync(KnowledgeSqlPackage package, CancellationToken cancellationToken = default);
+    Task<KnowledgeSqlPackagePriceChange?> UpdatePriceAsync(Guid packageId, decimal newPriceVnd, string changedBy, DateTimeOffset changedAt, CancellationToken cancellationToken = default);
+    Task<KnowledgeSqlPackagePriceChange?> GetLatestPriceChangeAsync(CancellationToken cancellationToken = default);
 }

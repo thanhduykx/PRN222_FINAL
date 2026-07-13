@@ -33,6 +33,32 @@ public sealed class PackageService : IPackageService
         return package is null ? null : BillingDtoMapper.ToDto(BillingDtoMapper.ToModel(package));
     }
 
+    public async Task<PackagePriceChangeDto?> UpdatePriceAsync(
+        Guid packageId,
+        decimal newPriceVnd,
+        string changedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (packageId == Guid.Empty)
+        {
+            throw new ArgumentException("Gói dịch vụ không hợp lệ.", nameof(packageId));
+        }
+        if (newPriceVnd < 0 || newPriceVnd > 1_000_000_000m || decimal.Truncate(newPriceVnd) != newPriceVnd)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newPriceVnd), "Giá phải là số nguyên từ 0 đến 1.000.000.000 đồng.");
+        }
+
+        var actor = string.IsNullOrWhiteSpace(changedBy) ? "Admin" : changedBy.Trim();
+        var change = await _packages.UpdatePriceAsync(packageId, newPriceVnd, actor, DateTimeOffset.UtcNow, cancellationToken);
+        return change is null ? null : ToPriceChangeDto(change);
+    }
+
+    public async Task<PackagePriceChangeDto?> GetLatestPriceChangeAsync(CancellationToken cancellationToken = default)
+    {
+        var change = await _packages.GetLatestPriceChangeAsync(cancellationToken);
+        return change is null ? null : ToPriceChangeDto(change);
+    }
+
     private async Task EnsureDefaultPackagesAsync(CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
@@ -125,24 +151,20 @@ public sealed class PackageService : IPackageService
         foreach (var package in defaults)
         {
             var existing = existingPackages.FirstOrDefault(item => item.Code.Equals(package.Code, StringComparison.OrdinalIgnoreCase));
-            if (existing is null || DefaultPackageNeedsUpdate(existing, package))
+            if (existing is null)
             {
                 await _packages.UpsertAsync(BillingDtoMapper.ToEntity(package), cancellationToken);
             }
         }
     }
 
-    private static bool DefaultPackageNeedsUpdate(Package existing, Package expected)
+    private static PackagePriceChangeDto ToPriceChangeDto(DAL.Entities.Billing.KnowledgeSqlPackagePriceChange change) => new()
     {
-        return existing.Name != expected.Name
-               || existing.Description != expected.Description
-               || existing.PriceVnd != expected.PriceVnd
-               || existing.DurationDays != expected.DurationDays
-               || existing.MonthlyChatLimit != expected.MonthlyChatLimit
-               || existing.MonthlyDocumentUploadLimit != expected.MonthlyDocumentUploadLimit
-               || existing.StorageLimitMb != expected.StorageLimitMb
-               || existing.IsLifetime != expected.IsLifetime
-               || existing.IsActive != expected.IsActive
-               || existing.SortOrder != expected.SortOrder;
-    }
+        Id = change.Id,
+        PackageId = change.PackageId,
+        PackageName = change.PackageName,
+        OldPriceVnd = change.OldPriceVnd,
+        NewPriceVnd = change.NewPriceVnd,
+        ChangedAt = change.ChangedAt
+    };
 }

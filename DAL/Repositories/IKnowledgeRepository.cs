@@ -39,7 +39,6 @@ public interface IKnowledgeRepository
     Task DeleteDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CourseSubject>> GetCourseCatalogAsync(CancellationToken cancellationToken = default);
     Task<CourseSubject> UpsertSubjectAsync(Guid? subjectId, string code, string name, string? description, CancellationToken cancellationToken = default, SubjectOwnerInfo? ownerInfo = null);
-    Task DeleteSubjectAsync(Guid subjectId, CancellationToken cancellationToken = default);
     Task<CourseChapter> UpsertChapterAsync(Guid? chapterId, Guid subjectId, string title, int sortOrder, CancellationToken cancellationToken = default);
     Task DeleteChapterAsync(Guid chapterId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ChatSession>> GetSessionsAsync(CancellationToken cancellationToken = default);
