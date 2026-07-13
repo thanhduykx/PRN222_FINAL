@@ -4369,39 +4369,139 @@ function initAdminRoleUpdateForms() {
   });
 }
 
-function initPriceChangeNotification() {
-  const modal = document.querySelector("[data-price-change-modal]");
-  if (!modal) return;
+function initPackagePricePublishing() {
+  const modal = document.querySelector("[data-package-price-review]");
+  const forms = Array.from(document.querySelectorAll("[data-package-price-form]"));
+  if (!modal || !forms.length) return;
 
-  const notificationId = modal.dataset.notificationId;
-  const viewerId = modal.dataset.viewerId || "anonymous";
-  if (!notificationId) return;
+  const packageName = modal.querySelector("[data-review-package-name]");
+  const currentPrice = modal.querySelector("[data-review-current-price]");
+  const newPrice = modal.querySelector("[data-review-new-price]");
+  const priceDelta = modal.querySelector("[data-review-price-delta]");
+  const reason = modal.querySelector("[data-review-reason]");
+  const pendingWarning = modal.querySelector("[data-review-pending-warning]");
+  const freeWarning = modal.querySelector("[data-review-free-warning]");
+  const confirmButton = modal.querySelector("[data-package-price-review-confirm]");
+  const cancelButtons = Array.from(modal.querySelectorAll("[data-package-price-review-cancel]"));
+  const formatPrice = (value) => `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
+  let activeForm = null;
+  let triggerButton = null;
 
-  const storageKey = `courseAssistant.priceChange.${viewerId}.${notificationId}`;
-  try {
-    if (localStorage.getItem(storageKey) === "acknowledged") return;
-  } catch {
-    // The notification still works when browser storage is unavailable.
-  }
-
-  const closeButtons = Array.from(modal.querySelectorAll("[data-price-change-close]"));
   const close = () => {
     modal.hidden = true;
-    document.body.classList.remove("price-change-modal-open");
-    try {
-      localStorage.setItem(storageKey, "acknowledged");
-    } catch {
-      // Dismiss for this page view when browser storage is unavailable.
-    }
+    document.body.classList.remove("package-price-review-open");
+    triggerButton?.focus();
+    activeForm = null;
+    triggerButton = null;
   };
 
-  closeButtons.forEach((button) => button.addEventListener("click", close));
-  modal.hidden = false;
-  document.body.classList.add("price-change-modal-open");
-  modal.querySelector(".price-change-modal__dialog button")?.focus();
+  const open = (form) => {
+    const current = Number(form.dataset.currentPrice || 0);
+    const priceInput = form.querySelector('input[name="PriceVnd"]');
+    const reasonInput = form.querySelector('textarea[name="Reason"]');
+    const next = Number(priceInput?.value || 0);
+    const delta = next - current;
+    const deltaPercent = current > 0 ? Math.abs(delta) * 100 / current : null;
+    const pendingCount = Number(form.dataset.pendingCount || 0);
+
+    activeForm = form;
+    triggerButton = form.querySelector('button[type="submit"]');
+    packageName.textContent = form.dataset.packageName || "gói dịch vụ";
+    currentPrice.textContent = formatPrice(current);
+    newPrice.textContent = formatPrice(next);
+    priceDelta.textContent = delta === 0
+      ? "Không thay đổi"
+      : `${delta > 0 ? "Tăng" : "Giảm"} ${formatPrice(Math.abs(delta))}${deltaPercent === null ? "" : ` (${deltaPercent.toFixed(1)}%)`}`;
+    reason.textContent = reasonInput?.value.trim() || "";
+
+    pendingWarning.hidden = pendingCount <= 0;
+    if (pendingCount > 0) {
+      pendingWarning.textContent = `${pendingCount} payment đang chờ vẫn tiếp tục sử dụng số tiền đã được ghi nhận khi tạo checkout.`;
+    }
+    freeWarning.hidden = !(current > 0 && next === 0);
+    modal.hidden = false;
+    document.body.classList.add("package-price-review-open");
+    confirmButton?.focus();
+  };
+
+  forms.forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (form.dataset.pricePublishConfirmed === "true") return;
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      open(form);
+    });
+  });
+
+  cancelButtons.forEach((button) => button.addEventListener("click", close));
+  confirmButton?.addEventListener("click", () => {
+    if (!activeForm) return;
+    const current = Number(activeForm.dataset.currentPrice || 0);
+    const next = Number(activeForm.querySelector('input[name="PriceVnd"]')?.value || 0);
+    const confirmFreePrice = activeForm.querySelector("[data-confirm-free-price]");
+    if (confirmFreePrice) confirmFreePrice.value = current > 0 && next === 0 ? "true" : "false";
+    activeForm.dataset.pricePublishConfirmed = "true";
+    modal.hidden = true;
+    document.body.classList.remove("package-price-review-open");
+    activeForm.requestSubmit();
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.hidden) close();
   });
+}
+
+function initSystemNotifications() {
+  const modals = Array.from(document.querySelectorAll("[data-system-notification]"));
+  if (!modals.length) return;
+
+  const pendingModals = modals.filter((modal) => {
+    const notificationId = modal.dataset.notificationId;
+    const viewerId = modal.dataset.viewerId || "anonymous";
+    if (!notificationId) return false;
+
+    const storageKey = `courseAssistant.systemNotification.${viewerId}.${notificationId}`;
+    modal.dataset.storageKey = storageKey;
+    try {
+      return localStorage.getItem(storageKey) !== "acknowledged";
+    } catch {
+      // The notification still works when browser storage is unavailable.
+      return true;
+    }
+  });
+
+  let activeModal = null;
+  const showNext = () => {
+    activeModal = pendingModals.shift() || null;
+    if (!activeModal) {
+      document.body.classList.remove("price-change-modal-open");
+      return;
+    }
+
+    activeModal.hidden = false;
+    document.body.classList.add("price-change-modal-open");
+    activeModal.querySelector(".price-change-modal__dialog button")?.focus();
+  };
+
+  const close = (modal) => {
+    modal.hidden = true;
+    try {
+      localStorage.setItem(modal.dataset.storageKey, "acknowledged");
+    } catch {
+      // Dismiss for this page view when browser storage is unavailable.
+    }
+
+    if (activeModal === modal) showNext();
+  };
+
+  modals.forEach((modal) => {
+    const closeButtons = Array.from(modal.querySelectorAll("[data-system-notification-close]"));
+    closeButtons.forEach((button) => button.addEventListener("click", () => close(modal)));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && activeModal && !activeModal.hidden) close(activeModal);
+  });
+  showNext();
 }
 
 bindSuggestionButtons();
@@ -4413,7 +4513,8 @@ initSubjectCards();
 initAdminCreateUserForm();
 initConfirmForms();
 initAdminRoleUpdateForms();
-initPriceChangeNotification();
+initPackagePricePublishing();
+initSystemNotifications();
 initAssistantLauncherDrag();
 initOnlineUsersWidget();
 markActiveSession(getSessionId());

@@ -24,6 +24,7 @@ public sealed class KnowledgeSqlDbContext : DbContext
     public DbSet<KnowledgeSqlPayment> Payments => Set<KnowledgeSqlPayment>();
     public DbSet<KnowledgeSqlSubscription> Subscriptions => Set<KnowledgeSqlSubscription>();
     public DbSet<KnowledgeSqlPackagePriceChange> PackagePriceChanges => Set<KnowledgeSqlPackagePriceChange>();
+    public DbSet<KnowledgeSqlSystemNotification> SystemNotifications => Set<KnowledgeSqlSystemNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -123,6 +124,12 @@ public sealed class KnowledgeSqlDbContext : DbContext
             entity.Property(change => change.NewPriceVnd).HasColumnType("numeric(18,2)");
             entity.HasIndex(change => change.ChangedAt);
             entity.HasIndex(change => change.PackageId);
+        });
+
+        modelBuilder.Entity<KnowledgeSqlSystemNotification>(entity =>
+        {
+            entity.HasIndex(notification => notification.OccurredAt);
+            entity.HasIndex(notification => notification.Type);
         });
 
         modelBuilder.Entity<KnowledgeSqlPayment>(entity =>
