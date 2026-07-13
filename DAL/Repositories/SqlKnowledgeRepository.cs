@@ -343,19 +343,6 @@ public sealed class SqlKnowledgeRepository : IKnowledgeRepository
         return ToCourseSubject(subject);
     }
 
-    public async Task DeleteSubjectAsync(Guid subjectId, CancellationToken cancellationToken = default)
-    {
-        await using var context = CreateContext();
-        var subject = await context.CourseSubjects.FirstOrDefaultAsync(item => item.Id == subjectId, cancellationToken);
-        if (subject is null)
-        {
-            return;
-        }
-
-        context.CourseSubjects.Remove(subject);
-        await context.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task<CourseChapter> UpsertChapterAsync(
         Guid? chapterId,
         Guid subjectId,

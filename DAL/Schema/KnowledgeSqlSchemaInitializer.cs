@@ -59,6 +59,19 @@ public static class KnowledgeSqlSchemaInitializer
             CREATE INDEX IF NOT EXISTS "IX_packages_SortOrder" ON packages ("SortOrder");
             ALTER TABLE packages ADD COLUMN IF NOT EXISTS "IsLifetime" boolean NOT NULL DEFAULT false;
 
+            CREATE TABLE IF NOT EXISTS package_price_changes (
+                "Id" uuid PRIMARY KEY,
+                "PackageId" uuid NOT NULL REFERENCES packages ("Id") ON DELETE RESTRICT,
+                "PackageName" varchar(120) NOT NULL,
+                "OldPriceVnd" numeric(18,2) NOT NULL,
+                "NewPriceVnd" numeric(18,2) NOT NULL,
+                "ChangedBy" varchar(255) NOT NULL,
+                "ChangedAt" timestamp with time zone NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS "IX_package_price_changes_ChangedAt" ON package_price_changes ("ChangedAt");
+            CREATE INDEX IF NOT EXISTS "IX_package_price_changes_PackageId" ON package_price_changes ("PackageId");
+
             CREATE TABLE IF NOT EXISTS payments (
                 "Id" uuid PRIMARY KEY,
                 "PackageId" uuid NOT NULL REFERENCES packages ("Id") ON DELETE RESTRICT,

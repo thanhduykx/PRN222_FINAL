@@ -191,18 +191,6 @@ public sealed class IndexModel : HomePageModelBase
         return RedirectToPage("/Home/Index");
     }
 
-    public async Task<IActionResult> OnPostDeleteSubjectAsync(Guid id, CancellationToken cancellationToken)
-    {
-        if (!base.IsAdmin())
-        {
-            return Forbid();
-        }
-
-        await _knowledge.DeleteSubjectAsync(id, cancellationToken);
-        TempData["Success"] = "Đã xóa môn học.";
-        return RedirectToPage("/Home/Index");
-    }
-
     public async Task<IActionResult> OnPostSaveChapterAsync([FromForm] ChapterCatalogViewModel model, CancellationToken cancellationToken)
     {
         try

@@ -41,7 +41,6 @@ public interface IKnowledgeService
     Task DeleteDocumentAsync(Guid documentId, string uploadsRoot, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CourseSubject>> GetCourseCatalogAsync(CancellationToken cancellationToken = default);
     Task<CourseSubject> UpsertSubjectAsync(Guid? subjectId, string code, string name, string? description, CancellationToken cancellationToken = default, SubjectOwnerInfo? ownerInfo = null);
-    Task DeleteSubjectAsync(Guid subjectId, CancellationToken cancellationToken = default);
     Task<CourseChapter> UpsertChapterAsync(Guid? chapterId, Guid subjectId, string title, int sortOrder, CancellationToken cancellationToken = default);
     Task DeleteChapterAsync(Guid chapterId, CancellationToken cancellationToken = default);
     Task RemoveSubjectLecturerAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default);
@@ -100,7 +99,6 @@ public sealed class KnowledgeService : IKnowledgeService
     }
     public async Task<IReadOnlyList<CourseSubject>> GetCourseCatalogAsync(CancellationToken cancellationToken = default) => (await _repository.GetCourseCatalogAsync(cancellationToken)).Select(KnowledgeModelMapper.ToModel).ToList();
     public async Task<CourseSubject> UpsertSubjectAsync(Guid? subjectId, string code, string name, string? description, CancellationToken cancellationToken = default, SubjectOwnerInfo? ownerInfo = null) => KnowledgeModelMapper.ToModel(await _repository.UpsertSubjectAsync(subjectId, code, name, description, cancellationToken, KnowledgeModelMapper.ToData(ownerInfo)));
-    public Task DeleteSubjectAsync(Guid subjectId, CancellationToken cancellationToken = default) => _repository.DeleteSubjectAsync(subjectId, cancellationToken);
     public async Task<CourseChapter> UpsertChapterAsync(Guid? chapterId, Guid subjectId, string title, int sortOrder, CancellationToken cancellationToken = default) => KnowledgeModelMapper.ToModel(await _repository.UpsertChapterAsync(chapterId, subjectId, title, sortOrder, cancellationToken));
     public Task DeleteChapterAsync(Guid chapterId, CancellationToken cancellationToken = default) => _repository.DeleteChapterAsync(chapterId, cancellationToken);
     public Task RemoveSubjectLecturerAsync(Guid subjectId, Guid userId, CancellationToken cancellationToken = default) => _repository.RemoveSubjectLecturerAsync(subjectId, userId, cancellationToken);

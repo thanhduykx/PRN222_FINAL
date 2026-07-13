@@ -4369,6 +4369,41 @@ function initAdminRoleUpdateForms() {
   });
 }
 
+function initPriceChangeNotification() {
+  const modal = document.querySelector("[data-price-change-modal]");
+  if (!modal) return;
+
+  const notificationId = modal.dataset.notificationId;
+  const viewerId = modal.dataset.viewerId || "anonymous";
+  if (!notificationId) return;
+
+  const storageKey = `courseAssistant.priceChange.${viewerId}.${notificationId}`;
+  try {
+    if (localStorage.getItem(storageKey) === "acknowledged") return;
+  } catch {
+    // The notification still works when browser storage is unavailable.
+  }
+
+  const closeButtons = Array.from(modal.querySelectorAll("[data-price-change-close]"));
+  const close = () => {
+    modal.hidden = true;
+    document.body.classList.remove("price-change-modal-open");
+    try {
+      localStorage.setItem(storageKey, "acknowledged");
+    } catch {
+      // Dismiss for this page view when browser storage is unavailable.
+    }
+  };
+
+  closeButtons.forEach((button) => button.addEventListener("click", close));
+  modal.hidden = false;
+  document.body.classList.add("price-change-modal-open");
+  modal.querySelector(".price-change-modal__dialog button")?.focus();
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) close();
+  });
+}
+
 bindSuggestionButtons();
 bindSessionButtons();
 bindSubjectFilterChips();
@@ -4378,6 +4413,7 @@ initSubjectCards();
 initAdminCreateUserForm();
 initConfirmForms();
 initAdminRoleUpdateForms();
+initPriceChangeNotification();
 initAssistantLauncherDrag();
 initOnlineUsersWidget();
 markActiveSession(getSessionId());

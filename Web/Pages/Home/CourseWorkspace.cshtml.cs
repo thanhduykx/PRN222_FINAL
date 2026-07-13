@@ -17,6 +17,7 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
 {
     private static readonly Regex SentenceRegex = new(@"(?<=[.!?。])\s+|\r?\n+", RegexOptions.Compiled);
     private readonly IAnalyticsService _analytics;
+    private readonly IDocumentStatusNotifier _documentStatusNotifier;
 
     public CourseWorkspaceModel(
         ILogger<HomePageModelBase> logger,
@@ -27,9 +28,11 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
         IUserAccountService users,
         IWebHostEnvironment environment,
         IDocumentIndexJobQueue indexJobQueue,
+        IDocumentStatusNotifier documentStatusNotifier,
         IAnalyticsService analytics)
         : base(logger, knowledge, indexingService, webPageTextExtractor, chatService, users, environment, indexJobQueue)
     {
+        _documentStatusNotifier = documentStatusNotifier;
         _analytics = analytics;
     }
 
@@ -94,6 +97,46 @@ public sealed class CourseWorkspaceModel : HomePageModelBase
             LoadErrorMessage = "Database unavailable/timeout. Course workspace could not be loaded.";
             return Page();
         }
+    }
+
+    public async Task<IActionResult> OnPostDeleteDocumentAsync(Guid id, Guid documentId, CancellationToken cancellationToken)
+    {
+        var document = await _knowledge.GetDocumentAsync(documentId, cancellationToken);
+        if (document is null)
+        {
+            TempData["Error"] = "Không tìm thấy tài liệu để xóa.";
+            return RedirectToPage(new { id });
+        }
+
+        if (!await CanManageDocumentAsync(document, cancellationToken))
+        {
+            return Forbid();
+        }
+
+        await _knowledge.DeleteDocumentAsync(documentId, GetUploadsRoot(), cancellationToken);
+        TempData["Success"] = $"Đã xóa tài liệu {document.FileName}.";
+        return RedirectToPage(new { id });
+    }
+
+    public async Task<IActionResult> OnPostReindexDocumentAsync(Guid id, Guid documentId, CancellationToken cancellationToken)
+    {
+        var document = await _knowledge.GetDocumentAsync(documentId, cancellationToken);
+        if (document is null)
+        {
+            TempData["Error"] = "Không tìm thấy tài liệu để re-index.";
+            return RedirectToPage(new { id });
+        }
+
+        if (!await CanManageDocumentAsync(document, cancellationToken))
+        {
+            return Forbid();
+        }
+
+        await _knowledge.MarkDocumentIndexProcessingAsync(documentId, cancellationToken);
+        await _documentStatusNotifier.NotifyDocumentStatusChangedAsync(documentId, CancellationToken.None);
+        await _indexJobQueue.EnqueueAsync(documentId, cancellationToken);
+        TempData["Success"] = $"Đã đưa {document.FileName} vào hàng đợi re-index.";
+        return RedirectToPage(new { id });
     }
 
     private static IReadOnlyList<CourseChapterLearningViewModel> BuildChapterLearning(

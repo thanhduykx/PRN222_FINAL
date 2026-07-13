@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @inject PRN222_FINAL.BLL.Services.Billing.ISubscriptionService SubscriptionService
+@inject PRN222_FINAL.BLL.Services.Billing.IPackageService PackageService
 @{
     var useRblShell = ViewData["UseRblShell"] as bool? ?? false;
     var activeNav = (ViewData["ActiveNav"] as string ?? string.Empty).ToLowerInvariant();
@@ -46,6 +47,16 @@
     var adminNavClass = activeNav == "admin" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var reportsNavClass = activeNav == "reports" ? "rbl-nav-link is-active" : "rbl-nav-link";
     var assistantSettingsNavClass = activeNav == "assistant-settings" ? "rbl-nav-link is-active" : "rbl-nav-link";
+    var packagePricingNavClass = activeNav == "package-pricing" ? "rbl-nav-link is-active" : "rbl-nav-link";
+    PRN222_FINAL.BLL.Contracts.Billing.PackagePriceChangeDto? latestPriceChange = null;
+    try
+    {
+        latestPriceChange = await PackageService.GetLatestPriceChangeAsync(Context.RequestAborted);
+    }
+    catch
+    {
+        // A billing notification failure must not prevent the page from rendering.
+    }
     var currentDocumentSection = (ViewData["DocumentSection"] as string ?? Context.Request.Query["section"].ToString() ?? string.Empty).ToLowerInvariant();
     if (string.IsNullOrWhiteSpace(currentDocumentSection))
     {
@@ -163,6 +174,10 @@
                     <a class="@assistantSettingsNavClass" asp-page="/Admin/AiSettings" aria-current="@(activeNav == "assistant-settings" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">tune</span>
                         <span data-i18n="shell.assistantSettings">Thiết lập trợ lý</span>
+                    </a>
+                    <a class="@packagePricingNavClass" asp-page="/Admin/Packages" aria-current="@(activeNav == "package-pricing" ? "page" : null)">
+                        <span class="material-symbols-outlined" aria-hidden="true">sell</span>
+                        <span>Giá gói</span>
                     </a>
                     <a class="@reportsNavClass" asp-page="/Admin/Statistics" asp-route-tab="overview" asp-route-days="30" aria-current="@(activeNav == "reports" ? "page" : null)">
                         <span class="material-symbols-outlined" aria-hidden="true">monitoring</span>
@@ -421,6 +436,26 @@
                 &copy; 2026 - Course Assistant
             </div>
         </footer>
+        @if (latestPriceChange is not null)
+        {
+            <div class="price-change-modal" data-price-change-modal data-notification-id="@latestPriceChange.Id" data-viewer-id="@(string.IsNullOrWhiteSpace(currentUserId) ? "anonymous" : currentUserId)" hidden>
+                <div class="price-change-modal__backdrop" data-price-change-close></div>
+                <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="priceChangeTitle" aria-describedby="priceChangeDescription">
+                    <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">campaign</span>
+                    <div>
+                        <span class="ops-eyebrow">Thông báo giá gói</span>
+                        <h2 id="priceChangeTitle">Giá gói @latestPriceChange.PackageName đã thay đổi</h2>
+                        <p id="priceChangeDescription">
+                            Từ <strong>@latestPriceChange.OldPriceVnd.ToString("N0")đ</strong>
+                            thành <strong>@latestPriceChange.NewPriceVnd.ToString("N0")đ</strong>.
+                            Giá mới áp dụng cho các giao dịch tiếp theo.
+                        </p>
+                        <small>Cập nhật lúc @latestPriceChange.ChangedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <button type="button" class="ops-button ops-button--primary" data-price-change-close>Đã hiểu</button>
+                </section>
+            </div>
+        }
     }
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
