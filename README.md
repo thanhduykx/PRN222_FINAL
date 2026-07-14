@@ -1,326 +1,302 @@
-# EduVietRAG - Course Document Assistant
+# EduVietRAG
 
-EduVietRAG là web app ASP.NET Core Razor Pages hỗ trợ quản lý tài liệu môn học và hỏi đáp theo mô hình RAG (Retrieval-Augmented Generation). Hệ thống cho phép giảng viên tải lên tài liệu, tự động trích xuất nội dung, chia đoạn, tạo embedding, sau đó sinh viên có thể đặt câu hỏi và nhận câu trả lời có trích dẫn nguồn.
+<p align="center">
+  <strong>Nền tảng quản lý tài liệu môn học và hỏi đáp có trích dẫn dựa trên RAG</strong>
+</p>
 
-> Mục tiêu chính: câu trả lời phải bám vào tài liệu đã index, có citation rõ ràng, hạn chế trả lời ngoài phạm vi dữ liệu của môn học.
+<p align="center">
+  <a href="https://github.com/thanhduykx/PRN222_FINAL/actions/workflows/dotnet.yml">
+    <img alt=".NET CI" src="https://github.com/thanhduykx/PRN222_FINAL/actions/workflows/dotnet.yml/badge.svg">
+  </a>
+  <img alt=".NET 9" src="https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet">
+  <img alt="ASP.NET Core" src="https://img.shields.io/badge/ASP.NET_Core-Razor_Pages-512BD4">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql">
+  <img alt="Architecture" src="https://img.shields.io/badge/Architecture-Web_%E2%86%92_BLL_%E2%86%92_DAL-0F766E">
+</p>
 
-## Mục Lục
+EduVietRAG hỗ trợ giảng viên quản lý và index tài liệu môn học. Sinh viên có thể đặt câu hỏi trên nội dung đã index và nhận câu trả lời kèm citation để kiểm tra nguồn.
 
-- [Tính năng chính](#tính-năng-chính)
-- [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
-- [Cấu trúc source code](#cấu-trúc-source-code)
-- [Phân quyền người dùng](#phân-quyền-người-dùng)
-- [Luồng nghiệp vụ](#luồng-nghiệp-vụ)
-- [Cấu hình môi trường](#cấu-hình-môi-trường)
-- [Hướng dẫn chạy project](#hướng-dẫn-chạy-project)
-- [Hướng dẫn sử dụng](#hướng-dẫn-sử-dụng)
+> Nguyên tắc chính: câu trả lời phải dựa trên tài liệu được truy xuất. Khi không đủ căn cứ, hệ thống cần thông báo thiếu dữ liệu thay vì tạo câu trả lời không được kiểm chứng.
+
+## Mục lục
+
+- [Tính năng](#tính-năng)
+- [Kiến trúc](#kiến-trúc)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Luồng RAG](#luồng-rag)
+- [Công nghệ](#công-nghệ)
+- [Yêu cầu](#yêu-cầu)
+- [Cài đặt và chạy](#cài-đặt-và-chạy)
+- [Cấu hình](#cấu-hình)
 - [Kiểm thử](#kiểm-thử)
-- [Lưu ý vận hành](#lưu-ý-vận-hành)
-- [Kiến Trúc Hệ Thống](#kiến-trúc-hệ-thống)
+- [Vai trò người dùng](#vai-trò-người-dùng)
+- [Tài liệu bổ sung](#tài-liệu-bổ-sung)
+- [Lưu ý bảo mật](#lưu-ý-bảo-mật)
 
-## Tính Năng Chính
+## Tính năng
 
-| Nhóm chức năng | Mô tả |
+| Nhóm | Mô tả |
 |---|---|
-| Xác thực | Đăng nhập bằng tài khoản nội bộ, hỗ trợ Google OAuth khi cấu hình client id/secret. |
-| Quản trị người dùng | Admin tạo tài khoản, import Excel, đổi role, gán môn cho lecturer, gửi email welcome qua SMTP. |
-| Quản lý môn học | Seed sẵn danh mục môn, tạo thêm môn, gán môn cho giảng viên phụ trách. |
-| Quản lý tài liệu | Upload tài liệu PDF, DOCX, PPTX, TXT hoặc lấy nội dung từ URL. |
-| Index tài liệu | Trích xuất text, chia chunk theo ngữ cảnh syllabus, tạo embedding, lưu vào SQL Server. |
-| Chat RAG | Hỏi đáp theo phiên chat, truy xuất chunk liên quan, sinh câu trả lời từ context và lưu lịch sử. |
-| Citation | Câu trả lời kèm nguồn tài liệu/chunk để người dùng kiểm tra lại. |
-| Realtime status | SignalR cập nhật trạng thái index tài liệu cho giao diện. |
-| Kiểm thử | Có script kiểm tra dependency 3 lớp, build và smoke test ứng dụng. |
+| Xác thực | Đăng nhập nội bộ, đổi/quên mật khẩu và Google OAuth |
+| Quản lý người dùng | Tạo hoặc import tài khoản, phân quyền và gán môn học |
+| Quản lý tài liệu | Upload PDF, DOCX, PPTX, TXT hoặc nhập nội dung từ URL công khai |
+| Index tài liệu | Trích xuất văn bản, chia chunk, tạo embedding và lưu dữ liệu truy xuất |
+| Chat RAG | Tìm ngữ cảnh liên quan, sinh câu trả lời và duy trì lịch sử hội thoại |
+| Citation | Hiển thị tài liệu và chunk được dùng làm căn cứ trả lời |
+| Quản lý môn học | Quản lý course, subject, workspace và quyền truy cập tài liệu |
+| Realtime | SignalR cập nhật trạng thái index và người dùng trực tuyến |
+| Gói dịch vụ | Quản lý package, subscription và thanh toán qua PayOS hoặc MoMo |
+| Quản trị | AI settings, thống kê, thông báo hệ thống và quản lý giá gói |
 
-## Kiến Trúc Hệ Thống
+## Kiến trúc
 
-![Sơ đồ kiến trúc EduVietRAG](docs\architecture.jpg)
+### Kiến trúc 3 lớp
 
+<p align="center">
+  <img src="docs/images/three-layer-architecture.svg" alt="Kiến trúc 3 lớp Web, BLL và DAL" width="100%">
+</p>
 
+Chiều phụ thuộc bắt buộc:
 
-Hệ thống tuân thủ luồng một chiều `Web → BLL → DAL`. `Web` chỉ nhận input và hiển thị; `BLL` validate, xử lý nghiệp vụ và map raw data sang DTO/model; `DAL` thực hiện PostgreSQL, filesystem, SMTP và HTTP API. Kết quả quay về theo chiều `DAL → BLL → Web`; không có tham chiếu ngược lớp.
+```text
+Web → BLL → DAL
+```
 
-### Luồng RAG Tóm Tắt
+| Layer | Trách nhiệm |
+|---|---|
+| `Web` | Razor Pages, binding request, authorization, ViewModel, SignalR và hiển thị giao diện |
+| `BLL` | Validation, nghiệp vụ, orchestration, mapping và hợp đồng dữ liệu |
+| `DAL` | PostgreSQL, EF Core, repository, filesystem, SMTP và HTTP transport |
+
+Các quy tắc quan trọng:
+
+- `Web` chỉ tham chiếu `BLL`, không gọi trực tiếp `DAL`.
+- `BLL` tham chiếu `DAL` thông qua repository và data contract.
+- `DAL` không tham chiếu ngược lên `BLL` hoặc `Web`.
+- External services được BLL điều phối ở mức use case; chi tiết transport được đóng gói sau abstraction phù hợp.
+- Quy tắc dependency được kiểm tra bằng [`scripts/verify-3-layer.ps1`](scripts/verify-3-layer.ps1).
+
+### Kiến trúc thư mục và tích hợp
+
+<p align="center">
+  <img src="docs/images/system-architecture.svg" alt="Kiến trúc thư mục, external services và PostgreSQL" width="100%">
+</p>
+
+- Mũi tên xanh dương: `REQUEST`.
+- Mũi tên xanh lá: `RESPONSE`.
+- External Services chỉ kết nối với Business Logic Layer trên sơ đồ.
+- Data Access Layer chịu trách nhiệm lưu và đọc dữ liệu từ PostgreSQL/Supabase.
+
+## Cấu trúc dự án
+
+```text
+PRN222_FINAL/
+├── Web/                         # Presentation Layer
+│   ├── Pages/                   # Razor Pages và PageModel
+│   ├── Models/, ViewModels/     # Input model và dữ liệu dành cho UI
+│   ├── Hubs/, Services/         # SignalR và background workers
+│   ├── Security/                # Authorization policies
+│   ├── wwwroot/                 # CSS, JavaScript và static assets
+│   └── Program.cs               # Composition root
+├── BLL/                         # Business Logic Layer
+│   ├── Contracts/               # DTO và service contracts
+│   ├── Models/, Mapping/        # Business models và mapping
+│   ├── Services/                # Nghiệp vụ theo feature
+│   ├── Options/                 # Strongly typed configuration
+│   ├── Security/                # Role constants
+│   └── DependencyInjection/     # Đăng ký business services
+├── DAL/                         # Data Access Layer
+│   ├── Context/                 # EF Core DbContext
+│   ├── Entities/, Enums/        # Persistence entities
+│   ├── Repositories/            # Database, file, HTTP và SMTP
+│   ├── DataContracts/           # Raw persistence models
+│   ├── Mapping/                 # Entity/data mapping
+│   └── Schema/                  # Khởi tạo và cập nhật schema
+├── BLL.Tests/                   # Unit tests
+├── docs/                        # Tài liệu kỹ thuật và ảnh kiến trúc
+├── scripts/                     # Architecture và release verification
+├── .github/workflows/           # GitHub Actions
+└── PRN222_FINAL.sln
+```
+
+## Luồng RAG
 
 ```mermaid
 sequenceDiagram
-    actor Lecturer as Lecturer/Admin
-    actor Student as Student
-    participant UI as Razor Pages
-    participant Worker as DocumentIndexWorker
-    participant Indexing as DocumentIndexingService
-    participant Repo as SqlKnowledgeRepository
-    participant AI as Gemini API
-    participant Chat as RagChatService
+    actor User as Student / Lecturer
+    participant Web as Razor Pages
+    participant BLL as RAG Services
+    participant DAL as Repositories
+    participant DB as PostgreSQL
+    participant AI as Gemini / Groq
 
-    Lecturer->>UI: Upload tài liệu hoặc URL
-    UI->>Worker: Đưa job vào hàng đợi index
-    Worker->>Indexing: Trích xuất text và chia chunk
-    
-    Indexing->>AI: Tạo embedding cho chunk
-    %% Bổ sung trả về từ Gemini lúc tạo embedding
-    AI-->>Indexing: Trả về vector embedding 
-    
-    Indexing->>Repo: Lưu document, chunk, embedding
-    
-    Student->>UI: Đặt câu hỏi trong chat
-    UI->>Chat: Gửi câu hỏi + lịch sử phiên
-    
-    Chat->>Repo: Retrieve chunk liên quan
-    %% Bổ sung trả về từ Database lúc tìm ngữ cảnh
-    Repo-->>Chat: Trả về các chunk phù hợp (Context)
-    
-    Chat->>AI: Sinh câu trả lời từ context
-    %% Bổ sung trả về từ Gemini lúc sinh câu trả lời
-    AI-->>Chat: Trả về câu trả lời (Text)
-    
-    Chat->>Repo: Lưu message và citation
-    UI-->>Student: Hiển thị answer + nguồn trích dẫn
+    User->>Web: Gửi câu hỏi
+    Web->>BLL: Question + chat context
+    BLL->>DAL: Yêu cầu tìm chunk liên quan
+    DAL->>DB: Truy vấn dữ liệu
+    DB-->>DAL: Chunks + citations
+    DAL-->>BLL: Retrieval result
+    BLL->>AI: Prompt + grounded context
+    AI-->>BLL: Generated answer
+    BLL->>DAL: Lưu message + citation
+    DAL->>DB: Insert / update
+    DB-->>DAL: Save result
+    DAL-->>BLL: Success
+    BLL-->>Web: Answer + citations
+    Web-->>User: Hiển thị câu trả lời
 ```
 
-## Cấu Trúc Source Code
+Quy trình index tài liệu:
 
 ```text
-C:\PRN222_FINAL
-|-- PRN222_FINAL.sln
-|-- README.md
-|-- BLL/                         # Business Logic Layer
-|   |-- Contracts/               # Request/response DTO theo feature
-|   |-- Models/                  # Model nghiệp vụ dùng qua interface BLL
-|   |-- Mapping/                 # Raw DAL model -> business model/DTO
-|   |-- Services/                # Validation và nghiệp vụ
-|   `-- BLL.csproj
-|-- DAL/                         # Data Access Layer
-|   |-- Context/                  # EF Core DbContext và factory
-|   |-- Entities/                 # Entity persistence, không lộ lên Web
-|   |-- Models/                   # Raw data model chỉ dùng giữa DAL và BLL
-|   |-- Mapping/                  # Mapper database entity <-> raw model
-|   |-- Repositories/             # Database, file, SMTP và HTTP transport
-|   |-- Schema/                   # Khởi tạo/cập nhật schema
-|   `-- DAL.csproj
-`-- Web/                         # Presentation Layer
-    |-- Pages/                    # Razor Pages
-    |-- Models/, ViewModels/      # Input/view model chỉ dành cho giao diện
-    |-- Hubs/, Services/          # SignalR, worker và adapter web
-    |-- wwwroot/
-    |-- Program.cs
-    `-- Web.csproj
-```
-## Kiến Trúc Hệ Thống
-
-![Sơ đồ kiến trúc EduVietRAG](docs/architecture.jpg)
-
-## Phân Quyền Người Dùng
-
-Hệ thống có 3 role chính, được định nghĩa trong `BLL/Security/AppRoles.cs`.
-
-| Role | Quyền truy cập | Ghi chú nghiệp vụ |
-|---|---|---|
-| Student | Chat, xem phiên chat, tạo/đổi tên/ghim/xóa phiên chat, xem chính sách trả lời. | Không được upload/quản lý tài liệu. Mặc định dùng toàn bộ tài liệu đã index theo phạm vi app hiện tại. |
-| Lecturer | Toàn bộ quyền chat + quản lý tài liệu/môn được phụ trách. | Có thể upload tài liệu, xem document, preview, chỉnh sửa metadata, quản lý workspace môn học. |
-| Admin | Toàn quyền Lecturer + trang Admin. | Tạo/import user, đổi role, gán môn cho lecturer, tạo subject, quản lý danh mục tài khoản. |
-
-### Policy Trong Code
-
-| Policy | Role được phép | Dùng cho |
-|---|---|---|
-| `ChatAccess` | Student, Lecturer, Admin | Các trang chat, course workspace, privacy/answer policy. |
-| `DocumentRead` | Lecturer, Admin | Đọc tài liệu nếu cần policy tách riêng. |
-| `DocumentManagement` | Lecturer, Admin | Upload, xem, preview, sửa, quản lý tài liệu. |
-| `AdminOnly` | Admin | Trang `/Admin/Index`. |
-
-### Quy Tắc Tài Khoản
-
-- Người dùng không tự đăng ký. Trang Register sẽ chuyển về Login và báo liên hệ Nhà trường để được cấp tài khoản.
-- Admin seed được tạo tự động nếu `SeedAdmin.Enabled = true` và database chưa có admin hợp lệ.
-- Không được hạ quyền hoặc xóa seed admin.
-- Không được xóa admin trực tiếp; cần đổi role về Student/Lecturer trước nếu nghiệp vụ cho phép.
-- Google OAuth chỉ đăng nhập được khi đã cấu hình và email tồn tại/được cấp trong hệ thống theo luồng hiện tại.
-
-## Luồng Nghiệp Vụ
-
-### 1. Quản Trị Tài Khoản
-
-```mermaid
-flowchart LR
-    Admin["Admin"] --> Create["Tạo user hoặc import Excel"]
-    Create --> Role["Chọn role: Student / Lecturer / Admin"]
-    Role --> Subject{"Là Lecturer?"}
-    Subject -- Có --> Assign["Gán môn phụ trách"]
-    Subject -- Không --> Save["Lưu tài khoản"]
-    Assign --> Save
-    Save --> Email["Gửi welcome email qua SMTP"]
+Upload file hoặc URL
+  → Trích xuất văn bản
+  → Chia chunk
+  → Tạo embedding
+  → Lưu PostgreSQL
+  → Cập nhật trạng thái qua SignalR
 ```
 
-### 2. Index Tài Liệu
-
-```mermaid
-flowchart LR
-    Upload["Upload file / URL"] --> Extract["Extract text"]
-    Extract --> Chunk["Chunk theo syllabus/context"]
-    Chunk --> Embedding["Tạo embedding"]
-    Embedding --> Save["Lưu SQL Server"]
-    Save --> Notify["SignalR báo trạng thái"]
-```
-
-### 3. Hỏi Đáp RAG
-
-```mermaid
-flowchart LR
-    Question["Câu hỏi"] --> Retrieve["Retrieve chunk liên quan"]
-    Retrieve --> Prompt["Tạo prompt có context"]
-    Prompt --> Answer["Gemini sinh câu trả lời"]
-    Answer --> Guard["Kiểm tra bám context"]
-    Guard --> Citation["Gắn citation"]
-    Citation --> History["Lưu lịch sử chat"]
-```
-
-## Cấu Hình Môi Trường
-
-### Yêu Cầu
-
-- .NET SDK 9.x
-- SQL Server LocalDB, Express, Developer hoặc instance SQL Server tương đương
-- Gemini API key nếu dùng provider `Gemini`
-- SMTP account nếu muốn gửi email welcome/reset password
-- Google OAuth client nếu muốn bật đăng nhập Google
-
-### File Cấu Hình Chính
-
-`Web/appsettings.json` chứa các nhóm cấu hình sau:
-
-| Nhóm | Ý nghĩa |
-|---|---|
-| `ConnectionStrings:DefaultConnection` | Chuỗi kết nối SQL Server. |
-| `SeedAdmin` | Tài khoản admin mặc định khi khởi tạo. |
-| `Embedding` | Bật/tắt embedding, chọn provider `Gemini` hoặc fallback hashing. |
-| `Gemini` | API key, model chat, model embedding, timeout, base URL. |
-| `Smtp` | Host, port, SSL, email gửi, username, password. |
-| `Authentication:Google` | Google client id và client secret. |
-
-Khuyến nghị thực tế: không commit API key, OAuth secret, SMTP password hoặc mật khẩu database thật. Dùng User Secrets, biến môi trường hoặc file cấu hình riêng theo môi trường deploy.
-
-Ví dụ cấu hình biến môi trường trên PowerShell:
-
-```powershell
-$env:Gemini__ApiKey="YOUR_GEMINI_API_KEY"
-$env:ConnectionStrings__DefaultConnection="Server=localhost;Database=EduVietRAG;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True;"
-```
-
-## Hướng Dẫn Chạy Project
-
-Chạy từ thư mục solution:
-
-```powershell
-cd C:\PRN222_FINAL
-dotnet restore
-dotnet build PRN222_FINAL.sln
-dotnet run --project Web\Web.csproj --urls http://0.0.0.0:9999
-```
-
-Mở trình duyệt:
-
-```text
-http://localhost:9999
-```
-
-Máy khác trong cùng LAN có thể truy cập bằng IP máy chạy app:
-
-```text
-http://<IP-may-chay-app>:9999
-```
-
-Khi app khởi động, hệ thống sẽ:
-
-1. Kết nối SQL Server theo `DefaultConnection`.
-2. Tạo/bổ sung schema cần thiết nếu thiếu.
-3. Seed danh mục môn mặc định.
-4. Seed admin nếu cấu hình bật.
-5. Khởi động hosted service xử lý hàng đợi index tài liệu.
-
-## Hướng Dẫn Sử Dụng
-
-### Admin
-
-1. Đăng nhập bằng seed admin hoặc tài khoản admin đã có.
-2. Vào trang Admin để quản lý người dùng.
-3. Tạo tài khoản mới hoặc import Excel danh sách user.
-4. Chọn role phù hợp: Student, Lecturer hoặc Admin.
-5. Với Lecturer, gán môn phụ trách nếu có.
-6. Kiểm tra SMTP nếu hệ thống không gửi được welcome email.
-
-### Lecturer
-
-1. Đăng nhập vào hệ thống.
-2. Vào khu vực quản lý tài liệu/môn học.
-3. Upload file PDF, DOCX, PPTX, TXT hoặc nhập URL cần index.
-4. Chờ trạng thái index hoàn tất. SignalR sẽ cập nhật trạng thái trên giao diện.
-5. Kiểm tra preview/document nếu cần xác nhận nội dung đã index đúng.
-6. Dùng chat để kiểm thử câu trả lời trên tài liệu vừa đưa vào.
-
-### Student
-
-1. Đăng nhập bằng tài khoản được cấp.
-2. Vào trang Chat.
-3. Tạo phiên chat mới hoặc tiếp tục phiên cũ.
-4. Đặt câu hỏi liên quan đến tài liệu môn học.
-5. Kiểm tra citation để biết câu trả lời lấy từ tài liệu nào.
-6. Nếu hệ thống báo không đủ dữ liệu, cần hỏi lại rõ hơn hoặc liên hệ lecturer/admin để bổ sung tài liệu.
-
-## Kiểm Thử
-
-Chạy toàn bộ test:
-
-```powershell
-dotnet test PRN222_FINAL.sln
-```
-
-Các nhóm test hiện có:
-
-| File test | Mục đích |
-|---|---|
-| `RagChatServiceTests.cs` | Kiểm thử luồng hỏi đáp RAG và citation. |
-| `DocumentIndexingServiceTests.cs` | Kiểm thử upload/index tài liệu. |
-| `DocumentAccessScopeTests.cs` | Kiểm thử phạm vi truy cập tài liệu. |
-| `ParagraphAwareTextChunkerTests.cs` | Kiểm thử chunking theo đoạn. |
-| `FlmSyllabusAwareTextChunkerTests.cs` | Kiểm thử chunking theo cấu trúc syllabus. |
-| `GeminiEmbeddingServiceTests.cs` | Kiểm thử embedding service. |
-| `CompatibleChatCompletionServiceTests.cs` | Kiểm thử adapter chat completion. |
-| `AiChunkRetrievalEnrichmentServiceTests.cs` | Kiểm thử enrichment cho retrieval. |
-
-Bộ câu hỏi/đáp án kiểm thử thủ công nằm ở:
-
-```text
-TestData/qa-test-50-vi-q-a.txt
-```
-
-## Lưu Ý Vận Hành
-
-- Không đưa secret thật lên repository public.
-- Sau khi đổi model embedding hoặc số chiều embedding, nên re-index tài liệu cũ để tránh lệch vector.
-- Metadata như mã môn, chương, tên file chỉ hỗ trợ lọc/tăng hạng retrieval; không nên xem là bằng chứng trả lời nếu nội dung chunk không có dữ kiện.
-- Câu trả lời học thuật phải có citation. Nếu không có chunk đủ căn cứ, hệ thống nên từ chối hoặc yêu cầu bổ sung tài liệu.
-- Với Google OAuth, origin công khai được cấu hình tại `Authentication:Google:PublicOrigin`. Khi chạy local, hãy đăng ký chính xác `http://localhost:9999/signin-google` trong **Authorized redirect URIs** của Google Cloud Console. Không đăng ký `/Account/GoogleCallback`: đây chỉ là trang xử lý nội bộ sau khi middleware Google hoàn tất callback.
-- Google sign-in bị ẩn khi truy cập bằng private IP LAN để tránh lỗi OAuth redirect không hợp lệ.
-- SQL schema được tạo bằng `EnsureCreated` và các câu lệnh bổ sung cột/index. Nếu deploy production nghiêm túc, nên chuyển sang migration có kiểm soát.
-- User account hiện được lưu trong bảng `app_users`, còn dữ liệu RAG dùng các bảng `rag_*`.
-
-## Công Nghệ Sử Dụng
+## Công nghệ
 
 | Thành phần | Công nghệ |
 |---|---|
-| Web app | ASP.NET Core Razor Pages, .NET 9 |
-| Auth | Cookie Authentication, Google OAuth |
+| Runtime | .NET 9 |
+| Web | ASP.NET Core Razor Pages |
 | Realtime | SignalR |
-| Database | SQL Server, EF Core SQL Server |
-| AI | Gemini chat + embedding, hashing embedding fallback |
-| Document parsing | OpenXML, PdfPig, text extractor nội bộ |
-| Test | xUnit, Microsoft.NET.Test.Sdk, coverlet |
-### Student
+| Database | PostgreSQL, Supabase, EF Core, Npgsql |
+| AI | Gemini/Groq chat completion, Gemini embedding |
+| Authentication | Cookie Authentication, Google OAuth |
+| Payment | PayOS, MoMo |
+| Email | SMTP |
+| Document parsing | OpenXML, PdfPig và text extractor nội bộ |
+| Testing | xUnit, Microsoft.NET.Test.Sdk, coverlet |
+| CI | GitHub Actions |
 
-1. Đăng nhập bằng tài khoản được admin cung cấp.
-2. Vào trang Chat.
-3. Tạo phiên chat mới hoặc tiếp tục phiên cũ.
-4. Đặt câu hỏi liên quan đến tài liệu môn học đã được upload.
-5. Kiểm tra citation để biết câu trả lời lấy từ tài liệu nào.
-6. Nếu hệ thống báo không đủ dữ liệu, cần hỏi lại rõ ràng  hơn hoặc liên hệ lecturer/admin để bổ sung tài liệu cho phần liên quan.
+## Yêu cầu
+
+- .NET SDK 9.x
+- PostgreSQL hoặc Supabase project
+- Gemini API key để tạo embedding và sử dụng Gemini chat
+- Các thông tin SMTP, Google OAuth, PayOS hoặc MoMo nếu bật tính năng tương ứng
+
+## Cài đặt và chạy
+
+### 1. Clone repository
+
+```powershell
+git clone https://github.com/thanhduykx/PRN222_FINAL.git
+cd PRN222_FINAL
+```
+
+### 2. Restore dependencies
+
+```powershell
+dotnet restore PRN222_FINAL.sln
+```
+
+### 3. Cấu hình secret tối thiểu
+
+```powershell
+dotnet user-secrets --project Web/Web.csproj set "ConnectionStrings:DefaultConnection" "<POSTGRES_CONNECTION_STRING>"
+dotnet user-secrets --project Web/Web.csproj set "Gemini:ApiKey" "<GEMINI_API_KEY>"
+```
+
+### 4. Chạy ứng dụng
+
+```powershell
+dotnet run --project Web/Web.csproj --urls http://localhost:9999
+```
+
+Mở [http://localhost:9999](http://localhost:9999).
+
+## Cấu hình
+
+Ứng dụng đọc cấu hình từ `Web/appsettings.json`, .NET User Secrets và biến môi trường. Với cấu hình phân cấp, biến môi trường dùng dấu `__`, ví dụ `Gemini__ApiKey`.
+
+| Nhóm cấu hình | Mục đích |
+|---|---|
+| `ConnectionStrings:DefaultConnection` | Kết nối PostgreSQL/Supabase |
+| `SeedAdmin` | Tạo tài khoản quản trị ban đầu |
+| `Embedding` | Bật/tắt embedding; cấu hình hiện tại sử dụng Gemini |
+| `Gemini` | Model chat, embedding, endpoint và timeout |
+| `Smtp` | Gửi email tài khoản và thông báo |
+| `Authentication:Google` | Đăng nhập Google OAuth |
+| `Payment:PayOS` | Thanh toán PayOS |
+| `Payment:MoMo` | Thanh toán MoMo |
+
+Ví dụ cấu hình thêm bằng User Secrets:
+
+```powershell
+dotnet user-secrets --project Web/Web.csproj set "Authentication:Google:ClientId" "<GOOGLE_CLIENT_ID>"
+dotnet user-secrets --project Web/Web.csproj set "Authentication:Google:ClientSecret" "<GOOGLE_CLIENT_SECRET>"
+dotnet user-secrets --project Web/Web.csproj set "Smtp:Password" "<SMTP_APP_PASSWORD>"
+dotnet user-secrets --project Web/Web.csproj set "Payment:PayOS:ApiKey" "<PAYOS_API_KEY>"
+dotnet user-secrets --project Web/Web.csproj set "Payment:MoMo:SecretKey" "<MOMO_SECRET_KEY>"
+```
+
+## Kiểm thử
+
+### Chạy unit tests
+
+```powershell
+dotnet test BLL.Tests/BLL.Tests.csproj
+```
+
+### Kiểm tra dependency 3 lớp
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-3-layer.ps1
+```
+
+### Chạy toàn bộ release gates
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify-chatbot.ps1
+```
+
+Script release gate sẽ:
+
+1. Chạy toàn bộ tests với warning được xem là lỗi.
+2. Build project `Web`.
+3. Kiểm tra dependency `Web → BLL → DAL`.
+4. Dọn thư mục build tạm sau khi hoàn thành.
+
+GitHub Actions tự động restore, build và test khi push lên `main`, `Thanh-Duy` hoặc khi tạo pull request.
+
+## Vai trò người dùng
+
+| Role | Quyền chính |
+|---|---|
+| `Student` | Chat, quản lý phiên chat, xem citation và nội dung được cấp quyền |
+| `Lecturer` | Quyền Student, quản lý môn học và tài liệu phụ trách |
+| `Admin` | Quản lý tài khoản, role, package, AI settings, thống kê và thông báo |
+
+## Tài liệu bổ sung
+
+- [Cấu hình Groq](docs/groq-configuration.md)
+- [Đánh giá logic nghiệp vụ toàn dự án](docs/full-project-business-logic-audit.md)
+- [Nghiên cứu độ tin cậy của chatbot RAG](docs/chatbot-rag-reliability-research.md)
+- [Nghiên cứu comparison và citation](docs/advanced-rag-comparison-citation-research.md)
+- [Nghiên cứu RAG đa môn học](docs/rag-multi-course-intelligence-research.md)
+- [Nghiên cứu quản lý giá package](docs/admin-package-pricing-research.md)
+
+## Lưu ý bảo mật
+
+Không commit các giá trị thật sau đây:
+
+- Database connection string
+- Gemini/Groq API key
+- Google OAuth client secret
+- SMTP password
+- PayOS/MoMo secret
+- Seed admin password dùng ngoài môi trường local
+
+Trước khi public repository, cần kiểm tra `Web/appsettings.json`, thay các giá trị nhạy cảm bằng chuỗi rỗng hoặc placeholder và thu hồi mọi secret đã từng được commit. Việc xóa secret khỏi commit mới không làm secret biến mất khỏi lịch sử Git.
+
+---
+
+<p align="center">
+  <strong>EduVietRAG</strong><br>
+  Grounded answers. Verifiable sources.
+</p>

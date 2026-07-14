@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Sơ đồ kiến trúc thư mục EduVietRAG</title>
+  <desc id="desc">Sơ đồ các thư mục chính trong Web, BLL và DAL, cùng PostgreSQL và dịch vụ ngoài. External Services chỉ kết nối với BLL. Mỗi kết nối đều phân biệt request và response.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fafc"/><stop offset="1" stop-color="#eef2ff"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#0f172a" flood-opacity=".10"/></filter>
+    <marker id="req" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0v6l9-3z" fill="#2563eb"/></marker>
+    <marker id="res" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0v6l9-3z" fill="#059669"/></marker>
+    <style>text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#0f172a}.title{font-size:42px;font-weight:700}.subtitle{font-size:18px;fill:#475569}.head{font-size:25px;font-weight:700}.card{font-size:18px;font-weight:650}.small{font-size:15px;fill:#475569}.label{font-size:15px;font-weight:700}.blue{fill:#1d4ed8}.green{fill:#047857}</style>
+  </defs>
+  <rect width="1800" height="1120" fill="url(#bg)"/>
+  <text x="900" y="58" text-anchor="middle" class="title">EduVietRAG — Project Folder Architecture</text>
+  <text x="900" y="90" text-anchor="middle" class="subtitle">REQUEST • RESPONSE</text>
+
+  <g filter="url(#shadow)"><rect x="300" y="125" width="1050" height="195" rx="23" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/><text x="825" y="167" text-anchor="middle" class="head" fill="#1d4ed8">Presentation Layer — Web / Razor Pages</text>
+    <rect x="430" y="195" width="205" height="88" rx="13" fill="#fff" stroke="#60a5fa" stroke-width="2"/><text x="532" y="230" text-anchor="middle" class="card">Pages/</text><text x="532" y="258" text-anchor="middle" class="small">App_Data/</text>
+    <rect x="655" y="195" width="230" height="88" rx="13" fill="#fff" stroke="#60a5fa" stroke-width="2"/><text x="770" y="230" text-anchor="middle" class="card">Models/</text><text x="770" y="258" text-anchor="middle" class="small">ViewModels/</text>
+    <rect x="905" y="195" width="195" height="88" rx="13" fill="#fff" stroke="#60a5fa" stroke-width="2"/><text x="1002" y="230" text-anchor="middle" class="card">Hubs/</text><text x="1002" y="258" text-anchor="middle" class="small">Services/</text>
+    <rect x="1120" y="195" width="200" height="88" rx="13" fill="#fff" stroke="#60a5fa" stroke-width="2"/><text x="1220" y="230" text-anchor="middle" class="card">Security/</text><text x="1220" y="258" text-anchor="middle" class="small">wwwroot/</text>
+  </g>
+
+  <g filter="url(#shadow)"><rect x="300" y="400" width="1050" height="205" rx="23" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/><text x="825" y="444" text-anchor="middle" class="head" fill="#166534">Business Logic Layer — BLL</text>
+    <rect x="430" y="477" width="205" height="86" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="532" y="512" text-anchor="middle" class="card">Contracts/</text><text x="532" y="540" text-anchor="middle" class="small">DependencyInjection/</text>
+    <rect x="655" y="477" width="230" height="86" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="770" y="512" text-anchor="middle" class="card">Models/</text><text x="770" y="540" text-anchor="middle" class="small">Mapping/</text>
+    <rect x="905" y="477" width="195" height="86" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="1002" y="512" text-anchor="middle" class="card">Services/</text><text x="1002" y="540" text-anchor="middle" class="small">Repositories/</text>
+    <rect x="1120" y="477" width="200" height="86" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="1220" y="512" text-anchor="middle" class="card">Options/</text><text x="1220" y="540" text-anchor="middle" class="small">Security/</text>
+  </g>
+
+  <g filter="url(#shadow)"><rect x="300" y="685" width="1050" height="185" rx="23" fill="#ffedd5" stroke="#ea580c" stroke-width="3"/><text x="825" y="728" text-anchor="middle" class="head" fill="#9a3412">Data Access Layer — DAL</text>
+    <rect x="430" y="762" width="205" height="70" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="532" y="792" text-anchor="middle" class="card">Context/</text><text x="532" y="817" text-anchor="middle" class="small">Models/</text>
+    <rect x="655" y="762" width="230" height="70" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="770" y="792" text-anchor="middle" class="card">Entities/</text><text x="770" y="817" text-anchor="middle" class="small">Enums/</text>
+    <rect x="905" y="762" width="195" height="70" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="1002" y="792" text-anchor="middle" class="card">Repositories/</text><text x="1002" y="817" text-anchor="middle" class="small">Mapping/</text>
+    <rect x="1120" y="762" width="200" height="70" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="1220" y="792" text-anchor="middle" class="card">DataContracts/</text><text x="1220" y="817" text-anchor="middle" class="small">Schema/</text>
+  </g>
+
+  <g filter="url(#shadow)"><path d="M610 965c0-26 118-47 265-47s265 21 265 47v60c0 26-118 47-265 47s-265-21-265-47z" fill="#ccfbf1" stroke="#0f766e" stroke-width="3"/><ellipse cx="875" cy="965" rx="265" ry="47" fill="#ecfeff" stroke="#0f766e" stroke-width="3"/><text x="875" y="972" text-anchor="middle" class="head" fill="#115e59">PostgreSQL Database</text><text x="875" y="1023" text-anchor="middle" class="card" fill="#0f766e">Supabase</text></g>
+
+  <g filter="url(#shadow)"><rect x="1440" y="125" width="310" height="830" rx="24" fill="#f3e8ff" stroke="#7e22ce" stroke-width="3"/><text x="1595" y="165" text-anchor="middle" class="head" fill="#6b21a8">External Services</text>
+    <rect x="1475" y="190" width="240" height="90" rx="14" fill="#fff" stroke="#c084fc" stroke-width="2"/><text x="1595" y="242" text-anchor="middle" class="card">Google OAuth</text>
+    <rect x="1475" y="370" width="240" height="95" rx="14" fill="#fff" stroke="#c084fc" stroke-width="2"/><text x="1595" y="425" text-anchor="middle" class="card">Gemini / Groq API</text>
+    <rect x="1475" y="505" width="240" height="95" rx="14" fill="#fff" stroke="#c084fc" stroke-width="2"/><text x="1595" y="560" text-anchor="middle" class="card">PayOS / MoMo</text>
+    <rect x="1475" y="650" width="240" height="95" rx="14" fill="#fff" stroke="#c084fc" stroke-width="2"/><text x="1595" y="705" text-anchor="middle" class="card">SMTP Email</text>
+    <rect x="1475" y="790" width="240" height="120" rx="14" fill="#fff" stroke="#c084fc" stroke-width="2"/><text x="1595" y="857" text-anchor="middle" class="card">Website URL Import</text>
+  </g>
+
+  <path d="M805 320v68" stroke="#2563eb" stroke-width="5" marker-end="url(#req)"/><text x="780" y="358" text-anchor="end" class="label blue">REQUEST</text>
+  <path d="M945 400v-68" stroke="#059669" stroke-width="5" marker-end="url(#res)"/><text x="970" y="365" class="label green">RESPONSE</text>
+  <path d="M805 605v68" stroke="#2563eb" stroke-width="5" marker-end="url(#req)"/><text x="780" y="643" text-anchor="end" class="label blue">REQUEST</text>
+  <path d="M945 685v-68" stroke="#059669" stroke-width="5" marker-end="url(#res)"/><text x="970" y="650" class="label green">RESPONSE</text>
+  <path d="M805 870v48" stroke="#2563eb" stroke-width="5" marker-end="url(#req)"/><text x="780" y="900" text-anchor="end" class="label blue">REQUEST</text>
+  <path d="M945 918v-48" stroke="#059669" stroke-width="5" marker-end="url(#res)"/><text x="970" y="901" class="label green">RESPONSE</text>
+
+  <path d="M1350 475h75" stroke="#2563eb" stroke-width="5" marker-end="url(#req)"/><text x="1387" y="458" text-anchor="middle" class="label blue">REQUEST</text>
+  <path d="M1425 575h-75" stroke="#059669" stroke-width="5" marker-end="url(#res)"/><text x="1387" y="600" text-anchor="middle" class="label green">RESPONSE</text>
+
+  <g transform="translate(90 1015)"><line x1="0" y1="0" x2="65" y2="0" stroke="#2563eb" stroke-width="5" marker-end="url(#req)"/><text x="80" y="6" class="label blue">REQUEST</text><line x1="230" y1="0" x2="295" y2="0" stroke="#059669" stroke-width="5" marker-end="url(#res)"/><text x="310" y="6" class="label green">RESPONSE</text></g>
+</svg>

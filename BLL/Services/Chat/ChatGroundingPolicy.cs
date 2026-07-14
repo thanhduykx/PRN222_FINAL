@@ -4,6 +4,12 @@ namespace PRN222_FINAL.BLL;
 
 internal static partial class ChatGroundingPolicy
 {
+    private static readonly HashSet<string> ClaimStopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "in", "is", "it", "of", "on", "or", "that", "the", "to", "with",
+        "va", "la", "cua", "cho", "co", "duoc", "trong", "voi", "mot", "cac", "nhung", "theo", "nay", "do", "thi", "o"
+    };
+
     public const string GroundedAnswerStatus = "grounded_answer";
     public const string PartialAnswerStatus = "partial_answer";
     public const string InsufficientEvidenceStatus = "insufficient_evidence";
@@ -32,6 +38,27 @@ internal static partial class ChatGroundingPolicy
     public static string RemoveSourceMarkers(string? answer)
     {
         return string.IsNullOrEmpty(answer) ? string.Empty : SourceMarkerRegex().Replace(answer, " ");
+    }
+
+    public static bool AreClaimsSupportedByCitedSources(
+        string? answer,
+        IReadOnlyList<string> sourceTexts)
+    {
+        if (!HasValidSourceMarkers(answer, sourceTexts.Count))
+        {
+            return false;
+        }
+
+        return ExtractClaimSegments(answer!).All(segment =>
+        {
+            var sourceNumbers = SourceMarkerRegex()
+                .Matches(segment)
+                .Select(match => int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture))
+                .Distinct()
+                .ToList();
+            var citedText = string.Join("\n", sourceNumbers.Select(sourceNumber => sourceTexts[sourceNumber - 1] ?? string.Empty));
+            return IsClaimSupported(RemoveSourceMarkers(segment), citedText);
+        });
     }
 
     public static NormalizedSourceMarkers NormalizeSourceMarkers(string answer)
@@ -99,6 +126,75 @@ internal static partial class ChatGroundingPolicy
             }
         }
     }
+
+    private static bool IsClaimSupported(string claim, string citedText)
+    {
+        if (string.IsNullOrWhiteSpace(claim) || string.IsNullOrWhiteSpace(citedText))
+        {
+            return false;
+        }
+
+        var normalizedClaim = NormalizeForGrounding(claim);
+        var normalizedSource = NormalizeForGrounding(citedText);
+        var claimFacts = FactRegex().Matches(normalizedClaim).Select(match => NormalizeFact(match.Value)).Distinct().ToList();
+        var sourceFacts = FactRegex().Matches(normalizedSource).Select(match => NormalizeFact(match.Value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (claimFacts.Any(fact => !sourceFacts.Contains(fact)))
+        {
+            return false;
+        }
+
+        var claimTerms = TokenRegex().Matches(normalizedClaim)
+            .Select(match => match.Value)
+            .Where(term => term.Length >= 3 && !ClaimStopWords.Contains(term) && !FactRegex().IsMatch(term))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (claimTerms.Count == 0)
+        {
+            return claimFacts.Count > 0;
+        }
+
+        var sourceTerms = TokenRegex().Matches(normalizedSource)
+            .Select(match => match.Value)
+            .Where(term => term.Length >= 3)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var supportedTerms = claimTerms.Count(claimTerm => sourceTerms.Any(sourceTerm => TermsOverlap(claimTerm, sourceTerm)));
+        var requiredTerms = claimTerms.Count <= 4
+            ? Math.Min(2, claimTerms.Count)
+            : (int)Math.Ceiling(claimTerms.Count * 0.35);
+        return supportedTerms >= requiredTerms;
+    }
+
+    private static bool TermsOverlap(string left, string right)
+    {
+        return left.Equals(right, StringComparison.OrdinalIgnoreCase)
+               || (left.Length >= 4 && right.Length >= 4
+                   && (left.StartsWith(right, StringComparison.OrdinalIgnoreCase)
+                       || right.StartsWith(left, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string NormalizeForGrounding(string text)
+    {
+        var decomposed = text.Normalize(System.Text.NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder(decomposed.Length);
+        foreach (var character in decomposed)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(character) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character is '\u0111' or '\u0110' ? 'd' : char.ToLowerInvariant(character));
+            }
+        }
+
+        return Regex.Replace(builder.ToString().Normalize(System.Text.NormalizationForm.FormC), @"[^\p{L}\p{N}%.,\s]+", " ");
+    }
+
+    private static string NormalizeFact(string fact) => fact.Replace(',', '.').ToUpperInvariant();
+
+    [GeneratedRegex(@"[\p{L}\p{N}]+")]
+    private static partial Regex TokenRegex();
+
+    [GeneratedRegex(@"\b(?:[a-z]{2,}\d{2,}|\d+(?:[.,]\d+)?%?)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex FactRegex();
 }
 
 internal sealed record NormalizedSourceMarkers(string Answer, IReadOnlyList<int> OriginalSourceNumbers);

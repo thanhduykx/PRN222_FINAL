@@ -114,6 +114,93 @@ public sealed class PaymentServiceTests
         await payments.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
     }
 
+    [Fact]
+    public async Task GetReturnStatusAsync_ReturnsReceiptAndActivatedPackageForOwner()
+    {
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        package.MonthlyChatLimit = 500;
+        package.MonthlyDocumentUploadLimit = 20;
+        package.StorageLimitMb = 1_024;
+        var paidAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            UserName = "Nguyen Van A",
+            UserEmail = "student@example.edu",
+            PackageId = package.Id,
+            Provider = PaymentProvider.MoMo,
+            Status = PaymentStatus.Paid,
+            AmountVnd = package.PriceVnd,
+            Currency = "VND",
+            OrderCode = "8123456789",
+            ProviderTransactionId = "MOMO-123",
+            CreatedAt = paidAt.AddMinutes(-1),
+            PaidAt = paidAt
+        };
+        var subscription = new KnowledgeSqlSubscription
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PackageId = package.Id,
+            PaymentId = payment.Id,
+            Status = SubscriptionStatus.Active,
+            StartsAt = paidAt,
+            EndsAt = paidAt.AddDays(30),
+            CreatedAt = paidAt,
+            Package = package
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        payments.GetByOrderCodeAsync(PaymentProvider.MoMo, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        payments.GetLatestSuccessfulByUserAsync(userId, Arg.Any<CancellationToken>()).Returns(payment);
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        subscriptions.GetByPaymentIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(subscription);
+        var service = CreateService(packages, payments, subscriptions);
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.MoMo,
+            payment.OrderCode,
+            userId);
+
+        Assert.NotNull(result);
+        Assert.Equal("Pro", result!.PackageName);
+        Assert.Equal(49_000, result.AmountVnd);
+        Assert.Equal("Nguyen Van A", result.CustomerName);
+        Assert.Equal(subscription.EndsAt, result.SubscriptionEndsAt);
+        Assert.Equal(20, result.MonthlyDocumentUploadLimit);
+    }
+
+    [Fact]
+    public async Task GetReturnStatusAsync_DoesNotExposeAnotherUsersPayment()
+    {
+        var ownerId = Guid.NewGuid();
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(),
+            UserId = ownerId,
+            PackageId = Guid.NewGuid(),
+            Provider = PaymentProvider.PayOS,
+            Status = PaymentStatus.Paid,
+            OrderCode = "123456789"
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        payments.GetByOrderCodeAsync(PaymentProvider.PayOS, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        var service = CreateService(packages, payments, subscriptions);
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.PayOS,
+            payment.OrderCode,
+            Guid.NewGuid());
+
+        Assert.Null(result);
+        await packages.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
     private static KnowledgeSqlPackage CreatePackage(string code, string name, int sortOrder) => new()
     {
         Id = Guid.NewGuid(),

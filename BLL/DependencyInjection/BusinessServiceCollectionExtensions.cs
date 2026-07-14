@@ -60,10 +60,17 @@ public static class BusinessServiceCollectionExtensions
         services.AddSingleton<IFileRepository, LocalFileRepository>();
         services.AddSingleton<IHttpRepository>(_ => new HttpRepository(TimeSpan.FromSeconds(60)));
         services.AddSingleton<IWebPageTextExtractor, WebPageTextExtractor>();
-        services.AddSingleton<IEmbeddingService>(provider =>
-            (configuration["Embedding:Provider"] ?? "Hashing").Equals("Gemini", StringComparison.OrdinalIgnoreCase)
-                ? new GeminiEmbeddingService(provider.GetRequiredService<IHttpRepository>(), provider.GetRequiredService<GeminiOptions>())
-                : new HashingEmbeddingService());
+        var embeddingProvider = (configuration["Embedding:Provider"] ?? ChatProviders.Gemini).Trim();
+        if (!embeddingProvider.Equals(ChatProviders.Gemini, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Embedding provider '{embeddingProvider}' is not supported. " +
+                "Set Embedding:Provider to 'Gemini' so document chunks and search queries use the same Gemini embedding space.");
+        }
+
+        services.AddSingleton<IEmbeddingService>(provider => new GeminiEmbeddingService(
+            provider.GetRequiredService<IHttpRepository>(),
+            provider.GetRequiredService<GeminiOptions>()));
         services.AddSingleton<IDocumentFileService, DocumentFileService>();
         services.AddSingleton<IAiSettingsService>(provider => new AiSettingsService(
             contentRootPath,

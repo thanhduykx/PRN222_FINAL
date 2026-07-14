@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Security.Claims;
 using PRN222_FINAL.BLL.Services.Billing;
 using PRN222_FINAL.BLL.Models;
 using PRN222_FINAL.BLL.Contracts.Billing;
@@ -51,7 +52,10 @@ public sealed class ReturnModel : PageModel
             }
         }
 
-        Status = await _payments.GetReturnStatusAsync(parsedProvider, rawOrderCode, cancellationToken);
+        var userId = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId)
+            ? parsedUserId
+            : Guid.Empty;
+        Status = await _payments.GetReturnStatusAsync(parsedProvider, rawOrderCode, userId, cancellationToken);
         ReturnStatusHint = ParseReturnStatusHint(parsedProvider);
         if (Status is null)
         {

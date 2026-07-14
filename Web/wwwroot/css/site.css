@@ -10026,6 +10026,68 @@ body.rbl-body:has(.ops-documents-page) .learning-footer__logout-form button:focu
 .payment-result-action:hover { transform: translateY(-1px); color: #172033; }
 .payment-result-action.is-primary:hover { color: #fff; filter: brightness(.95); }
 @media (max-width: 680px) { .payment-result-details { grid-template-columns: 1fr; } .payment-result-actions { flex-direction: column; } .payment-result-action { width: 100%; } }
+
+.payment-result-thanks {
+    margin: 1rem 0;
+    color: #435269;
+    line-height: 1.6;
+}
+.payment-result-thanks strong { color: #172033; }
+.payment-result-summary { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(240px, .75fr); gap: 1rem; }
+.payment-result-order, .payment-result-membership { border: 1px solid #dfe6ef; border-radius: 16px; background: #f8fafc; }
+.payment-result-order { overflow: hidden; }
+.payment-result-order__title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border-bottom: 1px solid #dfe6ef; background: #fff; }
+.payment-result-order__title div { display: grid; gap: .2rem; }
+.payment-result-order__title span, .payment-result-membership > div > span { color: #64748b; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.payment-result-order__title strong { overflow-wrap: anywhere; color: #172033; }
+.payment-result-order__title a { color: #2563eb; font-size: .82rem; font-weight: 750; text-decoration: none; }
+.payment-result-order__facts { display: grid; gap: 0; margin: 0; padding: .35rem 1rem; }
+.payment-result-order__facts div { display: grid; grid-template-columns: minmax(120px, .65fr) minmax(0, 1.35fr); gap: .75rem; padding: .65rem 0; border-bottom: 1px dashed #d8e0eb; }
+.payment-result-order__facts div:last-child { border-bottom: 0; }
+.payment-result-order__facts dt { color: #64748b; font-size: .78rem; }
+.payment-result-order__facts dd { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: .35rem; margin: 0; overflow-wrap: anywhere; color: #26364d; font-size: .8rem; font-weight: 700; text-align: right; }
+.payment-result-order__facts img { width: 22px; height: 22px; border-radius: 6px; }
+.payment-result-order__total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; background: #eef5ff; color: #35455d; }
+.payment-result-order__total strong { color: #dc2626; font-size: 1.05rem; }
+.payment-result-membership { display: grid; align-content: start; gap: .75rem; padding: 1rem; background: linear-gradient(145deg, #effcf9, #f8fafc 60%); }
+.payment-result-membership > .material-symbols-outlined { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #14b8a6; color: #fff; }
+.payment-result-membership h3 { margin: .1rem 0 0; color: #172033; font-size: 1.05rem; }
+.payment-result-membership dl { display: grid; gap: .55rem; margin: 0; }
+.payment-result-membership dl div { display: grid; gap: .15rem; padding-top: .55rem; border-top: 1px solid #d8e7e4; }
+.payment-result-membership dt { color: #64748b; font-size: .72rem; }
+.payment-result-membership dd { margin: 0; color: #1f3f3b; font-size: .82rem; font-weight: 800; }
+.payment-result-paid { display: flex; align-items: center; gap: .55rem; margin-top: 1rem; padding: .8rem; border: 1px solid #37b99e; border-radius: 12px; background: #effcf8; color: #265f54; font-size: .82rem; }
+.payment-result-paid .material-symbols-outlined { color: #0f9f83; }
+.payment-refund-link { display: block; margin: .9rem auto 0; padding: .25rem; border: 0; background: transparent; color: #1670c5; font: inherit; font-size: .86rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.payment-refund-link:hover { color: #0e4d8a; }
+
+.refund-policy-dialog { width: min(680px, calc(100% - 2rem)); max-height: min(82vh, 760px); padding: 0; border: 0; border-radius: 18px; background: #fff; color: #26364d; box-shadow: 0 26px 80px rgba(15, 23, 42, .35); }
+.refund-policy-dialog::backdrop { background: rgba(15, 23, 42, .66); backdrop-filter: blur(2px); }
+.refund-policy-dialog__header { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.2rem 1.35rem; border-bottom: 1px solid #e3e8ef; background: #fff; }
+.refund-policy-dialog__header h2 { margin: 0; color: #172033; font-size: clamp(1.1rem, 3vw, 1.35rem); line-height: 1.35; }
+.refund-policy-dialog__header button { display: inline-flex; min-height: 40px; flex: 0 0 auto; align-items: center; gap: .25rem; padding: .45rem .65rem; border: 1px solid #ced7e3; border-radius: 9px; background: #fff; color: #28699e; cursor: pointer; }
+.refund-policy-dialog__header button:hover { background: #f3f7fb; }
+.refund-policy-dialog__header .material-symbols-outlined { font-size: 19px; }
+.refund-policy-dialog__body { padding: 1.2rem 1.35rem 1.4rem; overflow: auto; line-height: 1.65; }
+.refund-policy-dialog__body > p:first-child { margin-top: 0; }
+.refund-policy-dialog__body section { padding-top: .25rem; }
+.refund-policy-dialog__body h3 { margin: .8rem 0 .25rem; color: #172033; font-size: .98rem; }
+.refund-policy-dialog__body p, .refund-policy-dialog__body ul { margin: .35rem 0; }
+.refund-policy-dialog__body ul { padding-left: 1.25rem; }
+.refund-policy-dialog__body li + li { margin-top: .35rem; }
+
+@media (max-width: 760px) {
+    .payment-result-summary { grid-template-columns: 1fr; }
+    .payment-result-order__facts div { grid-template-columns: 1fr; gap: .2rem; }
+    .payment-result-order__facts dd { justify-content: flex-start; text-align: left; }
+}
+@media (max-width: 520px) {
+    .payment-result-card { padding: 1rem; }
+    .payment-result-order__title { align-items: flex-start; flex-direction: column; }
+    .refund-policy-dialog__header { padding: 1rem; }
+    .refund-policy-dialog__header button span:last-child { display: none; }
+    .refund-policy-dialog__body { padding: 1rem; }
+}
 .finance-summary { display: grid; gap: 1rem; margin-bottom: 1rem; padding: 1.25rem; border: 1px solid #b9d4f5; border-radius: 16px; background: linear-gradient(135deg,#f8fbff,#eef6ff); }
 .finance-summary__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .finance-summary__heading h2 { margin: .2rem 0; color: #172033; font-size: 1.15rem; font-weight: 800; }

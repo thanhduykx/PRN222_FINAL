@@ -9,3 +9,8 @@ public sealed class SystemNotificationDto
     public string Message { get; set; } = string.Empty;
     public DateTimeOffset OccurredAt { get; set; }
 }
+
+public static class SystemNotificationTypeNames
+{
+    public const string PackagePriceChanged = "PackagePriceChanged";
+}

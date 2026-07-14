@@ -55,4 +55,40 @@ public sealed class ChatGroundingPolicyTests
         Assert.Equal("Ý A [1]. Ý B [2]. Ý C [1].", result.Answer);
         Assert.Equal([3, 1], result.OriginalSourceNumbers);
     }
+
+    [Fact]
+    public void AreClaimsSupportedByCitedSources_RejectsCorrectFactAttachedToWrongChunk()
+    {
+        var sources = new[]
+        {
+            "PRN222 authentication uses a secure cookie.",
+            "PRN222 authorization uses role-based access control."
+        };
+
+        Assert.False(ChatGroundingPolicy.AreClaimsSupportedByCitedSources(
+            "Authentication uses a secure cookie [2].",
+            sources));
+    }
+
+    [Fact]
+    public void AreClaimsSupportedByCitedSources_AcceptsAtomicClaimsWithMatchingChunks()
+    {
+        var sources = new[]
+        {
+            "DBA103 has 3 credits and uses practical assignments.",
+            "IOT102 has 4 credits and uses laboratory projects."
+        };
+
+        Assert.True(ChatGroundingPolicy.AreClaimsSupportedByCitedSources(
+            "DBA103 has 3 credits [1]. IOT102 has 4 credits [2].",
+            sources));
+    }
+
+    [Fact]
+    public void AreClaimsSupportedByCitedSources_RejectsNumberInventedInsideOtherwiseRelevantClaim()
+    {
+        Assert.False(ChatGroundingPolicy.AreClaimsSupportedByCitedSources(
+            "The final exam is worth 70% [1].",
+            ["The final exam is worth 60%."]));
+    }
 }
