@@ -9,6 +9,14 @@ namespace PRN222_FINAL.BLL.Tests;
 public sealed class SystemNotificationServiceTests
 {
     [Fact]
+    public void PublicNotificationTypeName_MatchesPersistenceContract()
+    {
+        Assert.Equal(
+            PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged,
+            PRN222_FINAL.BLL.Contracts.Notifications.SystemNotificationTypeNames.PackagePriceChanged);
+    }
+
+    [Fact]
     public async Task GetActiveAsync_ReadsNotificationsFromLastThreeDaysAndMapsThem()
     {
         var now = new DateTimeOffset(2026, 7, 14, 9, 30, 0, TimeSpan.Zero);

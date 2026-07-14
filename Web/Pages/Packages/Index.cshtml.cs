@@ -73,7 +73,7 @@ public sealed class IndexModel : PageModel
 
             var result = await _payments.CreateCheckoutAsync(request, cancellationToken);
             return result.Status == PaymentStatus.Paid
-                ? RedirectToPage("/Subscriptions/Current")
+                ? RedirectToPage("/Payments/Return", new { provider = result.Provider, orderCode = result.OrderCode })
                 : Redirect(result.CheckoutUrl);
         }
         catch (Exception ex)

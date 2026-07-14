@@ -8,6 +8,6 @@ public interface IPaymentService
     Task<PaymentCheckoutResultDto> CreateCheckoutAsync(CreatePaymentRequestDto request, CancellationToken cancellationToken = default);
     Task<PaymentWebhookResultDto> HandleWebhookAsync(PaymentWebhookDto webhook, CancellationToken cancellationToken = default);
     Task<PaymentWebhookResultDto> HandleSignedReturnAsync(PaymentWebhookDto returnData, CancellationToken cancellationToken = default);
-    Task<PaymentReturnDto?> GetReturnStatusAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default);
+    Task<PaymentReturnDto?> GetReturnStatusAsync(PaymentProvider provider, string orderCode, Guid userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PaymentHistoryItemDto>> GetPaymentsForUserAsync(Guid userId, int limit = 20, CancellationToken cancellationToken = default);
 }

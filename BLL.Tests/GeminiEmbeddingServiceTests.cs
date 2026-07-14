@@ -33,8 +33,15 @@ public sealed class GeminiEmbeddingServiceTests
             inputType);
 
         Assert.NotEmpty(embedding);
+        Assert.Equal("POST", http.LastRequest?.Method);
+        Assert.Equal(
+            "https://example.test/v1beta/models/gemini-embedding-2:embedContent",
+            http.LastRequest?.Url);
+        Assert.Equal("test-key", http.LastRequest?.Headers?["x-goog-api-key"]);
         Assert.NotNull(http.LastRequest?.Body);
         using var request = JsonDocument.Parse(http.LastRequest!.Body!);
+        Assert.Equal("models/gemini-embedding-2", request.RootElement.GetProperty("model").GetString());
+        Assert.Equal(768, request.RootElement.GetProperty("outputDimensionality").GetInt32());
         var text = request.RootElement
             .GetProperty("content")
             .GetProperty("parts")[0]

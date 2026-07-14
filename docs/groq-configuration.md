@@ -1,6 +1,6 @@
 # Cấu hình Groq cho Chatbot
 
-Groq là provider tùy chọn cho bước sinh câu trả lời RAG. Embedding tài liệu vẫn dùng cấu hình Gemini/Hashing hiện tại. Groq sử dụng endpoint OpenAI-compatible:
+Groq là provider tùy chọn cho bước sinh câu trả lời RAG. Việc index chunk và tìm kiếm ngữ nghĩa luôn dùng Gemini Embeddings để bảo đảm query và tài liệu nằm trong cùng một không gian vector. Groq sử dụng endpoint OpenAI-compatible:
 
 ```text
 https://api.groq.com/openai/v1/chat/completions

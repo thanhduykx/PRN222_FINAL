@@ -466,7 +466,7 @@
         {
             var notificationTitleId = $"systemNotificationTitle-{notification.Id:N}";
             var notificationDescriptionId = $"systemNotificationDescription-{notification.Id:N}";
-            var isPackageNotification = notification.Type == PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged;
+            var isPackageNotification = notification.Type == PRN222_FINAL.BLL.Contracts.Notifications.SystemNotificationTypeNames.PackagePriceChanged;
             var packagePriceMatch = isPackageNotification
                 ? System.Text.RegularExpressions.Regex.Match(
                     notification.Message,

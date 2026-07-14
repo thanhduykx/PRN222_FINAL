@@ -211,37 +211,64 @@ public sealed class PaymentService : IPaymentService
         return HandleWebhookAsync(returnData, cancellationToken);
     }
 
-    public async Task<PaymentReturnDto?> GetReturnStatusAsync(PaymentProvider provider, string orderCode, CancellationToken cancellationToken = default)
+    public async Task<PaymentReturnDto?> GetReturnStatusAsync(
+        PaymentProvider provider,
+        string orderCode,
+        Guid userId,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(orderCode))
+        if (string.IsNullOrWhiteSpace(orderCode) || userId == Guid.Empty)
         {
             return null;
         }
 
         var paymentEntity = await _payments.GetByOrderCodeAsync((DalPaymentProvider)provider, orderCode, cancellationToken);
         var payment = paymentEntity is null ? null : BillingDtoMapper.ToModel(paymentEntity);
-        if (payment is not null && payment.Provider == PaymentProvider.PayOS && payment.Status == PaymentStatus.Pending)
+        if (payment is null || payment.UserId != userId)
+        {
+            return null;
+        }
+
+        if (payment.Provider == PaymentProvider.PayOS && payment.Status == PaymentStatus.Pending)
         {
             payment = await ReconcilePayOsPaymentAsync(payment, cancellationToken);
         }
 
-        if (payment is not null && payment.Status == PaymentStatus.Paid)
+        Package? package = null;
+        Subscription? subscription = null;
+        var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken);
+        if (packageEntity is not null)
         {
-            var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken);
-            if (packageEntity is not null)
+            package = BillingDtoMapper.ToModel(packageEntity);
+            if (payment.Status == PaymentStatus.Paid)
             {
-                await EnsurePaidSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), cancellationToken);
+                await EnsurePaidSubscriptionAsync(payment, package, cancellationToken);
+                var subscriptionEntity = await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken);
+                subscription = subscriptionEntity is null ? null : BillingDtoMapper.ToModel(subscriptionEntity);
             }
         }
 
-        return payment is null
-            ? null
-            : new PaymentReturnDto
+        return new PaymentReturnDto
             {
+                PaymentId = payment.Id,
                 Provider = provider,
                 OrderCode = payment.OrderCode,
                 ProviderTransactionId = payment.ProviderTransactionId,
                 Status = payment.Status,
+                CustomerName = payment.UserName,
+                CustomerEmail = payment.UserEmail,
+                PackageName = package?.Name ?? string.Empty,
+                PackageCode = package?.Code ?? string.Empty,
+                AmountVnd = payment.AmountVnd,
+                Currency = payment.Currency,
+                CreatedAt = payment.CreatedAt,
+                PaidAt = payment.PaidAt,
+                SubscriptionStartsAt = subscription?.StartsAt,
+                SubscriptionEndsAt = subscription?.EndsAt,
+                IsLifetime = package?.IsLifetime == true,
+                MonthlyChatLimit = package?.MonthlyChatLimit ?? 0,
+                MonthlyDocumentUploadLimit = package?.MonthlyDocumentUploadLimit ?? 0,
+                StorageLimitMb = package?.StorageLimitMb ?? 0,
                 Message = payment.Status switch
                 {
                     PaymentStatus.Paid => "Thanh toán thành công.",

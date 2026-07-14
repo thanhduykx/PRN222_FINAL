@@ -1,4 +1,5 @@
 .vs/
+.codex-debug/
 **/bin/
 **/obj/
 

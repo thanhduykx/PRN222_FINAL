@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Kiến trúc ba lớp của EduVietRAG</title>
+  <desc id="desc">Web gửi request tới BLL, BLL gửi request tới DAL và DAL truy vấn PostgreSQL. Kết quả đi ngược lại dưới dạng response.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fbff"/><stop offset="1" stop-color="#eef3f9"/></linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity=".10"/></filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#059669"/></marker>
+    <style>
+      text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#0f172a}.title{font-size:42px;font-weight:700}.subtitle{font-size:19px;fill:#475569}.layer-title{font-size:27px;font-weight:700}.card-title{font-size:20px;font-weight:650}.small{font-size:16px;fill:#475569}.arrow-label{font-size:17px;font-weight:700}.request{fill:#1d4ed8}.response{fill:#047857}
+    </style>
+  </defs>
+  <rect width="1600" height="980" fill="url(#bg)"/>
+  <text x="800" y="62" text-anchor="middle" class="title">EduVietRAG — Kiến trúc 3 lớp</text>
+  <text x="800" y="95" text-anchor="middle" class="subtitle">Quy tắc phụ thuộc bắt buộc: Web → BLL → DAL</text>
+
+  <g filter="url(#shadow)">
+    <rect x="360" y="130" width="1140" height="210" rx="24" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/>
+    <text x="970" y="172" text-anchor="middle" class="layer-title" fill="#1d4ed8">Presentation Layer — Web (Razor Pages)</text>
+    <rect x="475" y="200" width="280" height="100" rx="14" fill="#fff" stroke="#60a5fa" stroke-width="2"/>
+    <text x="615" y="242" text-anchor="middle" class="card-title">Razor Pages / PageModel</text><text x="615" y="273" text-anchor="middle" class="small">Nhận request, trả response</text>
+    <rect x="790" y="200" width="320" height="100" rx="14" fill="#fff" stroke="#60a5fa" stroke-width="2"/>
+    <text x="950" y="239" text-anchor="middle" class="card-title">ViewModel</text><text x="950" y="267" text-anchor="middle" class="small">Dữ liệu dành riêng cho giao diện</text><text x="950" y="289" text-anchor="middle" class="small">input form + dữ liệu cần hiển thị</text>
+    <rect x="1145" y="200" width="320" height="100" rx="14" fill="#fff" stroke="#60a5fa" stroke-width="2"/>
+    <text x="1305" y="242" text-anchor="middle" class="card-title">SignalR / Web Workers</text><text x="1305" y="273" text-anchor="middle" class="small">Cập nhật trạng thái realtime</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="360" y="405" width="1140" height="190" rx="24" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+    <text x="970" y="449" text-anchor="middle" class="layer-title" fill="#166534">Business Logic Layer (BLL)</text>
+    <rect x="480" y="475" width="220" height="82" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="590" y="510" text-anchor="middle" class="card-title">Accounts</text><text x="590" y="537" text-anchor="middle" class="small">Auth &amp; users</text>
+    <rect x="725" y="475" width="245" height="82" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="847" y="510" text-anchor="middle" class="card-title">RAG &amp; Documents</text><text x="847" y="537" text-anchor="middle" class="small">Rules, validation, DTO</text>
+    <rect x="995" y="475" width="220" height="82" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="1105" y="510" text-anchor="middle" class="card-title">Billing</text><text x="1105" y="537" text-anchor="middle" class="small">Payments</text>
+    <rect x="1240" y="475" width="220" height="82" rx="13" fill="#fff" stroke="#4ade80" stroke-width="2"/><text x="1350" y="510" text-anchor="middle" class="card-title">Analytics</text><text x="1350" y="537" text-anchor="middle" class="small">Reports</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="360" y="660" width="1140" height="180" rx="24" fill="#ffedd5" stroke="#ea580c" stroke-width="3"/>
+    <text x="970" y="704" text-anchor="middle" class="layer-title" fill="#9a3412">Data Access Layer (DAL)</text>
+    <rect x="500" y="735" width="280" height="68" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="640" y="776" text-anchor="middle" class="card-title">Repositories</text>
+    <rect x="830" y="735" width="280" height="68" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="970" y="776" text-anchor="middle" class="card-title">EF Core DbContext</text>
+    <rect x="1160" y="735" width="280" height="68" rx="13" fill="#fff" stroke="#fb923c" stroke-width="2"/><text x="1300" y="776" text-anchor="middle" class="card-title">Entities / Data Models</text>
+  </g>
+
+  <g filter="url(#shadow)"><path d="M690 925c0-28 125-50 280-50s280 22 280 50v45c0 28-125 50-280 50s-280-22-280-50z" fill="#ccfbf1" stroke="#0f766e" stroke-width="3"/><ellipse cx="970" cy="925" rx="280" ry="50" fill="#ecfeff" stroke="#0f766e" stroke-width="3"/><text x="970" y="936" text-anchor="middle" class="layer-title" fill="#115e59">PostgreSQL — Supabase</text><text x="970" y="985" text-anchor="middle" class="small">Persisted application, RAG, billing and chat data</text></g>
+
+  <path d="M900 340v55" stroke="#2563eb" stroke-width="5" marker-end="url(#arrowBlue)"/><text x="875" y="374" text-anchor="end" class="arrow-label request">REQUEST</text>
+  <path d="M1040 405v-55" stroke="#059669" stroke-width="5" marker-end="url(#arrowGreen)"/><text x="1065" y="379" class="arrow-label response">RESPONSE</text>
+  <path d="M900 595v55" stroke="#2563eb" stroke-width="5" marker-end="url(#arrowBlue)"/><text x="875" y="629" text-anchor="end" class="arrow-label request">REQUEST</text>
+  <path d="M1040 660v-55" stroke="#059669" stroke-width="5" marker-end="url(#arrowGreen)"/><text x="1065" y="634" class="arrow-label response">RESPONSE</text>
+  <path d="M900 840v27" stroke="#2563eb" stroke-width="5" marker-end="url(#arrowBlue)"/><text x="875" y="862" text-anchor="end" class="arrow-label request">REQUEST</text>
+  <path d="M1040 875v-35" stroke="#059669" stroke-width="5" marker-end="url(#arrowGreen)"/><text x="1065" y="862" class="arrow-label response">RESPONSE</text>
+</svg>

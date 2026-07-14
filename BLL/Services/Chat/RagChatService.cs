@@ -36,7 +36,7 @@ public interface IRagChatService
 
 public sealed class RagChatService : IRagChatService
 {
-    private const int TopK = 5;
+    private const int TopK = 8;
     private const int RerankCandidateK = 20;
     private const int MaxBatchQuestions = 50;
     private const double MinimumScore = 0.42;
@@ -46,6 +46,13 @@ public sealed class RagChatService : IRagChatService
     private const string OutOfScopeAnswer = "Mình không đủ dữ liệu trong tài liệu để trả lời câu hỏi này.";
 
     private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}]+", RegexOptions.Compiled);
+    private static readonly string[] AssessmentComponentPatterns =
+    {
+        @"^(?:\d+[.)]\s*)?(?<name>.+?)\s*(?:\||:|\s[-–—]\s)\s*(?<value>\d+(?:[.,]\d+)?)\s*%\s*$",
+        @"^(?:\d+[.)]\s*)?(?<name>.+?)\s*\(\s*(?<value>\d+(?:[.,]\d+)?)\s*%\s*\)?\s*$",
+        @"^(?:\d+[.)]\s*)?(?<name>.+?)\s+(?<value>\d+(?:[.,]\d+)?)\s*%\s*$",
+        @"^(?<value>\d+(?:[.,]\d+)?)\s*%\s*(?:\||:|\s[-–—]\s)?\s*(?<name>.+?)\s*$"
+    };
     private static readonly string[] PromptInjectionSignals =
     {
         "ignore",
@@ -131,7 +138,16 @@ public sealed class RagChatService : IRagChatService
         "nocredit",
         "assessment",
         "danh gia",
+        "diem",
         "ty le diem",
+        "so sanh",
+        "khac nhau",
+        "de hon",
+        "kho hon",
+        "compare",
+        "difference",
+        "easier",
+        "harder",
         "quiz",
         "exam",
         "final exam",
@@ -294,6 +310,20 @@ public sealed class RagChatService : IRagChatService
             return new SingleQuestionAnswer(question, BuildUserIdentityAnswer(userDisplayName, responseLanguage), Array.Empty<SourceCitation>(), AnswerSource: "SmallTalk", HasDirectCitation: false);
         }
 
+        if (IsPersonalGradeQuestion(question))
+        {
+            var personalGradeAnswer = responseLanguage == "vi"
+                ? "Mình chưa có nguồn điểm cá nhân đã được xác thực và cấp quyền, nên không thể xem hoặc suy đoán điểm của bạn. Nếu bạn đang hỏi **cơ cấu điểm của môn học**, hãy cho mình mã môn."
+                : "I do not have an authorized personal-grade source, so I cannot view or infer your grades. If you mean the **course assessment structure**, provide the course code.";
+            return new SingleQuestionAnswer(
+                question,
+                personalGradeAnswer,
+                Array.Empty<SourceCitation>(),
+                AnswerSource: "OutOfScope",
+                HasDirectCitation: false,
+                AnswerStatus: ChatGroundingPolicy.InsufficientEvidenceStatus);
+        }
+
         var intent = await ClassifyQuestionIntentAsync(
             question,
             historyBeforeQuestion,
@@ -377,6 +407,11 @@ public sealed class RagChatService : IRagChatService
             return exactFactAnswer with { ResolvedSubject = route.SelectedSubject ?? exactFactAnswer.ResolvedSubject };
         }
 
+        if (TryBuildAssessmentStructureAnswer(retrievalQuestion, scopedChunks, responseLanguage) is { } assessmentAnswer)
+        {
+            return assessmentAnswer with { ResolvedSubject = route.SelectedSubject ?? assessmentAnswer.ResolvedSubject };
+        }
+
         if (exactFactIntent != ExactFactIntent.None)
         {
             return await BuildInsufficientAnswerAsync(
@@ -421,7 +456,8 @@ public sealed class RagChatService : IRagChatService
                 cancellationToken);
         }
 
-        if (string.IsNullOrWhiteSpace(route.SelectedSubject))
+        if (string.IsNullOrWhiteSpace(route.SelectedSubject)
+            && !IsMultiSubjectQuestion(NormalizeQuestion(retrievalQuestion)))
         {
             var ambiguousSubjects = FindAmbiguousCandidateSubjects(candidateMatches);
             if (ambiguousSubjects.Count > 1)
@@ -462,6 +498,15 @@ public sealed class RagChatService : IRagChatService
 
         var matchedChunks = matches.Select(item => item.Chunk).ToList();
         var resolvedSubject = route.SelectedSubject ?? ResolveSubject(matchedChunks);
+        var comparisonQuestion = retrievalQueries.FirstOrDefault(query =>
+                                     ExtractCourseCodes(query).Count >= 2
+                                     && IsMultiSubjectQuestion(NormalizeQuestion(query)))
+                                 ?? question;
+        if (TryBuildMultiSubjectStudyComparison(comparisonQuestion, matches, scopedChunks, responseLanguage) is { } studyComparison)
+        {
+            return studyComparison;
+        }
+
         var generatedAnswer = await _chatCompletionService.GenerateAnswerAsync(
             ApplyAnswerDepth(resolvedQuestion, answerDepth, responseLanguage),
             resolvedSubject,
@@ -871,7 +916,7 @@ public sealed class RagChatService : IRagChatService
 
         var courseCodes = ExtractCourseCodes(string.Join("\n", retrievalQueries));
 
-        var rankedCandidates = scopedChunks
+        var scoredCandidates = scopedChunks
             .Select(chunk =>
             {
                 var vectorScore = queryEmbeddings.Count == 0
@@ -900,14 +945,18 @@ public sealed class RagChatService : IRagChatService
                     lexicalScore);
             })
             .Where(item => HasRetrievalEvidence(item, needsContentEvidence, minimumSharedTerms))
-            .OrderByDescending(item => item.Score)
-            .ThenByDescending(item => item.ContentSharedTerms)
-            .ThenByDescending(item => item.TextSharedTerms)
-            .ThenByDescending(item => item.MetadataSharedTerms)
-            .ThenByDescending(item => item.VectorScore)
             .ToList();
 
-        return SelectWithCourseCoverage(rankedCandidates, courseCodes, RerankCandidateK);
+        var rankedCandidates = RankByReciprocalRankFusion(scoredCandidates);
+        var comparisonQuestion = retrievalQueries.FirstOrDefault(query =>
+                                     ExtractCourseCodes(query).Count >= 2
+                                     && IsMultiSubjectQuestion(NormalizeQuestion(query)))
+                                 ?? string.Join("\n", retrievalQueries);
+        return SelectWithEvidenceCoverage(
+            rankedCandidates,
+            BuildComparisonEvidenceSlots(comparisonQuestion),
+            courseCodes,
+            RerankCandidateK);
     }
 
     private static SubjectRouteResult ResolveSubjectRoute(
@@ -1065,7 +1114,18 @@ public sealed class RagChatService : IRagChatService
     private static bool IsMultiSubjectQuestion(string normalizedQuestion)
     {
         return normalizedQuestion.Contains("so sanh", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("khac nhau", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("giong nhau", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("de hon", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("kho hon", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("hai mon", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("2 mon", StringComparison.Ordinal)
                || normalizedQuestion.Contains("compare", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("difference", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("different", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("easier", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("harder", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("these two courses", StringComparison.Ordinal)
                || normalizedQuestion.Contains("tat ca mon", StringComparison.Ordinal)
                || normalizedQuestion.Contains("cac mon", StringComparison.Ordinal)
                || normalizedQuestion.Contains("all subjects", StringComparison.Ordinal);
@@ -1149,6 +1209,591 @@ public sealed class RagChatService : IRagChatService
         return new SingleQuestionAnswer(question, answer, citations, ResolveSubject(new[] { evidence.Chunk }));
     }
 
+    private static SingleQuestionAnswer? TryBuildMultiSubjectStudyComparison(
+        string question,
+        IReadOnlyList<ScoredChunk> matches,
+        IReadOnlyList<DocumentChunk> scopedChunks,
+        string language)
+    {
+        var normalizedQuestion = NormalizeQuestion(question);
+        if (!IsMultiSubjectQuestion(normalizedQuestion)
+            || DetectExactFactIntent(question) == ExactFactIntent.Credits)
+        {
+            return null;
+        }
+
+        var courseCodes = ExtractCourseCodesInOrder(question).Take(4).ToList();
+        if (courseCodes.Count < 2)
+        {
+            return null;
+        }
+
+        if (IsAssessmentWeightQuestion(normalizedQuestion))
+        {
+            return BuildAssessmentComparisonAnswer(question, matches, scopedChunks, courseCodes, language);
+        }
+
+        var isDifficultyQuestion = IsDifficultyQuestion(normalizedQuestion);
+        var studentPreference = isDifficultyQuestion ? BuildStudentPreferenceProfile(normalizedQuestion) : null;
+        var evidenceTerms = ExtractTerms(isDifficultyQuestion
+            ? "khối lượng workload điều kiện prerequisite bài tập assignment dự án project thực hành lab thi exam đánh giá assessment tín chỉ credit session buổi"
+            : "mục tiêu nội dung kỹ năng chuẩn đầu ra đánh giá bài tập dự án thực hành tín chỉ workload assessment outcome skill");
+        var citations = new List<SourceCitation>();
+        var lines = new List<string>
+        {
+            language == "vi"
+                ? isDifficultyQuestion ? "## So sánh độ khó có căn cứ" : "## Điểm khác nhau theo tài liệu"
+                : isDifficultyQuestion ? "## Evidence-based difficulty comparison" : "## Differences supported by the documents"
+        };
+
+        if (isDifficultyQuestion)
+        {
+            lines.Add(language == "vi"
+                ? "Không thể khẳng định môn nào **dễ hơn một cách khách quan** chỉ từ đề cương. Có thể so sánh các yêu cầu quan sát được như sau:"
+                : "A syllabus alone cannot prove which course is **objectively easier**. The observable requirements are:");
+        }
+
+        var coursesWithEvidence = 0;
+        foreach (var courseCode in courseCodes)
+        {
+            var courseMatches = matches
+                .Where(match => SubjectMatches(match.Chunk.Subject, courseCode))
+                .ToList();
+            var evidence = courseMatches
+                .SelectMany(match => SplitSentences(match.Chunk.Text).Select(sentence => new
+                {
+                    Match = match,
+                    Sentence = sentence,
+                    DimensionScore = CountSharedTerms(evidenceTerms, sentence),
+                    QuestionScore = CountSharedTerms(ExtractTerms(question), sentence)
+                }))
+                .Where(item => item.Sentence.Length is > 8 and <= 500 && !IsLowValueFallbackSentence(item.Sentence))
+                .OrderByDescending(item => item.DimensionScore)
+                .ThenByDescending(item => item.QuestionScore)
+                .ThenByDescending(item => item.Match.Score)
+                .GroupBy(item => item.Sentence, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Take(2)
+                .ToList();
+
+            lines.Add($"### {courseCode}");
+            if (evidence.Count == 0)
+            {
+                lines.Add(language == "vi"
+                    ? "- Chưa đủ bằng chứng phù hợp trong tài liệu được phép truy cập."
+                    : "- No qualified evidence was found in the authorized documents.");
+                continue;
+            }
+
+            coursesWithEvidence++;
+            foreach (var item in evidence)
+            {
+                var sourceNumber = AddComparisonCitation(citations, item.Match, item.Sentence);
+                lines.Add($"- {AttachSourceMarker(item.Sentence, sourceNumber)}");
+            }
+        }
+
+        if (isDifficultyQuestion)
+        {
+            var preferenceRanking = studentPreference is null
+                ? []
+                : courseCodes
+                    .Select(courseCode => matches
+                        .Where(match => SubjectMatches(match.Chunk.Subject, courseCode))
+                        .Select(match => new
+                        {
+                            CourseCode = courseCode,
+                            Match = match,
+                            Score = CountSharedTerms(studentPreference.Terms, match.Chunk.Text)
+                        })
+                        .OrderByDescending(item => item.Score)
+                        .ThenByDescending(item => item.Match.Score)
+                        .FirstOrDefault())
+                    .Where(item => item is not null)
+                    .OrderByDescending(item => item!.Score)
+                    .ToList();
+            var bestFit = preferenceRanking.FirstOrDefault();
+            var secondFitScore = preferenceRanking.Skip(1).FirstOrDefault()?.Score ?? 0;
+            if (studentPreference is not null
+                && bestFit is not null
+                && bestFit.Score >= 2
+                && bestFit.Score > secondFitScore)
+            {
+                var sourceNumber = AddComparisonCitation(citations, bestFit.Match, bestFit.Match.Chunk.Text);
+                var fitStatement = language == "vi"
+                    ? $"**Gợi ý theo độ phù hợp:** Với thế mạnh **{studentPreference.LabelVi}** bạn vừa nêu, **{bestFit.CourseCode} có vẻ phù hợp hơn** vì tài liệu môn này chứa nhiều yêu cầu liên quan trực tiếp tới thế mạnh đó. Đây không phải kết luận môn này dễ hơn."
+                    : $"**Conditional fit:** Given your stated strength in **{studentPreference.LabelEn}**, **{bestFit.CourseCode} may be a better fit** because its documents contain requirements directly related to that strength. This does not mean the course is objectively easier.";
+                lines.Add(AttachSourceMarker(fitStatement, sourceNumber));
+            }
+            else
+            {
+                lines.Add(language == "vi"
+                    ? "**Kết luận:** môn phù hợp hơn còn phụ thuộc nền tảng, sở thích và thế mạnh của bạn. Nếu bạn cho biết mình mạnh lý thuyết, lập trình hay thực hành, mình có thể tư vấn theo độ phù hợp thay vì đoán độ dễ."
+                    : "**Conclusion:** the better fit depends on your background, preferences, and strengths. Share whether you prefer theory, coding, or hands-on work for a conditional recommendation.");
+            }
+        }
+
+        return new SingleQuestionAnswer(
+            question,
+            string.Join("\n", lines),
+            citations,
+            AnswerSource: "Rag",
+            HasDirectCitation: citations.Count > 0,
+            AnswerStatus: coursesWithEvidence == courseCodes.Count
+                ? ChatGroundingPolicy.GroundedAnswerStatus
+                : coursesWithEvidence > 0
+                    ? ChatGroundingPolicy.PartialAnswerStatus
+                    : ChatGroundingPolicy.InsufficientEvidenceStatus);
+    }
+
+    private static SingleQuestionAnswer BuildAssessmentComparisonAnswer(
+        string question,
+        IReadOnlyList<ScoredChunk> matches,
+        IReadOnlyList<DocumentChunk> scopedChunks,
+        IReadOnlyList<string> courseCodes,
+        string language)
+    {
+        var citations = new List<SourceCitation>();
+        var lines = new List<string>
+        {
+            language == "vi" ? "## Cơ cấu điểm theo tài liệu" : "## Assessment structure from the documents"
+        };
+        var coursesWithEvidence = 0;
+        var hasInvalidEvidence = false;
+
+        foreach (var courseCode in courseCodes)
+        {
+            var components = scopedChunks
+                .Where(chunk => SubjectMatches(chunk.Subject, courseCode))
+                .SelectMany(chunk => ExtractAssessmentComponents(chunk).Select(component => new
+                {
+                    Chunk = chunk,
+                    Score = matches.FirstOrDefault(match =>
+                        match.Chunk.DocumentId == chunk.DocumentId && match.Chunk.ChunkIndex == chunk.ChunkIndex)?.Score ?? 0.99,
+                    component.Name,
+                    component.WeightPercent,
+                    component.EvidenceText
+                }))
+                .GroupBy(item => $"{NormalizeQuestion(item.Name)}|{item.WeightPercent:0.####}", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            lines.Add($"### {courseCode}");
+            if (components.Count == 0)
+            {
+                lines.Add(language == "vi"
+                    ? "- Chưa tìm thấy thành phần và tỷ trọng điểm trong tài liệu được phép truy cập."
+                    : "- No assessment components and weights were found in the authorized documents.");
+                continue;
+            }
+
+            coursesWithEvidence++;
+            foreach (var component in components)
+            {
+                var sourceNumber = AddComparisonCitation(citations, component.Chunk, component.Score, component.EvidenceText);
+                lines.Add($"- {component.Name}: {FormatCreditValue(component.WeightPercent)}% [{sourceNumber}]");
+            }
+
+            var total = components.Sum(component => component.WeightPercent);
+            var totalSources = string.Concat(components
+                .Select(component => AddComparisonCitation(citations, component.Chunk, component.Score, component.EvidenceText))
+                .Distinct()
+                .Select(sourceNumber => $"[{sourceNumber}]"));
+            lines.Add(language == "vi"
+                ? $"- **Tổng tỷ trọng tìm thấy:** {FormatCreditValue(total)}%. {totalSources}"
+                : $"- **Total weight found:** {FormatCreditValue(total)}%. {totalSources}");
+            if (Math.Abs(total - 100) > 0.01)
+            {
+                hasInvalidEvidence = true;
+                lines.Add(language == "vi"
+                    ? "- ⚠️ Tổng chưa bằng 100%; kết quả có thể thiếu thành phần hoặc tài liệu đang mâu thuẫn."
+                    : "- ⚠️ The total is not 100%; a component may be missing or the documents may conflict.");
+            }
+            var conflictingNames = components
+                .GroupBy(component => NormalizeQuestion(component.Name), StringComparer.OrdinalIgnoreCase)
+                .Where(group => group.Select(component => component.WeightPercent).Distinct().Count() > 1)
+                .Select(group => group.First().Name)
+                .ToList();
+            if (conflictingNames.Count > 0)
+            {
+                hasInvalidEvidence = true;
+                lines.Add(language == "vi"
+                    ? $"- ⚠️ Tài liệu có tỷ trọng mâu thuẫn cho: {string.Join(", ", conflictingNames)}."
+                    : $"- ⚠️ Conflicting weights were found for: {string.Join(", ", conflictingNames)}.");
+            }
+        }
+
+        return new SingleQuestionAnswer(
+            question,
+            string.Join("\n", lines),
+            citations,
+            AnswerSource: "Rag",
+            HasDirectCitation: citations.Count > 0,
+            AnswerStatus: coursesWithEvidence == courseCodes.Count && !hasInvalidEvidence
+                ? ChatGroundingPolicy.GroundedAnswerStatus
+                : coursesWithEvidence > 0
+                    ? ChatGroundingPolicy.PartialAnswerStatus
+                    : ChatGroundingPolicy.InsufficientEvidenceStatus);
+    }
+
+    private static SingleQuestionAnswer? TryBuildAssessmentStructureAnswer(
+        string question,
+        IReadOnlyList<DocumentChunk> scopedChunks,
+        string language)
+    {
+        var normalizedQuestion = NormalizeQuestion(question);
+        var asksForAllCourses = normalizedQuestion.Contains("cac mon", StringComparison.Ordinal)
+                                || normalizedQuestion.Contains("tat ca mon", StringComparison.Ordinal)
+                                || normalizedQuestion.Contains("all courses", StringComparison.Ordinal)
+                                || normalizedQuestion.Contains("all subjects", StringComparison.Ordinal);
+        var courseCodes = ExtractCourseCodesInOrder(question).Take(8).ToList();
+        if (courseCodes.Count == 0 && asksForAllCourses)
+        {
+            courseCodes = scopedChunks
+                .Select(chunk => ExtractSubjectCode(chunk.Subject))
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(code => code, StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToList();
+        }
+        if (!IsAssessmentWeightQuestion(normalizedQuestion)
+            || IsPersonalGradeQuestion(question)
+            || courseCodes.Count == 0
+            || (courseCodes.Count > 1 && IsMultiSubjectQuestion(normalizedQuestion) && !asksForAllCourses))
+        {
+            return null;
+        }
+
+        return BuildAssessmentComparisonAnswer(
+            question,
+            Array.Empty<ScoredChunk>(),
+            scopedChunks,
+            courseCodes,
+            language);
+    }
+
+    private static IReadOnlyList<AssessmentComponentFact> ExtractAssessmentComponents(DocumentChunk chunk)
+    {
+        var results = new List<AssessmentComponentFact>();
+        var lines = (chunk.Text ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(line => Regex.Split(line, @"(?<=%)\s*\)?\s*[.;]\s*"))
+            .Where(line => !string.IsNullOrWhiteSpace(line));
+        string? currentComponent = null;
+        var currentComponentAge = 0;
+
+        foreach (var line in lines)
+        {
+            if (!string.IsNullOrWhiteSpace(currentComponent) && ++currentComponentAge > 4)
+            {
+                currentComponent = null;
+                currentComponentAge = 0;
+            }
+
+            var cleaned = line.Trim().Trim('-', '*', '|').Trim();
+            if (TryParseInlineAssessmentComponent(cleaned, out var inlineName, out var inlineValue))
+            {
+                results.Add(new AssessmentComponentFact(
+                    NormalizeAssessmentComponentName(inlineName),
+                    inlineValue,
+                    cleaned));
+                currentComponent = null;
+                currentComponentAge = 0;
+                continue;
+            }
+
+            var weight = Regex.Match(
+                cleaned,
+                @"(?i)^(?:Tỷ\s*trọng|Ty\s*trong|Trọng\s*số|Trong\s*so|Weight|Percentage|Percent)?\s*:?\s*(?<value>\d+(?:[.,]\d+)?)\s*%\s*$",
+                RegexOptions.CultureInvariant);
+            if (weight.Success && !string.IsNullOrWhiteSpace(currentComponent)
+                && double.TryParse(weight.Groups["value"].Value.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+                && value is >= 0 and <= 100)
+            {
+                results.Add(new AssessmentComponentFact(
+                    NormalizeAssessmentComponentName(currentComponent),
+                    value,
+                    $"{currentComponent}: {cleaned}"));
+                currentComponent = null;
+                currentComponentAge = 0;
+                continue;
+            }
+
+            if (IsPlausibleAssessmentComponentName(cleaned))
+            {
+                currentComponent = CleanAssessmentComponentName(cleaned);
+                currentComponentAge = 0;
+            }
+        }
+
+        return results
+            .GroupBy(item => $"{NormalizeQuestion(item.Name)}|{item.WeightPercent:0.####}", StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
+    }
+
+    private static bool TryParseInlineAssessmentComponent(string line, out string name, out double value)
+    {
+        name = string.Empty;
+        value = 0;
+        foreach (var pattern in AssessmentComponentPatterns)
+        {
+            var match = Regex.Match(line, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            if (!match.Success)
+            {
+                continue;
+            }
+
+            var candidateName = CleanAssessmentComponentName(match.Groups["name"].Value);
+            if (!IsPlausibleAssessmentComponentName(candidateName)
+                || !double.TryParse(match.Groups["value"].Value.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var candidateValue)
+                || candidateValue is < 0 or > 100)
+            {
+                continue;
+            }
+
+            name = candidateName;
+            value = candidateValue;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsPlausibleAssessmentComponentName(string value)
+    {
+        var candidate = CleanAssessmentComponentName(value);
+        if (candidate.Length is < 2 or > 100
+            || candidate.Contains(':', StringComparison.Ordinal)
+            || Regex.IsMatch(candidate, @"[.!?;]", RegexOptions.CultureInvariant)
+            || !Regex.IsMatch(candidate, @"\p{L}", RegexOptions.CultureInvariant))
+        {
+            return false;
+        }
+
+        var wordCount = Regex.Matches(candidate, @"[\p{L}\p{N}]+", RegexOptions.CultureInvariant).Count;
+        if (wordCount is < 1 or > 12)
+        {
+            return false;
+        }
+
+        var normalized = NormalizeQuestion(candidate);
+        var normalizedWords = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+        return !normalizedWords.Overlaps(["total", "sum", "overall", "tong"])
+            && normalized is not "weight" and not "percentage" and not "percent" and not "ty trong" and not "trong so";
+    }
+
+    private static string CleanAssessmentComponentName(string name)
+    {
+        return Regex.Replace(name.Trim().Trim('-', '*', '|', ':', '.', ';').Trim(), @"^\d+[.)]\s*", string.Empty).Trim();
+    }
+
+    private static string NormalizeAssessmentComponentName(string name)
+    {
+        var trimmed = name.Trim();
+        var normalized = NormalizeQuestion(trimmed);
+        if (normalized.Contains("final exam", StringComparison.Ordinal)
+            || normalized.Contains("thi cuoi ky", StringComparison.Ordinal))
+        {
+            return "Final exam";
+        }
+        if (normalized.Contains("midterm", StringComparison.Ordinal)
+            || normalized.Contains("thi giua ky", StringComparison.Ordinal))
+        {
+            return "Midterm";
+        }
+        if (normalized.Contains("participation", StringComparison.Ordinal)
+            || normalized.Contains("tham gia", StringComparison.Ordinal))
+        {
+            return "Participation";
+        }
+        if (normalized.Contains("assignment", StringComparison.Ordinal)
+            || normalized.Contains("bai tap", StringComparison.Ordinal))
+        {
+            return "Assignment";
+        }
+        if (normalized.Contains("project", StringComparison.Ordinal)
+            || normalized.Contains("du an", StringComparison.Ordinal))
+        {
+            return "Project";
+        }
+        if (normalized.Contains("quiz", StringComparison.Ordinal))
+        {
+            return "Quiz";
+        }
+        if (normalized.Contains("lab", StringComparison.Ordinal)
+            || normalized.Contains("thuc hanh", StringComparison.Ordinal))
+        {
+            return "Lab";
+        }
+
+        return Regex.Replace(trimmed, @"^\d+[.)]\s*", string.Empty).Trim();
+    }
+
+    private static int AddComparisonCitation(List<SourceCitation> citations, ScoredChunk match, string evidenceText)
+    {
+        return AddComparisonCitation(citations, match.Chunk, match.Score, evidenceText);
+    }
+
+    private static int AddComparisonCitation(
+        List<SourceCitation> citations,
+        DocumentChunk chunk,
+        double score,
+        string evidenceText)
+    {
+        var existingIndex = citations.FindIndex(citation =>
+            citation.DocumentId == chunk.DocumentId && citation.ChunkIndex == chunk.ChunkIndex);
+        if (existingIndex >= 0)
+        {
+            return existingIndex + 1;
+        }
+
+        citations.Add(new SourceCitation
+        {
+            DocumentId = chunk.DocumentId,
+            FileName = chunk.FileName,
+            Subject = chunk.Subject,
+            Chapter = chunk.Chapter,
+            ChunkIndex = chunk.ChunkIndex,
+            Score = Math.Round(score, 3),
+            Excerpt = CreateFactExcerpt(chunk.Text, evidenceText)
+        });
+        return citations.Count;
+    }
+
+    private static bool IsAssessmentQuestion(string normalizedQuestion)
+    {
+        var usesDifferenceIdiom = normalizedQuestion.Contains("khac nhau o diem", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("khac nhau diem nao", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("diem khac nhau", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("diem giong nhau", StringComparison.Ordinal);
+        return (!usesDifferenceIdiom && normalizedQuestion.Contains("diem", StringComparison.Ordinal))
+               || normalizedQuestion.Contains("danh gia", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("ty trong", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("assessment", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("grading", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("weight", StringComparison.Ordinal);
+    }
+
+    private static bool IsAssessmentWeightQuestion(string normalizedQuestion)
+    {
+        var usesDifferenceIdiom = normalizedQuestion.Contains("khac nhau o diem", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("khac nhau diem nao", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("diem khac nhau", StringComparison.Ordinal)
+                                 || normalizedQuestion.Contains("diem giong nhau", StringComparison.Ordinal);
+        return (!usesDifferenceIdiom && normalizedQuestion.Contains("diem", StringComparison.Ordinal))
+               || normalizedQuestion.Contains("ty trong", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("phan tram", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("grading", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("weight", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("percentage", StringComparison.Ordinal);
+    }
+
+    private static bool IsDifficultyQuestion(string normalizedQuestion)
+    {
+        return normalizedQuestion.Contains("de hon", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("kho hon", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("do kho", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("easier", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("harder", StringComparison.Ordinal)
+               || normalizedQuestion.Contains("difficulty", StringComparison.Ordinal);
+    }
+
+    private static bool IsPersonalGradeQuestion(string question)
+    {
+        var normalized = NormalizeQuestion(question);
+        return normalized.Contains("diem cua toi", StringComparison.Ordinal)
+               || normalized.Contains("diem cua minh", StringComparison.Ordinal)
+               || normalized.Contains("diem ca nhan", StringComparison.Ordinal)
+               || normalized.Contains("my grade", StringComparison.Ordinal)
+               || normalized.Contains("my score", StringComparison.Ordinal)
+               || normalized.Contains("personal grade", StringComparison.Ordinal);
+    }
+
+    private static StudentPreferenceProfile? BuildStudentPreferenceProfile(string normalizedQuestion)
+    {
+        var terms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var labelsVi = new List<string>();
+        var labelsEn = new List<string>();
+
+        AddPreference(
+            normalizedQuestion,
+            ["lap trinh", "code", "coding", "programming", "software", "dotnet", ".net", "java", "web", "database", "co so du lieu"],
+            ["programming", "coding", "code", "software", "dotnet", "java", "web", "database", "lap", "trinh", "phan", "mem", "du", "lieu"],
+            "lập trình/phần mềm",
+            "programming/software",
+            terms,
+            labelsVi,
+            labelsEn);
+        AddPreference(
+            normalizedQuestion,
+            ["phan cung", "hardware", "iot", "sensor", "cam bien", "thiet bi"],
+            ["hardware", "iot", "sensor", "device", "embedded", "phan", "cung", "cam", "bien", "thiet", "bi"],
+            "phần cứng/IoT",
+            "hardware/IoT",
+            terms,
+            labelsVi,
+            labelsEn);
+        AddPreference(
+            normalizedQuestion,
+            ["am nhac", "music", "nhac cu", "instrument", "nghe thuat", "art"],
+            ["music", "instrument", "performance", "art", "am", "nhac", "nhac", "cu", "nghe", "thuat"],
+            "âm nhạc/nghệ thuật",
+            "music/arts",
+            terms,
+            labelsVi,
+            labelsEn);
+        AddPreference(
+            normalizedQuestion,
+            ["thuc hanh", "hands on", "practical", "lab", "project", "du an"],
+            ["practice", "practical", "lab", "laboratory", "project", "hands", "thuc", "hanh", "du", "an"],
+            "thực hành/dự án",
+            "hands-on/project work",
+            terms,
+            labelsVi,
+            labelsEn);
+        AddPreference(
+            normalizedQuestion,
+            ["ly thuyet", "theory", "toan", "math", "analysis", "phan tich"],
+            ["theory", "theoretical", "math", "mathematics", "analysis", "ly", "thuyet", "toan", "phan", "tich"],
+            "lý thuyết/phân tích",
+            "theory/analysis",
+            terms,
+            labelsVi,
+            labelsEn);
+
+        return terms.Count == 0
+            ? null
+            : new StudentPreferenceProfile(
+                string.Join(", ", labelsVi.Distinct(StringComparer.OrdinalIgnoreCase)),
+                string.Join(", ", labelsEn.Distinct(StringComparer.OrdinalIgnoreCase)),
+                terms);
+    }
+
+    private static void AddPreference(
+        string normalizedQuestion,
+        IReadOnlyList<string> signals,
+        IReadOnlyList<string> evidenceTerms,
+        string labelVi,
+        string labelEn,
+        HashSet<string> terms,
+        List<string> labelsVi,
+        List<string> labelsEn)
+    {
+        if (!signals.Any(signal => normalizedQuestion.Contains(signal, StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        terms.UnionWith(evidenceTerms);
+        labelsVi.Add(labelVi);
+        labelsEn.Add(labelEn);
+    }
+
     private static SingleQuestionAnswer? TryBuildMultiSubjectCreditComparison(
         string question,
         IReadOnlyList<DocumentChunk> chunks,
@@ -1210,9 +1855,10 @@ public sealed class RagChatService : IRagChatService
         {
             if (fact.Credit is not null && sourceNumbers.TryGetValue(fact.CourseCode, out var sourceNumber))
             {
-                lines.Add(language == "vi"
-                    ? $"- {fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} tín chỉ. [{sourceNumber}]"
-                    : $"- {fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} credits. [{sourceNumber}]");
+                var factText = language == "vi"
+                    ? $"{fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} tín chỉ."
+                    : $"{fact.CourseCode}: {FormatCreditValue(fact.Credit.Value)} credits.";
+                lines.Add($"- {AttachSourceMarker(factText, sourceNumber)}");
             }
             else
             {
@@ -1605,9 +2251,15 @@ public sealed class RagChatService : IRagChatService
 
     private static IReadOnlySet<string> ExtractCourseCodes(string text)
     {
+        return ExtractCourseCodesInOrder(text).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<string> ExtractCourseCodesInOrder(string text)
+    {
         return Regex.Matches(text ?? string.Empty, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant)
             .Select(match => match.Value.ToUpperInvariant())
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static string ResolveFactCourseLabel(string question, DocumentChunk chunk)
@@ -1708,8 +2360,9 @@ public sealed class RagChatService : IRagChatService
             }
         }
 
-        return SelectWithCourseCoverage(
+        return SelectWithEvidenceCoverage(
             selected.Concat(fallback).ToList(),
+            BuildComparisonEvidenceSlots(question),
             ExtractCourseCodes(question),
             TopK);
     }
@@ -1791,6 +2444,132 @@ public sealed class RagChatService : IRagChatService
         }
 
         return selected;
+    }
+
+    private static IReadOnlyList<ScoredChunk> SelectWithEvidenceCoverage(
+        IReadOnlyList<ScoredChunk> rankedCandidates,
+        IReadOnlyList<ComparisonEvidenceSlot> slots,
+        IReadOnlySet<string> courseCodes,
+        int limit)
+    {
+        if (rankedCandidates.Count == 0 || limit <= 0 || slots.Count == 0)
+        {
+            return SelectWithCourseCoverage(rankedCandidates, courseCodes, limit);
+        }
+
+        var selected = new List<ScoredChunk>(Math.Min(limit, rankedCandidates.Count));
+        var seen = new HashSet<(Guid DocumentId, int ChunkIndex)>();
+        foreach (var slot in slots)
+        {
+            var representative = rankedCandidates.FirstOrDefault(candidate =>
+                SubjectMatches(candidate.Chunk.Subject, slot.CourseCode)
+                && (CountSharedTerms(slot.Terms, candidate.Chunk.Text) > 0
+                    || CountSharedTerms(slot.Terms, BuildChunkMetadataText(candidate.Chunk)) > 0));
+            if (representative is null
+                || !seen.Add((representative.Chunk.DocumentId, representative.Chunk.ChunkIndex)))
+            {
+                continue;
+            }
+
+            selected.Add(representative);
+            if (selected.Count == limit)
+            {
+                return selected;
+            }
+        }
+
+        foreach (var candidate in SelectWithCourseCoverage(rankedCandidates, courseCodes, limit))
+        {
+            if (!seen.Add((candidate.Chunk.DocumentId, candidate.Chunk.ChunkIndex)))
+            {
+                continue;
+            }
+
+            selected.Add(candidate);
+            if (selected.Count == limit)
+            {
+                return selected;
+            }
+        }
+
+        return selected;
+    }
+
+    private static IReadOnlyList<ScoredChunk> RankByReciprocalRankFusion(IReadOnlyList<ScoredChunk> candidates)
+    {
+        if (candidates.Count <= 1)
+        {
+            return candidates;
+        }
+
+        const double rankConstant = 60;
+        var vectorRanks = candidates
+            .OrderByDescending(candidate => candidate.VectorScore)
+            .Select((candidate, index) => new { Key = (candidate.Chunk.DocumentId, candidate.Chunk.ChunkIndex), Rank = index + 1 })
+            .ToDictionary(item => item.Key, item => item.Rank);
+        var lexicalRanks = candidates
+            .OrderByDescending(candidate => candidate.LexicalScore)
+            .Select((candidate, index) => new { Key = (candidate.Chunk.DocumentId, candidate.Chunk.ChunkIndex), Rank = index + 1 })
+            .ToDictionary(item => item.Key, item => item.Rank);
+
+        return candidates
+            .OrderByDescending(candidate =>
+            {
+                var key = (candidate.Chunk.DocumentId, candidate.Chunk.ChunkIndex);
+                return (1d / (rankConstant + vectorRanks[key])) + (1d / (rankConstant + lexicalRanks[key]));
+            })
+            .ThenByDescending(candidate => candidate.Score)
+            .ThenByDescending(candidate => candidate.ContentSharedTerms)
+            .ToList();
+    }
+
+    private static IReadOnlyList<ComparisonEvidenceSlot> BuildComparisonEvidenceSlots(string question)
+    {
+        var normalized = NormalizeQuestion(question);
+        var courseCodes = ExtractCourseCodesInOrder(question).Take(4).ToList();
+        if (courseCodes.Count < 2 || !IsMultiSubjectQuestion(normalized))
+        {
+            return Array.Empty<ComparisonEvidenceSlot>();
+        }
+
+        var dimensions = new List<(string Name, string Terms)>();
+        if (IsAssessmentQuestion(normalized))
+        {
+            dimensions.Add(("assessment", "assessment grading diem danh gia weight ty trong assignment quiz project exam final participation"));
+        }
+        if (IsDifficultyQuestion(normalized)
+            || normalized.Contains("workload", StringComparison.Ordinal)
+            || normalized.Contains("khoi luong", StringComparison.Ordinal)
+            || normalized.Contains("bai tap", StringComparison.Ordinal)
+            || normalized.Contains("thuc hanh", StringComparison.Ordinal))
+        {
+            dimensions.Add(("workload", "workload prerequisite assignment project lab practice session khoi luong dieu kien bai tap du an thuc hanh buoi"));
+        }
+        if (normalized.Contains("skill", StringComparison.Ordinal)
+            || normalized.Contains("outcome", StringComparison.Ordinal)
+            || normalized.Contains("clo", StringComparison.Ordinal)
+            || normalized.Contains("ky nang", StringComparison.Ordinal)
+            || normalized.Contains("chuan dau ra", StringComparison.Ordinal))
+        {
+            dimensions.Add(("outcomes", "skill outcome clo objective ky nang chuan dau ra muc tieu"));
+        }
+        if (normalized.Contains("credit", StringComparison.Ordinal)
+            || normalized.Contains("tin chi", StringComparison.Ordinal))
+        {
+            dimensions.Add(("credits", "credit credits tin chi"));
+        }
+        if (dimensions.Count == 0)
+        {
+            dimensions.Add(("overview", "muc tieu noi dung skill ky nang assessment danh gia workload thuc hanh objective content"));
+        }
+
+        return courseCodes
+            .SelectMany(courseCode => dimensions.Select(dimension => new ComparisonEvidenceSlot(
+                courseCode,
+                dimension.Name,
+                ExtractTerms(dimension.Terms))))
+            .Take(8)
+            .ToList();
     }
 
     private static double CalculateLocalRerankScore(
@@ -1961,6 +2740,21 @@ public sealed class RagChatService : IRagChatService
         string? EvidenceText,
         DocumentChunk? Chunk);
 
+    private sealed record AssessmentComponentFact(
+        string Name,
+        double WeightPercent,
+        string EvidenceText);
+
+    private sealed record ComparisonEvidenceSlot(
+        string CourseCode,
+        string Dimension,
+        IReadOnlySet<string> Terms);
+
+    private sealed record StudentPreferenceProfile(
+        string LabelVi,
+        string LabelEn,
+        IReadOnlySet<string> Terms);
+
     private sealed record SubjectRouteResult(
         string? SelectedSubject,
         bool NeedsClarification,
@@ -2077,6 +2871,13 @@ public sealed class RagChatService : IRagChatService
         CancellationToken cancellationToken)
     {
         var queries = new List<string> { question.Trim() };
+        var localStandaloneQuestion = BuildLocalStandaloneQuestion(question, history);
+        AddDistinctQuery(queries, localStandaloneQuestion);
+
+        foreach (var slotQuery in BuildComparisonSlotQueries(localStandaloneQuestion))
+        {
+            AddDistinctQuery(queries, slotQuery);
+        }
 
         try
         {
@@ -2096,6 +2897,53 @@ public sealed class RagChatService : IRagChatService
         }
 
         return queries.Count == 0 ? new[] { question.Trim() } : queries.Take(4).ToList();
+    }
+
+    private static string BuildLocalStandaloneQuestion(string question, IReadOnlyList<ChatMessage> history)
+    {
+        var normalized = NormalizeQuestion(question);
+        var refersToPreviousCourses = normalized.Contains("hai mon nay", StringComparison.Ordinal)
+                                      || normalized.Contains("2 mon nay", StringComparison.Ordinal)
+                                      || normalized.Contains("cac mon nay", StringComparison.Ordinal)
+                                      || normalized.Contains("mon kia", StringComparison.Ordinal)
+                                      || normalized.Contains("these two courses", StringComparison.Ordinal)
+                                      || normalized.Contains("those courses", StringComparison.Ordinal);
+        if (!refersToPreviousCourses || ExtractCourseCodes(question).Count >= 2)
+        {
+            return question.Trim();
+        }
+
+        var historyCodes = history
+            .TakeLast(8)
+            .SelectMany(message => ExtractCourseCodes(message.Content))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .TakeLast(2)
+            .ToList();
+        return historyCodes.Count < 2
+            ? question.Trim()
+            : $"{question.Trim()} ({string.Join(" và ", historyCodes)})";
+    }
+
+    private static IReadOnlyList<string> BuildComparisonSlotQueries(string question)
+    {
+        var normalized = NormalizeQuestion(question);
+        if (!IsMultiSubjectQuestion(normalized))
+        {
+            return Array.Empty<string>();
+        }
+
+        var courseCodes = ExtractCourseCodes(question).Take(3).ToList();
+        if (courseCodes.Count < 2)
+        {
+            return Array.Empty<string>();
+        }
+
+        var dimension = IsDifficultyQuestion(normalized)
+            ? "khối lượng học điều kiện tiên quyết bài tập thực hành hình thức đánh giá"
+            : IsAssessmentQuestion(normalized)
+                ? "cơ cấu điểm thành phần đánh giá tỷ trọng bài tập thi cuối kỳ"
+                : "mục tiêu nội dung kỹ năng đánh giá khối lượng học";
+        return courseCodes.Select(code => $"{code} {dimension}").ToList();
     }
 
     private static void AddDistinctQuery(List<string> queries, string? query)
@@ -2120,6 +2968,13 @@ public sealed class RagChatService : IRagChatService
         string language,
         CancellationToken cancellationToken)
     {
+        if (!ChatGroundingPolicy.AreClaimsSupportedByCitedSources(
+                answer,
+                chunks.Select(chunk => chunk.Text).ToList()))
+        {
+            return false;
+        }
+
         var contextText = string.Join("\n\n", chunks.Select(chunk => chunk.Text));
         if (!IsAnswerGrounded(answer, contextText, questionTerms))
         {
@@ -2467,11 +3322,22 @@ public sealed class RagChatService : IRagChatService
         if (language == "vi")
         {
             return "Tóm tắt từ tài liệu:\n\n" +
-                   string.Join("\n", selectedSentences.Select(item => $"- {item.Text} [{item.SourceNumber}]"));
+                   string.Join("\n", selectedSentences.Select(item => $"- {AttachSourceMarker(item.Text, item.SourceNumber)}"));
         }
 
         return "Summary from the documents:\n\n" +
-               string.Join("\n", selectedSentences.Select(item => $"- {item.Text} [{item.SourceNumber}]"));
+               string.Join("\n", selectedSentences.Select(item => $"- {AttachSourceMarker(item.Text, item.SourceNumber)}"));
+    }
+
+    private static string AttachSourceMarker(string text, int sourceNumber)
+    {
+        var trimmed = text.Trim();
+        if (trimmed.Length > 0 && trimmed[^1] is '.' or '!' or '?')
+        {
+            return $"{trimmed[..^1].TrimEnd()} [{sourceNumber}]{trimmed[^1]}";
+        }
+
+        return $"{trimmed} [{sourceNumber}]";
     }
 
     private static bool IsLowValueFallbackSentence(string sentence)
