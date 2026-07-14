@@ -1,0 +1,36 @@
+name: .NET CI
+
+on:
+  push:
+    branches:
+      - main
+      - Thanh-Duy
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      Gemini__ApiKey: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore PRN222_FINAL.sln
+
+      - name: Build
+        run: dotnet build PRN222_FINAL.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test BLL.Tests/BLL.Tests.csproj --configuration Release --no-build
