@@ -17,6 +17,7 @@ public sealed class PaymentService : IPaymentService
     private readonly IMomoPaymentGateway _momoGateway;
     private readonly IPayOsPaymentGateway _payOsGateway;
     private readonly PaymentOptions _options;
+    private readonly TimeProvider _timeProvider;
 
     public PaymentService(
         IPackageRepository packages,
@@ -24,7 +25,8 @@ public sealed class PaymentService : IPaymentService
         ISubscriptionRepository subscriptions,
         IMomoPaymentGateway momoGateway,
         IPayOsPaymentGateway payOsGateway,
-        IOptions<PaymentOptions> options)
+        IOptions<PaymentOptions> options,
+        TimeProvider? timeProvider = null)
     {
         _packages = packages;
         _payments = payments;
@@ -32,11 +34,13 @@ public sealed class PaymentService : IPaymentService
         _momoGateway = momoGateway;
         _payOsGateway = payOsGateway;
         _options = options.Value;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<PaymentCheckoutResultDto> CreateCheckoutAsync(CreatePaymentRequestDto request, CancellationToken cancellationToken = default)
     {
         ValidateCreateRequest(request);
+        await CleanupExpiredPaymentsAsync(cancellationToken);
         var packageEntity = await _packages.GetByIdAsync(request.PackageId, cancellationToken)
             ?? throw new InvalidOperationException("Package not found.");
         var package = BillingDtoMapper.ToModel(packageEntity);
@@ -56,7 +60,7 @@ public sealed class PaymentService : IPaymentService
             }
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         var payment = new Payment
         {
             Id = Guid.NewGuid(),
@@ -146,6 +150,11 @@ public sealed class PaymentService : IPaymentService
         var paymentEntity = await _payments.GetByOrderCodeAsync((DalPaymentProvider)webhook.Provider, result.OrderCode, cancellationToken)
             ?? throw new InvalidOperationException("Payment not found.");
         var payment = BillingDtoMapper.ToModel(paymentEntity);
+        if (payment.Status == PaymentStatus.Pending && IsExpired(payment))
+        {
+            await _payments.DeletePendingAsync(payment.Id, payment.UserId, cancellationToken);
+            throw new InvalidOperationException("Đơn thanh toán đã hết hạn.");
+        }
         var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken)
             ?? throw new InvalidOperationException("Package not found.");
         var package = BillingDtoMapper.ToModel(packageEntity);
@@ -177,14 +186,14 @@ public sealed class PaymentService : IPaymentService
         if (result.Status == PaymentStatus.Paid)
         {
             payment.Status = PaymentStatus.Paid;
-            payment.PaidAt = DateTimeOffset.UtcNow;
+            payment.PaidAt = _timeProvider.GetUtcNow();
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
             await ActivateSubscriptionAsync(payment, package, cancellationToken);
         }
         else
         {
             payment.Status = result.Status == PaymentStatus.Canceled ? PaymentStatus.Canceled : PaymentStatus.Failed;
-            payment.FailedAt = DateTimeOffset.UtcNow;
+            payment.FailedAt = _timeProvider.GetUtcNow();
             payment.FailureReason = Normalize(result.Message, 1000);
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
         }
@@ -226,6 +235,12 @@ public sealed class PaymentService : IPaymentService
         var payment = paymentEntity is null ? null : BillingDtoMapper.ToModel(paymentEntity);
         if (payment is null || payment.UserId != userId)
         {
+            return null;
+        }
+
+        if (payment.Status == PaymentStatus.Pending && IsExpired(payment))
+        {
+            await _payments.DeletePendingAsync(payment.Id, payment.UserId, cancellationToken);
             return null;
         }
 
@@ -319,14 +334,14 @@ public sealed class PaymentService : IPaymentService
             }
 
             payment.Status = PaymentStatus.Paid;
-            payment.PaidAt = DateTimeOffset.UtcNow;
+            payment.PaidAt = _timeProvider.GetUtcNow();
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
             await ActivateSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), cancellationToken);
         }
         else if (gatewayStatus.Status == PaymentStatus.Canceled)
         {
             payment.Status = PaymentStatus.Canceled;
-            payment.FailedAt = DateTimeOffset.UtcNow;
+            payment.FailedAt = _timeProvider.GetUtcNow();
             payment.FailureReason = Normalize(gatewayStatus.Message, 1000);
             await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
         }
@@ -341,6 +356,7 @@ public sealed class PaymentService : IPaymentService
             throw new InvalidOperationException("User is required.");
         }
 
+        await CleanupExpiredPaymentsAsync(cancellationToken);
         var payments = (await _payments.GetByUserAsync(userId, Math.Clamp(limit, 1, 100), cancellationToken))
             .Select(BillingDtoMapper.ToModel).ToList();
         return payments.Select(payment => new PaymentHistoryItemDto
@@ -360,6 +376,61 @@ public sealed class PaymentService : IPaymentService
         }).ToList();
     }
 
+    public async Task<IReadOnlyList<PendingPaymentDto>> GetPendingPaymentsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("User is required.");
+        }
+
+        await CleanupExpiredPaymentsAsync(cancellationToken);
+        var lifetime = GetPendingLifetime();
+        return (await _payments.GetPendingByUserAsync(userId, cancellationToken))
+            .Select(payment => new PendingPaymentDto
+            {
+                PaymentId = payment.Id,
+                PackageId = payment.PackageId,
+                PackageName = payment.Package?.Name ?? string.Empty,
+                PackageCode = payment.Package?.Code ?? string.Empty,
+                Provider = (PaymentProvider)payment.Provider,
+                AmountVnd = payment.AmountVnd,
+                Currency = payment.Currency,
+                OrderCode = payment.OrderCode,
+                CheckoutUrl = payment.CheckoutUrl,
+                QrCode = payment.QrCode,
+                CreatedAt = payment.CreatedAt,
+                ExpiresAt = payment.CreatedAt.Add(lifetime)
+            })
+            .ToList();
+    }
+
+    public Task<bool> DeletePendingPaymentAsync(
+        Guid paymentId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (paymentId == Guid.Empty || userId == Guid.Empty)
+        {
+            return Task.FromResult(false);
+        }
+
+        return _payments.DeletePendingAsync(paymentId, userId, cancellationToken);
+    }
+
+    public Task<int> CleanupExpiredPaymentsAsync(CancellationToken cancellationToken = default)
+    {
+        var cutoff = _timeProvider.GetUtcNow().Subtract(GetPendingLifetime());
+        return _payments.DeleteExpiredPendingAsync(cutoff, cancellationToken);
+    }
+
+    private TimeSpan GetPendingLifetime() =>
+        TimeSpan.FromMinutes(Math.Clamp(_options.PendingPaymentLifetimeMinutes, 1, 60));
+
+    private bool IsExpired(Payment payment) =>
+        payment.CreatedAt.Add(GetPendingLifetime()) <= _timeProvider.GetUtcNow();
+
     private async Task ActivateSubscriptionAsync(Payment payment, Package package, CancellationToken cancellationToken)
     {
         var latestPaidPayment = await _payments.GetLatestSuccessfulByUserAsync(payment.UserId, cancellationToken);
@@ -368,7 +439,7 @@ public sealed class PaymentService : IPaymentService
             return;
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         var existingEntity = await _subscriptions.GetByPaymentIdAsync(payment.Id, cancellationToken);
         var existing = existingEntity is null ? null : BillingDtoMapper.ToModel(existingEntity);
         var isAlreadyEffective = existing is not null
@@ -472,7 +543,7 @@ public sealed class PaymentService : IPaymentService
         return $"8{DateTimeOffset.UtcNow:yyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
     }
 
-    private static PaymentCheckoutResultDto ToCheckoutResult(Payment payment, string message) => new()
+    private PaymentCheckoutResultDto ToCheckoutResult(Payment payment, string message) => new()
     {
         PaymentId = payment.Id,
         PackageId = payment.PackageId,
@@ -481,6 +552,9 @@ public sealed class PaymentService : IPaymentService
         OrderCode = payment.OrderCode,
         CheckoutUrl = payment.CheckoutUrl,
         QrCode = payment.QrCode,
+        ExpiresAt = payment.Status == PaymentStatus.Pending
+            ? payment.CreatedAt.Add(GetPendingLifetime())
+            : null,
         Message = message
     };
 

@@ -3,6 +3,7 @@
 public sealed class PaymentOptions
 {
     public string BaseReturnUrl { get; set; } = string.Empty;
+    public int PendingPaymentLifetimeMinutes { get; set; } = 10;
     public MomoOptions MoMo { get; set; } = new();
     public PayOsOptions PayOS { get; set; } = new();
 }

@@ -1,0 +1,135 @@
+@page
+@model PRN222_FINAL.Web.Pages.Payments.CheckoutModel
+@using PRN222_FINAL.BLL.Models
+@{
+    ViewData["Title"] = "Giỏ thanh toán";
+    ViewData["UseRblShell"] = true;
+    ViewData["ActiveNav"] = "checkout";
+    ViewData["ShellTitle"] = "Giỏ thanh toán";
+    var activePayment = Model.PendingPayments.FirstOrDefault();
+}
+
+<section class="checkout-page">
+    <header class="checkout-hero">
+        <div>
+            <span class="checkout-eyebrow">Thanh toán học phí dịch vụ</span>
+            <h1>Giỏ thanh toán</h1>
+            <p>Mỗi đơn được giữ trong 10 phút. Đơn chưa thanh toán khi hết hạn sẽ tự động bị xóa.</p>
+        </div>
+        <a class="checkout-secondary-button" asp-page="/Packages/Index">
+            <span class="material-symbols-outlined" aria-hidden="true">add_shopping_cart</span>
+            Chọn thêm gói
+        </a>
+    </header>
+
+    @if (Model.PendingPayments.Count == 0)
+    {
+        <section class="checkout-empty">
+            <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+            <h2>Giỏ thanh toán đang trống</h2>
+            <p>Đơn quá hạn có thể vừa được tự động xóa. Hãy chọn một gói học tập để tạo đơn mới.</p>
+            <a class="checkout-primary-button" asp-page="/Packages/Index">Xem các gói học tập</a>
+        </section>
+    }
+    else
+    {
+        <section class="checkout-order-card" aria-labelledby="pendingOrdersTitle">
+            <div class="checkout-section-heading">
+                <div>
+                    <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+                    <div><h2 id="pendingOrdersTitle">Đơn chờ thanh toán</h2><p>@Model.PendingPayments.Count đơn đang được giữ</p></div>
+                </div>
+                <span class="checkout-secure"><span class="material-symbols-outlined" aria-hidden="true">lock</span> Bảo mật</span>
+            </div>
+
+            <div class="checkout-table-wrap">
+                <table class="checkout-table">
+                    <thead><tr><th>Gói dịch vụ</th><th>Mã đơn</th><th>Số tiền</th><th>Thời hạn</th><th>Thao tác</th></tr></thead>
+                    <tbody>
+                    @foreach (var payment in Model.PendingPayments)
+                    {
+                        <tr class="@(payment.PaymentId == activePayment?.PaymentId ? "is-active" : null)">
+                            <td><strong>@payment.PackageName</strong><small>@payment.Provider</small></td>
+                            <td><code>@payment.OrderCode</code></td>
+                            <td><strong>@payment.AmountVnd.ToString("N0") @payment.Currency</strong></td>
+                            <td>
+                                <span class="checkout-countdown" data-payment-countdown data-expires-at="@payment.ExpiresAt.ToString("O")">--:--</span>
+                                <small>@payment.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</small>
+                            </td>
+                            <td>
+                                <div class="checkout-row-actions">
+                                    <a class="checkout-select" asp-page="/Payments/Checkout" asp-route-paymentId="@payment.PaymentId">Thanh toán</a>
+                                    <form method="post" asp-page-handler="Delete" data-confirm="Xóa đơn thanh toán này?">
+                                        <input type="hidden" name="paymentId" value="@payment.PaymentId" />
+                                        <button class="checkout-delete" type="submit" aria-label="Xóa đơn @payment.OrderCode"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        @if (activePayment is not null)
+        {
+            <section class="checkout-payment-grid">
+                <div class="checkout-method-card">
+                    <span class="checkout-eyebrow">Phương thức đã chọn</span>
+                    <div class="checkout-provider">
+                        <img src="~/img/payments/@(activePayment.Provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="@activePayment.Provider" />
+                        <div><h2>@(activePayment.Provider == PaymentProvider.MoMo ? "Ví MoMo" : "PayOS / Chuyển khoản QR")</h2><p>Thanh toán trên cổng chính thức của nhà cung cấp.</p></div>
+                    </div>
+                    @if (CheckoutModel.IsSafeQrImageUrl(activePayment.QrCode))
+                    {
+                        <img class="checkout-qr" src="@activePayment.QrCode" alt="Mã QR thanh toán đơn @activePayment.OrderCode" />
+                    }
+                    @if (CheckoutModel.IsSafeCheckoutUrl(activePayment.CheckoutUrl))
+                    {
+                        <a class="checkout-primary-button checkout-pay-button" href="@activePayment.CheckoutUrl" rel="noopener noreferrer">
+                            Thanh toán ngay
+                            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <p class="checkout-gateway-error">Không lấy được liên kết thanh toán an toàn. Vui lòng xóa đơn và tạo lại.</p>
+                    }
+                    <p class="checkout-expiry-note"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> Còn <strong data-active-countdown data-expires-at="@activePayment.ExpiresAt.ToString("O")">--:--</strong> để hoàn tất thanh toán.</p>
+                </div>
+
+                <div class="checkout-instructions">
+                    <span class="checkout-eyebrow">Hướng dẫn thanh toán</span>
+                    <h2>Hoàn tất trong vài bước</h2>
+                    <ol>
+                        <li><span>1</span><div><strong>Mở cổng thanh toán</strong><p>Nhấn “Thanh toán ngay” để sang trang bảo mật của @activePayment.Provider.</p></div></li>
+                        <li><span>2</span><div><strong>Quét QR hoặc xác nhận</strong><p>Kiểm tra đúng số tiền <b>@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</b> và mã đơn <b>@activePayment.OrderCode</b>.</p></div></li>
+                        <li><span>3</span><div><strong>Chờ hệ thống xác nhận</strong><p>Sau khi cổng thanh toán báo thành công, gói học tập sẽ được kích hoạt tự động.</p></div></li>
+                    </ol>
+                    <div class="checkout-warning"><span class="material-symbols-outlined" aria-hidden="true">warning</span><p>Nếu thanh toán sau thời hạn, đơn đã bị xóa và hệ thống sẽ không kích hoạt gói. Hãy tạo đơn mới.</p></div>
+                </div>
+            </section>
+        }
+    }
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const format = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+            let expired = false;
+            const tick = () => {
+                document.querySelectorAll('[data-expires-at]').forEach(element => {
+                    const remaining = Math.max(0, Math.ceil((new Date(element.dataset.expiresAt).getTime() - Date.now()) / 1000));
+                    element.textContent = format(remaining);
+                    element.classList.toggle('is-urgent', remaining <= 60);
+                    if (remaining === 0) expired = true;
+                });
+                if (expired) window.location.reload();
+            };
+            tick();
+            window.setInterval(tick, 1000);
+        })();
+    </script>
+}
