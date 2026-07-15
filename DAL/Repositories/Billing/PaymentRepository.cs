@@ -124,6 +124,44 @@ public sealed class PaymentRepository : SqlBillingRepositoryBase, IPaymentReposi
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<KnowledgeSqlPayment>> GetPendingByUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments
+            .AsNoTracking()
+            .Include(payment => payment.Package)
+            .Where(payment => payment.UserId == userId && payment.Status == PaymentStatus.Pending)
+            .OrderBy(payment => payment.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeletePendingAsync(
+        Guid paymentId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        var deleted = await context.Payments
+            .Where(payment => payment.Id == paymentId
+                && payment.UserId == userId
+                && payment.Status == PaymentStatus.Pending)
+            .ExecuteDeleteAsync(cancellationToken);
+        return deleted == 1;
+    }
+
+    public async Task<int> DeleteExpiredPendingAsync(
+        DateTimeOffset createdBeforeOrAt,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = CreateContext();
+        return await context.Payments
+            .Where(payment => payment.Status == PaymentStatus.Pending
+                && payment.CreatedAt <= createdBeforeOrAt)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task<bool> HasSuccessfulPaymentAsync(Guid userId, Guid packageId, CancellationToken cancellationToken = default)
     {
         await using var context = CreateContext();

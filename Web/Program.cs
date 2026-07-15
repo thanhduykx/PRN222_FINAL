@@ -253,6 +253,7 @@ namespace PRN222_FINAL.Web
             builder.Services.AddScoped<PRN222_FINAL.BLL.IRagChatService, PRN222_FINAL.BLL.RagChatService>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.DocumentIndexWorker>();
             builder.Services.AddHostedService<PRN222_FINAL.Web.Services.AccountEmailWorker>();
+            builder.Services.AddHostedService<PRN222_FINAL.Web.Services.PaymentExpirationWorker>();
 
             var app = builder.Build();
             _ = app.Services.GetRequiredService<PRN222_FINAL.BLL.Services.IAiSettingsService>();

@@ -81,6 +81,7 @@ public static class BusinessServiceCollectionExtensions
         services.AddSingleton<IKnowledgeService, KnowledgeService>();
 
         services.Configure<PaymentOptions>(configuration.GetSection("Payment"));
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPackageRepository>(_ => new PackageRepository(connectionString));
         services.AddSingleton<IPaymentRepository>(_ => new PaymentRepository(connectionString));
         services.AddSingleton<ISubscriptionRepository>(_ => new SubscriptionRepository(connectionString));

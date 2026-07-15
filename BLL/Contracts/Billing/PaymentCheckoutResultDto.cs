@@ -11,5 +11,6 @@ public sealed class PaymentCheckoutResultDto
     public string OrderCode { get; set; } = string.Empty;
     public string CheckoutUrl { get; set; } = string.Empty;
     public string QrCode { get; set; } = string.Empty;
+    public DateTimeOffset? ExpiresAt { get; set; }
     public string Message { get; set; } = string.Empty;
 }

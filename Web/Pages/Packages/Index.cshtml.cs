@@ -67,14 +67,14 @@ public sealed class IndexModel : PageModel
                 UserName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
                 UserEmail = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty,
                 ReturnUrl = Url.PageLink("/Payments/Return") ?? string.Empty,
-                CancelUrl = Url.PageLink("/Payments/Return") ?? string.Empty,
+                CancelUrl = Url.PageLink("/Payments/Checkout") ?? string.Empty,
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty
             };
 
             var result = await _payments.CreateCheckoutAsync(request, cancellationToken);
             return result.Status == PaymentStatus.Paid
                 ? RedirectToPage("/Payments/Return", new { provider = result.Provider, orderCode = result.OrderCode })
-                : Redirect(result.CheckoutUrl);
+                : RedirectToPage("/Payments/Checkout", new { paymentId = result.PaymentId });
         }
         catch (Exception ex)
         {

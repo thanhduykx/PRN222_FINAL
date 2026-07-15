@@ -14,6 +14,117 @@ namespace PRN222_FINAL.BLL.Tests;
 public sealed class PaymentServiceTests
 {
     [Fact]
+    public async Task CreateCheckoutAsync_PaidPackage_ExpiresAfterTenMinutes()
+    {
+        var now = new DateTimeOffset(2026, 7, 16, 8, 0, 0, TimeSpan.Zero);
+        var package = CreatePackage("PRO", "Pro", 30);
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var momo = Substitute.For<IMomoPaymentGateway>();
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        momo.CreateCheckoutAsync(Arg.Any<PaymentGatewayCreateRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new PaymentGatewayCreateResult { CheckoutUrl = "https://gateway.example/checkout" });
+        var service = new PaymentService(
+            packages, payments, subscriptions, momo, Substitute.For<IPayOsPaymentGateway>(),
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()), new FixedTimeProvider(now));
+
+        var result = await service.CreateCheckoutAsync(new CreatePaymentRequestDto
+        {
+            UserId = Guid.NewGuid(),
+            PackageId = package.Id,
+            Provider = PRN222_FINAL.BLL.Models.PaymentProvider.MoMo,
+            ReturnUrl = "https://app.example.test/Payments/Return",
+            CancelUrl = "https://app.example.test/Payments/Checkout"
+        });
+
+        Assert.Equal(now.AddMinutes(10), result.ExpiresAt);
+        await payments.Received(1).DeleteExpiredPendingAsync(now.AddMinutes(-10), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetPendingPaymentsAsync_DeletesExpiredOrdersBeforeReturningCart()
+    {
+        var now = new DateTimeOffset(2026, 7, 16, 8, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        var pending = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id, Package = package,
+            Provider = PaymentProvider.PayOS, Status = PaymentStatus.Pending,
+            AmountVnd = package.PriceVnd, OrderCode = "123456789", CheckoutUrl = "https://pay.example/123",
+            CreatedAt = now.AddMinutes(-4)
+        };
+        var payments = Substitute.For<IPaymentRepository>();
+        payments.GetPendingByUserAsync(userId, Arg.Any<CancellationToken>()).Returns([pending]);
+        var service = CreateService(
+            Substitute.For<IPackageRepository>(), payments, Substitute.For<ISubscriptionRepository>(),
+            new FixedTimeProvider(now));
+
+        var result = await service.GetPendingPaymentsAsync(userId);
+
+        await payments.Received(1).DeleteExpiredPendingAsync(now.AddMinutes(-10), Arg.Any<CancellationToken>());
+        var item = Assert.Single(result);
+        Assert.Equal(pending.Id, item.PaymentId);
+        Assert.Equal(now.AddMinutes(6), item.ExpiresAt);
+    }
+
+    [Fact]
+    public async Task DeletePendingPaymentAsync_DeletesOnlyOwnersPendingOrder()
+    {
+        var userId = Guid.NewGuid();
+        var paymentId = Guid.NewGuid();
+        var payments = Substitute.For<IPaymentRepository>();
+        payments.DeletePendingAsync(paymentId, userId, Arg.Any<CancellationToken>()).Returns(true);
+        var service = CreateService(
+            Substitute.For<IPackageRepository>(), payments, Substitute.For<ISubscriptionRepository>());
+
+        var deleted = await service.DeletePendingPaymentAsync(paymentId, userId);
+
+        Assert.True(deleted);
+        await payments.Received(1).DeletePendingAsync(paymentId, userId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleWebhookAsync_ExpiredPendingOrder_IsDeletedAndCannotActivateSubscription()
+    {
+        var now = new DateTimeOffset(2026, 7, 16, 8, 0, 0, TimeSpan.Zero);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = Guid.NewGuid(), PackageId = Guid.NewGuid(),
+            Provider = PaymentProvider.MoMo, Status = PaymentStatus.Pending,
+            AmountVnd = 49_000, OrderCode = "8123456789", CreatedAt = now.AddMinutes(-11)
+        };
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var momo = Substitute.For<IMomoPaymentGateway>();
+        payments.GetByOrderCodeAsync(PaymentProvider.MoMo, payment.OrderCode, Arg.Any<CancellationToken>())
+            .Returns(payment);
+        payments.DeletePendingAsync(payment.Id, payment.UserId, Arg.Any<CancellationToken>()).Returns(true);
+        momo.VerifyWebhook(Arg.Any<PaymentWebhookDto>()).Returns(new PaymentGatewayWebhookResult
+        {
+            IsSignatureValid = true,
+            OrderCode = payment.OrderCode,
+            AmountVnd = payment.AmountVnd,
+            Status = PRN222_FINAL.BLL.Models.PaymentStatus.Paid
+        });
+        var service = new PaymentService(
+            Substitute.For<IPackageRepository>(), payments, subscriptions, momo,
+            Substitute.For<IPayOsPaymentGateway>(),
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()), new FixedTimeProvider(now));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.HandleWebhookAsync(new PaymentWebhookDto
+        {
+            Provider = PRN222_FINAL.BLL.Models.PaymentProvider.MoMo,
+            RawBody = "{}"
+        }));
+
+        Assert.Contains("hết hạn", error.Message);
+        await payments.Received(1).DeletePendingAsync(payment.Id, payment.UserId, Arg.Any<CancellationToken>());
+        await subscriptions.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+    }
+
+    [Fact]
     public async Task CreateCheckoutAsync_FreePackage_UsesAtomicClaimAndRejectsSecondActivation()
     {
         var userId = Guid.NewGuid();
@@ -215,11 +326,18 @@ public sealed class PaymentServiceTests
     private static PaymentService CreateService(
         IPackageRepository packages,
         IPaymentRepository payments,
-        ISubscriptionRepository subscriptions) => new(
+        ISubscriptionRepository subscriptions,
+        TimeProvider? timeProvider = null) => new(
         packages,
         payments,
         subscriptions,
         Substitute.For<IMomoPaymentGateway>(),
         Substitute.For<IPayOsPaymentGateway>(),
-        Microsoft.Extensions.Options.Options.Create(new PaymentOptions()));
+        Microsoft.Extensions.Options.Options.Create(new PaymentOptions()),
+        timeProvider ?? TimeProvider.System);
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
 }

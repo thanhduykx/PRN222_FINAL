@@ -13050,3 +13050,4 @@ body.rbl-body .rbl-sidebar-online-users .online-users-widget__toggle {
   border: 0;
   background: transparent;
 }
+.rbl-cart-button{display:inline-flex;align-items:center;gap:.45rem;padding:.65rem .85rem;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#334155;text-decoration:none;font-weight:750;white-space:nowrap}.rbl-cart-button:hover,.rbl-cart-button[aria-current="page"]{border-color:#6366f1;background:#eef2ff;color:#4338ca}

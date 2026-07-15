@@ -271,6 +271,10 @@
                             </span>
                             <span class="rbl-topbar-package__status" data-i18n="packages.buyPackage">Mua gói</span>
                         </a>
+                        <a class="rbl-cart-button" asp-page="/Payments/Checkout" aria-current="@(activeNav == "checkout" ? "page" : null)" title="Giỏ thanh toán">
+                            <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+                            <span>Giỏ thanh toán</span>
+                        </a>
                     }
                     <div class="rbl-topbar-actions">
                         <div class="language-switch rbl-language-switch" role="group" aria-label="Language">
@@ -401,6 +405,7 @@
                                                 @if (currentRole == AppRoles.Student)
                                                 {
                                                     <a asp-page="/Packages/Index"><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong data-i18n="nav.billing">Gói dịch vụ</strong><small data-i18n="account.packagesDesc">Xem và chọn gói học tập</small></span></a>
+                                                    <a asp-page="/Payments/Checkout"><span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span><span><strong>Giỏ thanh toán</strong><small>Đơn đang chờ thanh toán</small></span></a>
                                                     <a asp-page="/Subscriptions/Current"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong data-i18n="account.profile">Thông tin người dùng</strong><small data-i18n="account.profileDesc">Chỉnh sửa tên hiển thị</small></span></a>
                                                     <a asp-page="/Subscriptions/Current" asp-fragment="transactionHistory"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><span><strong data-i18n="account.history">Lịch sử giao dịch</strong><small data-i18n="account.historyDesc">Xem và in biên nhận</small></span></a>
                                                 }
