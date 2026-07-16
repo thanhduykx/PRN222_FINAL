@@ -1131,8 +1131,10 @@
 .transaction-item { --transaction-tone:#ef4444; overflow: hidden; border: 1px solid #dfe6ef; border-inline-start: 3px solid var(--transaction-tone); border-radius: 12px; background: #fff; }
 .transaction-item.is-success { --transaction-tone:#14b8a6; }
 .transaction-item.is-pending { --transaction-tone:#f59e0b; }
-.transaction-item > summary { display: grid; grid-template-columns: 38px 1fr auto auto auto; align-items: center; gap: .7rem; padding: .75rem; cursor: pointer; list-style: none; }
-.transaction-item > summary img { width: 38px; height: 38px; border-radius: 10px; }
+.transaction-item > summary { display: grid; grid-template-columns: 50px 1fr auto auto auto; align-items: center; gap: .7rem; padding: .75rem; cursor: pointer; list-style: none; }
+.transaction-provider-logo { display: grid; width: 50px; height: 38px; place-items: center; overflow: hidden; border-radius: 9px; background: #fff; }
+.transaction-provider-logo img { display: block; max-width: 46px; max-height: 32px; object-fit: contain; }
+.transaction-provider-logo.is-momo img { border-radius: 8px; }
 .transaction-item__identity { display: grid; gap: .1rem; }
 .transaction-item__identity small { color: #64748b; font-size: .7rem; }
 .transaction-item__amount { color: #172033; font-size: .85rem; }
@@ -1150,7 +1152,9 @@
 .payment-receipt dl div { display: grid; grid-template-columns: 145px 1fr; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid #e8edf4; }
 .payment-receipt dt { color: #64748b; font-size: .72rem; font-weight: 650; }
 .payment-receipt dd { margin: 0; color: #172033; font-size: .75rem; font-weight: 700; overflow-wrap: anywhere; }
-.payment-receipt dd img { width: 20px; height: 20px; margin-right: .25rem; border-radius: 5px; }
+.payment-provider-inline { display: inline-flex; min-height: 24px; align-items: center; gap: .4rem; }
+.payment-provider-inline img { display: block; max-width: 42px; max-height: 22px; object-fit: contain; }
+.payment-provider-inline.is-momo img { border-radius: 5px; }
 .payment-receipt__total { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; padding: .8rem; border-radius: 10px; background: #0d1b35; color: #fff; }
 .payment-receipt__total strong { font-size: 1.05rem; }
 .payment-receipt__failure { grid-column: 1/-1; margin: 0; color: #b42318; font-size: .75rem; }
@@ -1160,7 +1164,7 @@
 .transaction-empty { display: grid; justify-items: center; gap: .25rem; padding: 1.5rem; text-align: center; }
 .transaction-empty > .material-symbols-outlined { color: #94a3b8; font-size: 34px; }
 .transaction-empty p { margin: 0; color: #64748b; font-size: .75rem; }
-@media (max-width: 760px) { .account-billing-hero { grid-template-columns: auto 1fr; } .account-billing-hero > a { grid-column: 1/-1; justify-content: center; } .account-billing-grid { grid-template-columns: 1fr; } .transaction-item > summary { grid-template-columns: 38px 1fr auto; } .transaction-item__amount { grid-column: 2; } .transaction-item__status { grid-column: 3; grid-row: 1; } .transaction-item__chevron { grid-column: 3; grid-row: 2; justify-self: end; } }
+@media (max-width: 760px) { .account-billing-hero { grid-template-columns: auto 1fr; } .account-billing-hero > a { grid-column: 1/-1; justify-content: center; } .account-billing-grid { grid-template-columns: 1fr; } .transaction-item > summary { grid-template-columns: 50px 1fr auto; } .transaction-item__amount { grid-column: 2; } .transaction-item__status { grid-column: 3; grid-row: 1; } .transaction-item__chevron { grid-column: 3; grid-row: 2; justify-self: end; } }
 @media (max-width: 520px) { .current-plan-card__facts { grid-template-columns: 1fr; } .payment-receipt { grid-template-columns: 1fr; } .payment-receipt__status { justify-self: start; } .payment-receipt dl div { grid-template-columns: 1fr; gap: .15rem; } .payment-receipt__footer { align-items: stretch; flex-direction: column; } .payment-receipt__footer button { justify-content: center; } }
 @media print { body.receipt-printing * { visibility: hidden !important; } body.receipt-printing .payment-receipt.is-print-target, body.receipt-printing .payment-receipt.is-print-target * { visibility: visible !important; } body.receipt-printing .payment-receipt.is-print-target { position: fixed; inset: 0; margin: 0; border: 0; box-shadow: none; } body.receipt-printing .payment-receipt__footer button { display: none; } }
 .rbl-account-menu { position: relative; z-index: 120; }
