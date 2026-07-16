@@ -16,16 +16,6 @@ public static class BillingDtoMapper
         IsActive = entity.IsActive, SortOrder = entity.SortOrder, CreatedAt = entity.CreatedAt
     };
 
-    public static KnowledgeSqlPackage ToEntity(Package model) => new()
-    {
-        Id = model.Id, Code = model.Code, Name = model.Name, Description = model.Description,
-        PriceVnd = model.PriceVnd, DurationDays = model.DurationDays,
-        MonthlyChatLimit = model.MonthlyChatLimit,
-        MonthlyDocumentUploadLimit = model.MonthlyDocumentUploadLimit,
-        StorageLimitMb = model.StorageLimitMb, IsLifetime = model.IsLifetime,
-        IsActive = model.IsActive, SortOrder = model.SortOrder, CreatedAt = model.CreatedAt
-    };
-
     public static Payment ToModel(KnowledgeSqlPayment entity) => new()
     {
         Id = entity.Id, PackageId = entity.PackageId, UserId = entity.UserId,
@@ -39,6 +29,25 @@ public static class BillingDtoMapper
         Package = entity.Package is null ? null : ToModel(entity.Package)
     };
 
+    public static Subscription ToModel(KnowledgeSqlSubscription entity) => new()
+    {
+        Id = entity.Id, PackageId = entity.PackageId, UserId = entity.UserId,
+        UserName = entity.UserName, UserEmail = entity.UserEmail,
+        Status = (SubscriptionStatus)entity.Status, StartsAt = entity.StartsAt,
+        EndsAt = entity.EndsAt, PaymentId = entity.PaymentId, CreatedAt = entity.CreatedAt,
+        Package = entity.Package is null ? null : ToModel(entity.Package)
+    };
+
+    public static KnowledgeSqlPackage ToEntity(Package model) => new()
+    {
+        Id = model.Id, Code = model.Code, Name = model.Name, Description = model.Description,
+        PriceVnd = model.PriceVnd, DurationDays = model.DurationDays,
+        MonthlyChatLimit = model.MonthlyChatLimit,
+        MonthlyDocumentUploadLimit = model.MonthlyDocumentUploadLimit,
+        StorageLimitMb = model.StorageLimitMb, IsLifetime = model.IsLifetime,
+        IsActive = model.IsActive, SortOrder = model.SortOrder, CreatedAt = model.CreatedAt
+    };
+
     public static KnowledgeSqlPayment ToEntity(Payment model) => new()
     {
         Id = model.Id, PackageId = model.PackageId, UserId = model.UserId,
@@ -50,15 +59,6 @@ public static class BillingDtoMapper
         QrCode = model.QrCode, RawRequest = model.RawRequest, RawResponse = model.RawResponse,
         RawWebhook = model.RawWebhook, CreatedAt = model.CreatedAt, PaidAt = model.PaidAt,
         FailedAt = model.FailedAt, FailureReason = model.FailureReason
-    };
-
-    public static Subscription ToModel(KnowledgeSqlSubscription entity) => new()
-    {
-        Id = entity.Id, PackageId = entity.PackageId, UserId = entity.UserId,
-        UserName = entity.UserName, UserEmail = entity.UserEmail,
-        Status = (SubscriptionStatus)entity.Status, StartsAt = entity.StartsAt,
-        EndsAt = entity.EndsAt, PaymentId = entity.PaymentId, CreatedAt = entity.CreatedAt,
-        Package = entity.Package is null ? null : ToModel(entity.Package)
     };
 
     public static KnowledgeSqlSubscription ToEntity(Subscription model) => new()

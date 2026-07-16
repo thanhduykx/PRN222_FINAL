@@ -18,8 +18,6 @@
     var isCatalogSection = Model.CurrentSection == "catalog";
     var totalDocuments = Model.TotalDocumentCount;
     var visibleDocuments = documents.Count;
-    var totalChunks = Model.TotalChunkCount;
-    var averageChunks = Model.AverageChunksPerIndexedDocument <= 0 ? 0 : Model.AverageChunksPerIndexedDocument;
     var subjectOptions = courseCatalog
         .Select(subject => subject.DisplayName)
         .Where(subject => !string.IsNullOrWhiteSpace(subject))

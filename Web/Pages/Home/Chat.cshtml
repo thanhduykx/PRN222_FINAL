@@ -184,11 +184,18 @@
                 foreach (var session in Model.ChatSessions)
                 {
                     var firstQuestion = session.FirstUserMessagePreview?.Trim();
-                    var title = !string.IsNullOrWhiteSpace(session.Title)
-                        ? session.Title.Trim()
-                        : string.IsNullOrWhiteSpace(firstQuestion)
-                        ? "Session without a question"
-                        : firstQuestion.Length <= 56 ? firstQuestion : $"{firstQuestion[..56]}...";
+                    var title = session.Title?.Trim();
+                    if (string.IsNullOrWhiteSpace(title))
+                    {
+                        if (string.IsNullOrWhiteSpace(firstQuestion))
+                        {
+                            title = "Session without a question";
+                        }
+                        else
+                        {
+                            title = firstQuestion.Length <= 56 ? firstQuestion : $"{firstQuestion[..56]}...";
+                        }
+                    }
 
                     <div class="chat-session-entry @(session.IsStarred ? "is-starred" : string.Empty)" data-session-entry data-session-id="@session.Id">
                         <button type="button" class="chat-session-item" data-session-id="@session.Id">

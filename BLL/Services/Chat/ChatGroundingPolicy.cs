@@ -4,6 +4,7 @@ namespace PRN222_FINAL.BLL;
 
 internal static partial class ChatGroundingPolicy
 {
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
     private static readonly HashSet<string> ClaimStopWords = new(StringComparer.OrdinalIgnoreCase)
     {
         "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "in", "is", "it", "of", "on", "or", "that", "the", "to", "with",
@@ -116,10 +117,10 @@ internal static partial class ChatGroundingPolicy
                 continue;
             }
 
-            foreach (var sentence in Regex.Split(normalizedLine, @"(?<=[.!?])\s+"))
+            foreach (var sentence in Regex.Split(normalizedLine, @"(?<=[.!?])\s+", RegexOptions.None, RegexTimeout))
             {
                 var segment = sentence.Trim();
-                if (Regex.Matches(RemoveSourceMarkers(segment), @"[\p{L}\p{N}]+").Count >= 3)
+                if (Regex.Matches(RemoveSourceMarkers(segment), @"[\p{L}\p{N}]+", RegexOptions.None, RegexTimeout).Count >= 3)
                 {
                     yield return segment;
                 }
@@ -185,7 +186,7 @@ internal static partial class ChatGroundingPolicy
             }
         }
 
-        return Regex.Replace(builder.ToString().Normalize(System.Text.NormalizationForm.FormC), @"[^\p{L}\p{N}%.,\s]+", " ");
+        return Regex.Replace(builder.ToString().Normalize(System.Text.NormalizationForm.FormC), @"[^\p{L}\p{N}%.,\s]+", " ", RegexOptions.None, RegexTimeout);
     }
 
     private static string NormalizeFact(string fact) => fact.Replace(',', '.').ToUpperInvariant();

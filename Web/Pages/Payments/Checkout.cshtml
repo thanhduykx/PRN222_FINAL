@@ -7,6 +7,7 @@
     ViewData["ActiveNav"] = "checkout";
     ViewData["ShellTitle"] = "Giỏ thanh toán";
     var activePayment = Model.PendingPayments.FirstOrDefault();
+    var paymentProviders = new[] { PaymentProvider.MoMo, PaymentProvider.PayOS };
 }
 
 <section class="checkout-page">
@@ -21,6 +22,11 @@
             Chọn thêm gói
         </a>
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="checkout-alert" role="alert">@Model.ErrorMessage</div>
+    }
 
     @if (Model.PendingPayments.Count == 0)
     {
@@ -49,7 +55,7 @@
                     @foreach (var payment in Model.PendingPayments)
                     {
                         <tr class="@(payment.PaymentId == activePayment?.PaymentId ? "is-active" : null)">
-                            <td><strong>@payment.PackageName</strong><small>@payment.Provider</small></td>
+                            <td><strong>@payment.PackageName</strong><small>@(payment.Provider == PaymentProvider.MoMo ? "MOMO" : "PayOS")</small></td>
                             <td><code>@payment.OrderCode</code></td>
                             <td><strong>@payment.AmountVnd.ToString("N0") @payment.Currency</strong></td>
                             <td>
@@ -74,22 +80,104 @@
 
         @if (activePayment is not null)
         {
+            var activeProviderName = activePayment.Provider == PaymentProvider.MoMo ? "MOMO" : "PayOS";
+            var recipientName = string.IsNullOrWhiteSpace(activePayment.RecipientName)
+                ? activePayment.RecipientEmail.Split('@')[0]
+                : activePayment.RecipientName;
+            var qrImageSource = CheckoutModel.BuildQrImageSource(activePayment.QrCode);
+            var hasPayeeDetails = !string.IsNullOrWhiteSpace(activePayment.PayeeAccountName)
+                || !string.IsNullOrWhiteSpace(activePayment.PayeeAccountNumber);
             <section class="checkout-payment-grid">
                 <div class="checkout-method-card">
-                    <span class="checkout-eyebrow">Phương thức đã chọn</span>
-                    <div class="checkout-provider">
-                        <img src="~/img/payments/@(activePayment.Provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="@activePayment.Provider" />
-                        <div><h2>@(activePayment.Provider == PaymentProvider.MoMo ? "Ví MoMo" : "PayOS / Chuyển khoản QR")</h2><p>Thanh toán trên cổng chính thức của nhà cung cấp.</p></div>
-                    </div>
-                    @if (CheckoutModel.IsSafeQrImageUrl(activePayment.QrCode))
-                    {
-                        <img class="checkout-qr" src="@activePayment.QrCode" alt="Mã QR thanh toán đơn @activePayment.OrderCode" />
-                    }
+                    <span class="checkout-eyebrow">Phương thức thanh toán</span>
+                    <h2>Chọn cách thanh toán</h2>
+                    <fieldset class="checkout-payment-options">
+                        <legend class="visually-hidden">Phương thức thanh toán</legend>
+                        @foreach (var provider in paymentProviders)
+                        {
+                            var isCurrentProvider = provider == activePayment.Provider;
+                            var providerName = provider == PaymentProvider.MoMo ? "MOMO" : "PayOS";
+                            var providerDescription = provider == PaymentProvider.MoMo
+                                ? "Thanh toán qua ví điện tử MOMO"
+                                : "Quét QR bằng ứng dụng ngân hàng";
+                            @if (isCurrentProvider)
+                            {
+                                <div class="checkout-payment-option is-selected" aria-current="true">
+                                    <img src="~/img/payments/@(provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="" />
+                                    <span><strong>@providerName</strong><small>@providerDescription</small></span>
+                                    <span class="checkout-method-status"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Đã chọn</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="SwitchProvider">
+                                    <input type="hidden" name="paymentId" value="@activePayment.PaymentId" />
+                                    <input type="hidden" name="provider" value="@provider" />
+                                    <button class="checkout-payment-option" type="submit" aria-label="Đổi sang @providerName">
+                                        <img src="~/img/payments/@(provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="" />
+                                        <span><strong>@providerName</strong><small>@providerDescription</small></span>
+                                        <span class="checkout-method-status">Chọn</span>
+                                    </button>
+                                </form>
+                            }
+                        }
+                    </fieldset>
+
+                    <section class="checkout-recipient" aria-labelledby="checkoutRecipientTitle">
+                        <div class="checkout-recipient__heading">
+                            <span class="material-symbols-outlined" aria-hidden="true">person_check</span>
+                            <h3 id="checkoutRecipientTitle">Thông tin người nhận gói</h3>
+                        </div>
+                        <dl>
+                            <div><dt>Họ và tên</dt><dd>@(string.IsNullOrWhiteSpace(recipientName) ? "Chưa cập nhật" : recipientName)</dd></div>
+                            <div><dt>Email</dt><dd>@(string.IsNullOrWhiteSpace(activePayment.RecipientEmail) ? "Chưa cập nhật" : activePayment.RecipientEmail)</dd></div>
+                            <div><dt>Gói nhận</dt><dd>@activePayment.PackageName</dd></div>
+                        </dl>
+                    </section>
+
+                </div>
+
+                <div class="checkout-instructions">
+                    <span class="checkout-eyebrow">Thanh toán trực tiếp</span>
+                    <h2>Quét mã QR để thanh toán</h2>
+
+                    <section class="checkout-payee" aria-labelledby="checkoutPayeeTitle">
+                        <div class="checkout-qr-frame">
+                            @if (!string.IsNullOrWhiteSpace(qrImageSource))
+                            {
+                                <img class="checkout-qr" src="@qrImageSource" alt="Mã QR thanh toán đơn @activePayment.OrderCode" />
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                                <p>Mã QR chưa sẵn sàng</p>
+                            }
+                        </div>
+                        <div class="checkout-payee__details">
+                            <span class="checkout-provider-badge">@activeProviderName</span>
+                            <h3 id="checkoutPayeeTitle">Thông tin người nhận tiền</h3>
+                            <dl>
+                                @if (activePayment.Provider == PaymentProvider.PayOS && hasPayeeDetails)
+                                {
+                                    <div><dt>Chủ tài khoản</dt><dd>@(string.IsNullOrWhiteSpace(activePayment.PayeeAccountName) ? "Chưa cập nhật" : activePayment.PayeeAccountName)</dd></div>
+                                    <div><dt>Số tài khoản</dt><dd class="checkout-copy-value">@(string.IsNullOrWhiteSpace(activePayment.PayeeAccountNumber) ? "Chưa cập nhật" : activePayment.PayeeAccountNumber)</dd></div>
+                                    <div><dt>Mã ngân hàng (BIN)</dt><dd>@(string.IsNullOrWhiteSpace(activePayment.PayeeBankBin) ? "Chưa cập nhật" : activePayment.PayeeBankBin)</dd></div>
+                                }
+                                else
+                                {
+                                    <div><dt>Kênh nhận tiền</dt><dd>@activeProviderName</dd></div>
+                                }
+                                <div><dt>Số tiền</dt><dd class="checkout-amount">@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</dd></div>
+                                <div><dt>Nội dung</dt><dd class="checkout-copy-value">@(string.IsNullOrWhiteSpace(activePayment.TransferDescription) ? activePayment.OrderCode : activePayment.TransferDescription)</dd></div>
+                            </dl>
+                        </div>
+                    </section>
+
                     @if (CheckoutModel.IsSafeCheckoutUrl(activePayment.CheckoutUrl))
                     {
                         <a class="checkout-primary-button checkout-pay-button" href="@activePayment.CheckoutUrl" rel="noopener noreferrer">
-                            Thanh toán ngay
-                            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                            Mở cổng thanh toán
+                            <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
                         </a>
                     }
                     else
@@ -97,13 +185,10 @@
                         <p class="checkout-gateway-error">Không lấy được liên kết thanh toán an toàn. Vui lòng xóa đơn và tạo lại.</p>
                     }
                     <p class="checkout-expiry-note"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> Còn <strong data-active-countdown data-expires-at="@activePayment.ExpiresAt.ToString("O")">--:--</strong> để hoàn tất thanh toán.</p>
-                </div>
 
-                <div class="checkout-instructions">
-                    <span class="checkout-eyebrow">Hướng dẫn thanh toán</span>
-                    <h2>Hoàn tất trong vài bước</h2>
+                    <h3 class="checkout-instructions__title">Hoàn tất trong vài bước</h3>
                     <ol>
-                        <li><span>1</span><div><strong>Mở cổng thanh toán</strong><p>Nhấn “Thanh toán ngay” để sang trang bảo mật của @activePayment.Provider.</p></div></li>
+                        <li><span>1</span><div><strong>Mở cổng thanh toán</strong><p>Nhấn “Thanh toán ngay” để sang trang bảo mật của @activeProviderName.</p></div></li>
                         <li><span>2</span><div><strong>Quét QR hoặc xác nhận</strong><p>Kiểm tra đúng số tiền <b>@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</b> và mã đơn <b>@activePayment.OrderCode</b>.</p></div></li>
                         <li><span>3</span><div><strong>Chờ hệ thống xác nhận</strong><p>Sau khi cổng thanh toán báo thành công, gói học tập sẽ được kích hoạt tự động.</p></div></li>
                     </ol>

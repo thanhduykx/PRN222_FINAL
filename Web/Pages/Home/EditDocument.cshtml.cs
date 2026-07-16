@@ -12,7 +12,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class EditDocumentModel : HomePageModelBase
 {
     public EditDocumentModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<EditDocumentModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

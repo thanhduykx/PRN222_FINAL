@@ -101,7 +101,7 @@ public sealed class GoogleCallbackModel : PageModel
             return true;
         }
 
-        var path = returnUrl.Split('?', '#')[0].TrimEnd('/');
+        var path = returnUrl.Split(['?', '#'], 2, StringSplitOptions.None)[0].TrimEnd('/');
         if (string.IsNullOrWhiteSpace(path))
         {
             path = "/";

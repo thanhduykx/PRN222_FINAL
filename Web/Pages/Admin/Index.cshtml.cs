@@ -174,11 +174,6 @@ public sealed class IndexModel : PageModel
             var assignedSubjectCount = 0;
             var warnings = new List<string>();
 
-            // For bulk import: distribute subjects round-robin among lecturers
-            var availableSubjects = new Queue<CourseSubject>(
-                subjects
-                    .Where(subject => !subject.OwnerUserId.HasValue)
-                    .OrderBy(subject => subject.DisplayName));
             var importSubjectIndex = 0;
             var selectedSubjectList = subjects
                 .Where(subject => model.SubjectIds?.Contains(subject.Id) == true)
@@ -402,26 +397,21 @@ public sealed class IndexModel : PageModel
                 string headerText = GetCellValue(doc, cell);
                 string colLetter = GetColumnLetter(cell.CellReference?.Value);
 
-                if (headerText.Equals("Họ & Tên", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Equals("Họ và Tên", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Equals("Tên", StringComparison.OrdinalIgnoreCase))
-                {
-                    nameColumn = colLetter;
-                }
-                else if (nameColumn == null && (
+                var isExactName = headerText.Equals("Họ & Tên", StringComparison.OrdinalIgnoreCase) ||
+                                  headerText.Equals("Họ và Tên", StringComparison.OrdinalIgnoreCase) ||
+                                  headerText.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
+                                  headerText.Equals("Tên", StringComparison.OrdinalIgnoreCase);
+                var containsName =
                     headerText.Contains("Họ & Tên", StringComparison.OrdinalIgnoreCase) ||
                     headerText.Contains("Họ và Tên", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Contains("Name", StringComparison.OrdinalIgnoreCase)))
+                    headerText.Contains("Name", StringComparison.OrdinalIgnoreCase);
+                if (isExactName || (nameColumn is null && containsName))
                 {
                     nameColumn = colLetter;
                 }
 
-                if (headerText.Equals("Email", StringComparison.OrdinalIgnoreCase))
-                {
-                    emailColumn = colLetter;
-                }
-                else if (emailColumn == null && headerText.Contains("Email", StringComparison.OrdinalIgnoreCase))
+                var isExactEmail = headerText.Equals("Email", StringComparison.OrdinalIgnoreCase);
+                if (isExactEmail || (emailColumn is null && headerText.Contains("Email", StringComparison.OrdinalIgnoreCase)))
                 {
                     emailColumn = colLetter;
                 }

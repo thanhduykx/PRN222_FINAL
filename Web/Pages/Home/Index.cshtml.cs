@@ -19,7 +19,7 @@ public sealed class IndexModel : HomePageModelBase
     private readonly IDocumentStatusNotifier _documentStatusNotifier;
 
     public IndexModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<IndexModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
@@ -386,27 +386,6 @@ public sealed class IndexModel : HomePageModelBase
             ? "Khong co tai lieu stale embedding can re-index hoac ban khong co quyen."
             : $"Da dua {enqueuedCount} tai lieu stale embedding vao hang doi re-index.";
         return RedirectToPage("/Home/Index");
-    }
-
-    private static bool DocumentMatchesQuery(IndexedDocument document, string query)
-    {
-        return Contains(document.FileName, query)
-               || Contains(document.Subject, query)
-               || Contains(document.Chapter, query)
-               || Contains(document.UploadedByName, query)
-               || Contains(document.UploadedByEmail, query)
-               || Contains(document.ContentType, query);
-    }
-
-    private static bool DocumentMatchesStatus(IndexedDocument document, string statusFilter)
-    {
-        return document.Status.Equals(statusFilter, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool Contains(string? value, string query)
-    {
-        return !string.IsNullOrWhiteSpace(value)
-               && value.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<DocumentTreeSubjectViewModel> BuildDocumentTree(

@@ -32,10 +32,6 @@ public sealed class ForgotPasswordModel : PageModel
     [BindProperty]
     public ForgotPasswordViewModel Input { get; set; } = new();
 
-    public void OnGet()
-    {
-    }
-
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)

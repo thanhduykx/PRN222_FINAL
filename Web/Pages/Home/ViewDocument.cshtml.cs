@@ -15,7 +15,7 @@ public sealed class ViewDocumentModel : HomePageModelBase
     private readonly IDocumentFileService _documentFiles;
 
     public ViewDocumentModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<ViewDocumentModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

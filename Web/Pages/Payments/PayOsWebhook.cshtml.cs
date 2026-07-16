@@ -6,7 +6,12 @@ using PRN222_FINAL.BLL.Contracts.Billing;
 
 namespace PRN222_FINAL.Web.Pages.Payments;
 
+#pragma warning disable S4502 // External PayOS callbacks cannot carry a browser CSRF token; HMAC validation is mandatory in PaymentService.
 [IgnoreAntiforgeryToken]
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Security",
+    "S4502:CSRF protection is intentionally disabled for this signed external callback",
+    Justification = "PayOS cannot provide a browser antiforgery token; PaymentService rejects callbacks unless their HMAC signature is valid.")]
 public sealed class PayOsWebhookModel : PageModel
 {
     private readonly IPaymentService _payments;

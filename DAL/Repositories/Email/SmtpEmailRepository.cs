@@ -11,29 +11,29 @@ public sealed class SmtpEmailRepository : IEmailRepository
     private readonly SmtpSettingsData _settings;
     public SmtpEmailRepository(SmtpSettingsData settings) => _settings = settings;
 
-    public async Task SendAsync(EmailMessageData data, CancellationToken cancellationToken = default)
+    public async Task SendAsync(EmailMessageData message, CancellationToken cancellationToken = default)
     {
         ValidateSettings();
-        using var message = new MailMessage
+        using var mailMessage = new MailMessage
         {
             From = new MailAddress(_settings.FromEmail, _settings.FromName, Encoding.UTF8),
-            Subject = data.Subject, SubjectEncoding = Encoding.UTF8, BodyEncoding = Encoding.UTF8
+            Subject = message.Subject, SubjectEncoding = Encoding.UTF8, BodyEncoding = Encoding.UTF8
         };
-        message.To.Add(new MailAddress(data.RecipientEmail, data.RecipientName, Encoding.UTF8));
-        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(data.PlainTextBody, Encoding.UTF8, MediaTypeNames.Text.Plain));
-        var html = AlternateView.CreateAlternateViewFromString(data.HtmlBody, Encoding.UTF8, MediaTypeNames.Text.Html);
-        if (!string.IsNullOrWhiteSpace(data.InlineLogoPath) && File.Exists(data.InlineLogoPath))
+        mailMessage.To.Add(new MailAddress(message.RecipientEmail, message.RecipientName, Encoding.UTF8));
+        mailMessage.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message.PlainTextBody, Encoding.UTF8, MediaTypeNames.Text.Plain));
+        var html = AlternateView.CreateAlternateViewFromString(message.HtmlBody, Encoding.UTF8, MediaTypeNames.Text.Html);
+        if (!string.IsNullOrWhiteSpace(message.InlineLogoPath) && File.Exists(message.InlineLogoPath))
         {
-            var logo = new LinkedResource(data.InlineLogoPath, "image/png")
-            { ContentId = data.InlineLogoContentId ?? "inline-logo", TransferEncoding = TransferEncoding.Base64 };
-            logo.ContentType.Name = Path.GetFileName(data.InlineLogoPath);
+            var logo = new LinkedResource(message.InlineLogoPath, "image/png")
+            { ContentId = message.InlineLogoContentId ?? "inline-logo", TransferEncoding = TransferEncoding.Base64 };
+            logo.ContentType.Name = Path.GetFileName(message.InlineLogoPath);
             html.LinkedResources.Add(logo);
         }
-        message.AlternateViews.Add(html);
+        mailMessage.AlternateViews.Add(html);
         var password = NormalizePassword(_settings.Host, _settings.Password);
         using var client = new SmtpClient(_settings.Host, _settings.Port)
-        { EnableSsl=_settings.EnableSsl,Credentials=new NetworkCredential(_settings.UserName,password),DeliveryMethod=SmtpDeliveryMethod.Network };
-        await client.SendMailAsync(message, cancellationToken);
+        { EnableSsl=true,Credentials=new NetworkCredential(_settings.UserName,password),DeliveryMethod=SmtpDeliveryMethod.Network };
+        await client.SendMailAsync(mailMessage, cancellationToken);
     }
 
     private void ValidateSettings()

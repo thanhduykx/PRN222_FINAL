@@ -9,6 +9,12 @@ namespace PRN222_FINAL.BLL;
 
 public sealed class GeminiEmbeddingService : IEmbeddingService
 {
+    private static readonly string DefaultEmbeddingBaseUrl = new UriBuilder(
+        Uri.UriSchemeHttps,
+        "generativelanguage.googleapis.com")
+    {
+        Path = "v1beta"
+    }.Uri.AbsoluteUri.TrimEnd('/');
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
@@ -61,7 +67,7 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
                         continue;
                     }
 
-                    throw new InvalidOperationException($"Gemini embedding request failed with HTTP {(int)response.StatusCode}. {detail}");
+                    throw new InvalidOperationException($"Gemini embedding request failed with HTTP {response.StatusCode}. {detail}");
                 }
 
                 using var payload = JsonDocument.Parse(response.Body);
@@ -76,12 +82,10 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
             catch (HttpRequestException) when (attempt < maxAttempts && !cancellationToken.IsCancellationRequested)
             {
                 await DelayBeforeRetryAsync(attempt, cancellationToken);
-                continue;
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested && attempt < maxAttempts)
             {
                 await DelayBeforeRetryAsync(attempt, cancellationToken);
-                continue;
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
@@ -111,7 +115,7 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
     private string ResolveEmbeddingUrl()
     {
         var baseUrl = string.IsNullOrWhiteSpace(_options.EmbeddingBaseUrl)
-            ? "https://generativelanguage.googleapis.com/v1beta"
+            ? DefaultEmbeddingBaseUrl
             : _options.EmbeddingBaseUrl.Trim().TrimEnd('/');
         var model = ModelName.Trim().Trim('/');
         return $"{baseUrl}/models/{model}:embedContent";

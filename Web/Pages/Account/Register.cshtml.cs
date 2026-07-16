@@ -29,8 +29,7 @@ public sealed class RegisterModel : PageModel
 
     public IActionResult OnPost()
     {
-        TempData["AuthInfo"] = AccountProvisioningMessage;
-        return RedirectToPage("/Account/Login");
+        return OnGet();
     }
 }
 

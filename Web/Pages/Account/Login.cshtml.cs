@@ -99,17 +99,6 @@ public sealed class LoginModel : PageModel
         return CreateGoogleChallenge(returnUrl);
     }
 
-    public async Task<IActionResult> OnGetGoogleStartAsync(string? returnUrl = null)
-    {
-        if (await _schemes.GetSchemeAsync(GoogleDefaults.AuthenticationScheme) is null)
-        {
-            TempData["AuthError"] = "Google sign-in is not configured.";
-            return RedirectToPage("/Account/Login", new { returnUrl });
-        }
-
-        return CreateGoogleChallenge(returnUrl);
-    }
-
     private ChallengeResult CreateGoogleChallenge(string? returnUrl)
     {
         var properties = new AuthenticationProperties
@@ -170,7 +159,7 @@ public sealed class LoginModel : PageModel
             return true;
         }
 
-        var path = returnUrl.Split('?', '#')[0].TrimEnd('/');
+        var path = returnUrl.Split(['?', '#'], 2, StringSplitOptions.None)[0].TrimEnd('/');
         if (string.IsNullOrWhiteSpace(path))
         {
             path = "/";

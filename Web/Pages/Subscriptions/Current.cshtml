@@ -15,7 +15,18 @@
         "Failed" => "Failed",
         _ => status
     };
-    string StatusClass(string status) => status == "Paid" ? "is-success" : status == "Pending" ? "is-pending" : "is-error";
+    string StatusClass(string status) => status switch
+    {
+        "Paid" => "is-success",
+        "Pending" => "is-pending",
+        _ => "is-error"
+    };
+    string StatusIcon(string status) => status switch
+    {
+        "Paid" => "check_circle",
+        "Pending" => "schedule",
+        _ => "cancel"
+    };
     string ProviderLogo(string provider) => provider.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
         ? "/img/payments/momo.svg" : "/img/payments/payos.svg";
     var premiumCode = Model.Subscription?.PackageCode?.ToUpperInvariant() ?? string.Empty;
@@ -98,7 +109,7 @@
                         </summary>
                         <div id="@receiptId" class="payment-receipt">
                             <div class="payment-receipt__brand"><span class="material-symbols-outlined" aria-hidden="true">school</span><div><strong>Course Assistant</strong><small data-i18n="subscriptions.receiptTitle">BIÊN NHẬN THANH TOÁN</small></div></div>
-                            <div class="payment-receipt__status @StatusClass(payment.Status)"><span class="material-symbols-outlined" aria-hidden="true">@(payment.Status == "Paid" ? "check_circle" : payment.Status == "Pending" ? "schedule" : "cancel")</span><span>@StatusLabel(payment.Status)</span></div>
+                            <div class="payment-receipt__status @StatusClass(payment.Status)"><span class="material-symbols-outlined" aria-hidden="true">@StatusIcon(payment.Status)</span><span>@StatusLabel(payment.Status)</span></div>
                             <div class="payment-receipt__customer"><span data-i18n="subscriptions.buyer">Người mua</span><strong>@Model.Profile.FullName</strong><small>@Model.AccountEmail</small></div>
                             <dl>
                                 <div><dt data-i18n="subscriptions.packageLabel">Gói dịch vụ</dt><dd>@payment.PackageName</dd></div>

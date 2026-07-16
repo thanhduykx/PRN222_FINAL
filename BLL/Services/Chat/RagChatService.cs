@@ -43,9 +43,9 @@ public sealed class RagChatService : IRagChatService
     private const double MinimumLocalRerankScore = 0.48;
     private const double MinimumLlmRerankScore = 0.55;
     private const double MinimumAnswerGroundingRatio = 0.42;
-    private const string OutOfScopeAnswer = "Mình không đủ dữ liệu trong tài liệu để trả lời câu hỏi này.";
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
-    private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}]+", RegexOptions.Compiled);
+    private static readonly Regex TokenRegex = new(@"[\p{L}\p{N}]+", RegexOptions.Compiled, RegexTimeout);
     private static readonly string[] AssessmentComponentPatterns =
     {
         @"^(?:\d+[.)]\s*)?(?<name>.+?)\s*(?:\||:|\s[-–—]\s)\s*(?<value>\d+(?:[.,]\d+)?)\s*%\s*$",
@@ -361,7 +361,6 @@ public sealed class RagChatService : IRagChatService
                 subjectFilter,
                 historyBeforeQuestion,
                 Array.Empty<DocumentChunk>(),
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -390,7 +389,6 @@ public sealed class RagChatService : IRagChatService
                     route.SelectedSubject,
                     historyBeforeQuestion,
                     Array.Empty<DocumentChunk>(),
-                    allowedSubjects,
                     responseLanguage,
                     cancellationToken);
             }
@@ -419,7 +417,6 @@ public sealed class RagChatService : IRagChatService
                 route.SelectedSubject ?? subjectFilter,
                 historyBeforeQuestion,
                 Array.Empty<DocumentChunk>(),
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -451,7 +448,6 @@ public sealed class RagChatService : IRagChatService
                 route.SelectedSubject ?? subjectFilter,
                 historyBeforeQuestion,
                 scopedChunks,
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -480,7 +476,6 @@ public sealed class RagChatService : IRagChatService
                 route.SelectedSubject ?? subjectFilter,
                 historyBeforeQuestion,
                 scopedChunks,
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -526,7 +521,6 @@ public sealed class RagChatService : IRagChatService
                 resolvedSubject,
                 historyBeforeQuestion,
                 scopedChunks,
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -538,7 +532,6 @@ public sealed class RagChatService : IRagChatService
                 resolvedSubject,
                 historyBeforeQuestion,
                 scopedChunks,
-                allowedSubjects,
                 responseLanguage,
                 cancellationToken);
         }
@@ -616,7 +609,6 @@ public sealed class RagChatService : IRagChatService
         string? subject,
         IReadOnlyList<ChatMessage> historyBeforeQuestion,
         IReadOnlyList<DocumentChunk> subjectChunks,
-        IReadOnlyCollection<string>? allowedSubjects,
         string responseLanguage,
         CancellationToken cancellationToken)
     {
@@ -1073,7 +1065,7 @@ public sealed class RagChatService : IRagChatService
             aliases.Add(normalizedCode);
             aliases.Add(normalizedCode.Replace(" ", string.Empty, StringComparison.Ordinal));
 
-            var codePrefix = Regex.Match(normalizedCode, @"^[a-z]+", RegexOptions.CultureInvariant).Value;
+            var codePrefix = Regex.Match(normalizedCode, @"^[a-z]+", RegexOptions.CultureInvariant, RegexTimeout).Value;
             if (codePrefix.Length >= 3)
             {
                 aliases.Add(codePrefix);
@@ -1239,11 +1231,16 @@ public sealed class RagChatService : IRagChatService
             ? "khối lượng workload điều kiện prerequisite bài tập assignment dự án project thực hành lab thi exam đánh giá assessment tín chỉ credit session buổi"
             : "mục tiêu nội dung kỹ năng chuẩn đầu ra đánh giá bài tập dự án thực hành tín chỉ workload assessment outcome skill");
         var citations = new List<SourceCitation>();
+        var heading = (language, isDifficultyQuestion) switch
+        {
+            ("vi", true) => "## So sánh độ khó có căn cứ",
+            ("vi", false) => "## Điểm khác nhau theo tài liệu",
+            (_, true) => "## Evidence-based difficulty comparison",
+            _ => "## Differences supported by the documents"
+        };
         var lines = new List<string>
         {
-            language == "vi"
-                ? isDifficultyQuestion ? "## So sánh độ khó có căn cứ" : "## Điểm khác nhau theo tài liệu"
-                : isDifficultyQuestion ? "## Evidence-based difficulty comparison" : "## Differences supported by the documents"
+            heading
         };
 
         if (isDifficultyQuestion)
@@ -1339,11 +1336,9 @@ public sealed class RagChatService : IRagChatService
             citations,
             AnswerSource: "Rag",
             HasDirectCitation: citations.Count > 0,
-            AnswerStatus: coursesWithEvidence == courseCodes.Count
-                ? ChatGroundingPolicy.GroundedAnswerStatus
-                : coursesWithEvidence > 0
-                    ? ChatGroundingPolicy.PartialAnswerStatus
-                    : ChatGroundingPolicy.InsufficientEvidenceStatus);
+            AnswerStatus: ResolveComparisonAnswerStatus(
+                coursesWithEvidence == courseCodes.Count,
+                coursesWithEvidence));
     }
 
     private static SingleQuestionAnswer BuildAssessmentComparisonAnswer(
@@ -1430,11 +1425,21 @@ public sealed class RagChatService : IRagChatService
             citations,
             AnswerSource: "Rag",
             HasDirectCitation: citations.Count > 0,
-            AnswerStatus: coursesWithEvidence == courseCodes.Count && !hasInvalidEvidence
-                ? ChatGroundingPolicy.GroundedAnswerStatus
-                : coursesWithEvidence > 0
-                    ? ChatGroundingPolicy.PartialAnswerStatus
-                    : ChatGroundingPolicy.InsufficientEvidenceStatus);
+            AnswerStatus: ResolveComparisonAnswerStatus(
+                coursesWithEvidence == courseCodes.Count && !hasInvalidEvidence,
+                coursesWithEvidence));
+    }
+
+    private static string ResolveComparisonAnswerStatus(bool isFullyGrounded, int evidenceCount)
+    {
+        if (isFullyGrounded)
+        {
+            return ChatGroundingPolicy.GroundedAnswerStatus;
+        }
+
+        return evidenceCount > 0
+            ? ChatGroundingPolicy.PartialAnswerStatus
+            : ChatGroundingPolicy.InsufficientEvidenceStatus;
     }
 
     private static SingleQuestionAnswer? TryBuildAssessmentStructureAnswer(
@@ -1481,7 +1486,7 @@ public sealed class RagChatService : IRagChatService
             .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .SelectMany(line => Regex.Split(line, @"(?<=%)\s*\)?\s*[.;]\s*"))
+            .SelectMany(line => Regex.Split(line, @"(?<=%)\s*\)?\s*[.;]\s*", RegexOptions.None, RegexTimeout))
             .Where(line => !string.IsNullOrWhiteSpace(line));
         string? currentComponent = null;
         var currentComponentAge = 0;
@@ -1509,7 +1514,8 @@ public sealed class RagChatService : IRagChatService
             var weight = Regex.Match(
                 cleaned,
                 @"(?i)^(?:Tỷ\s*trọng|Ty\s*trong|Trọng\s*số|Trong\s*so|Weight|Percentage|Percent)?\s*:?\s*(?<value>\d+(?:[.,]\d+)?)\s*%\s*$",
-                RegexOptions.CultureInvariant);
+                RegexOptions.CultureInvariant,
+                RegexTimeout);
             if (weight.Success && !string.IsNullOrWhiteSpace(currentComponent)
                 && double.TryParse(weight.Groups["value"].Value.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
                 && value is >= 0 and <= 100)
@@ -1542,7 +1548,7 @@ public sealed class RagChatService : IRagChatService
         value = 0;
         foreach (var pattern in AssessmentComponentPatterns)
         {
-            var match = Regex.Match(line, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            var match = Regex.Match(line, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexTimeout);
             if (!match.Success)
             {
                 continue;
@@ -1569,13 +1575,13 @@ public sealed class RagChatService : IRagChatService
         var candidate = CleanAssessmentComponentName(value);
         if (candidate.Length is < 2 or > 100
             || candidate.Contains(':', StringComparison.Ordinal)
-            || Regex.IsMatch(candidate, @"[.!?;]", RegexOptions.CultureInvariant)
-            || !Regex.IsMatch(candidate, @"\p{L}", RegexOptions.CultureInvariant))
+            || Regex.IsMatch(candidate, @"[.!?;]", RegexOptions.CultureInvariant, RegexTimeout)
+            || !Regex.IsMatch(candidate, @"\p{L}", RegexOptions.CultureInvariant, RegexTimeout))
         {
             return false;
         }
 
-        var wordCount = Regex.Matches(candidate, @"[\p{L}\p{N}]+", RegexOptions.CultureInvariant).Count;
+        var wordCount = Regex.Matches(candidate, @"[\p{L}\p{N}]+", RegexOptions.CultureInvariant, RegexTimeout).Count;
         if (wordCount is < 1 or > 12)
         {
             return false;
@@ -1589,7 +1595,7 @@ public sealed class RagChatService : IRagChatService
 
     private static string CleanAssessmentComponentName(string name)
     {
-        return Regex.Replace(name.Trim().Trim('-', '*', '|', ':', '.', ';').Trim(), @"^\d+[.)]\s*", string.Empty).Trim();
+        return Regex.Replace(name.Trim().Trim('-', '*', '|', ':', '.', ';').Trim(), @"^\d+[.)]\s*", string.Empty, RegexOptions.None, RegexTimeout).Trim();
     }
 
     private static string NormalizeAssessmentComponentName(string name)
@@ -1631,7 +1637,7 @@ public sealed class RagChatService : IRagChatService
             return "Lab";
         }
 
-        return Regex.Replace(trimmed, @"^\d+[.)]\s*", string.Empty).Trim();
+        return Regex.Replace(trimmed, @"^\d+[.)]\s*", string.Empty, RegexOptions.None, RegexTimeout).Trim();
     }
 
     private static int AddComparisonCitation(List<SourceCitation> citations, ScoredChunk match, string evidenceText)
@@ -1805,7 +1811,7 @@ public sealed class RagChatService : IRagChatService
             return null;
         }
 
-        var courseCodes = Regex.Matches(question, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant)
+        var courseCodes = Regex.Matches(question, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant, RegexTimeout)
             .Select(match => match.Value.ToUpperInvariant())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -1877,7 +1883,7 @@ public sealed class RagChatService : IRagChatService
             var allCreditsEqual = facts.All(fact => Math.Abs(fact.Credit!.Value - first.Credit!.Value) < 0.0001);
             if (allCreditsEqual)
             {
-                var courseList = string.Join(language == "vi" ? ", " : ", ", facts.Select(fact => fact.CourseCode));
+                var courseList = string.Join(", ", facts.Select(fact => fact.CourseCode));
                 lines.Add(language == "vi"
                     ? $"Kết luận: {courseList} có số tín chỉ bằng nhau. {comparisonSources}"
                     : $"Conclusion: {courseList} have the same number of credits. {comparisonSources}");
@@ -1926,7 +1932,8 @@ public sealed class RagChatService : IRagChatService
             var match = Regex.Match(
                 chunkText,
                 @"(?i)\b(?:Giảng\s+viên(?:\s+phụ\s+trách)?|Lecturer|Instructor|Teacher)\s*:\s*(?<name>.+?)(?=\s+(?:Số\s+tín\s+chỉ|Credits?|Mã\s+môn|Tên\s+môn|Subject|Chapter)\s*:|\s*=+|$)",
-                RegexOptions.CultureInvariant);
+                RegexOptions.CultureInvariant,
+                RegexTimeout);
             if (!match.Success)
             {
                 continue;
@@ -1976,7 +1983,7 @@ public sealed class RagChatService : IRagChatService
         {
             var chunkText = chunk.Text ?? string.Empty;
             var match = patterns
-                .Select(pattern => Regex.Match(chunkText, pattern, RegexOptions.CultureInvariant))
+                .Select(pattern => Regex.Match(chunkText, pattern, RegexOptions.CultureInvariant, RegexTimeout))
                 .FirstOrDefault(candidate => candidate.Success);
             if (match is null || !match.Success)
             {
@@ -2086,7 +2093,8 @@ public sealed class RagChatService : IRagChatService
             var section = Regex.Match(
                 chunkText,
                 @"(?i)KỸ\s+NĂNG\s+MỀM\s+VÀ\s+PHÁT\s+TRIỂN\s+CÁ\s+NHÂN\s*=+\s*(?<body>.+?)(?=\s*=+\s*[\p{L}\p{N}\s]+\s*=+|$)",
-                RegexOptions.CultureInvariant);
+                RegexOptions.CultureInvariant,
+                RegexTimeout);
             if (!section.Success)
             {
                 continue;
@@ -2155,7 +2163,8 @@ public sealed class RagChatService : IRagChatService
         var syllabusName = Regex.Match(
             text ?? string.Empty,
             @"(?i)\bSyllabus\s*Name\s*:\s*(?<name>.+?)(?=\s+(?:Subject|Course|Credits?|No\s*Credit|Chapter)\s*:|\s*=+|$)",
-            RegexOptions.CultureInvariant);
+            RegexOptions.CultureInvariant,
+            RegexTimeout);
         if (syllabusName.Success)
         {
             return syllabusName.Groups["name"].Value.Trim();
@@ -2164,7 +2173,8 @@ public sealed class RagChatService : IRagChatService
         var vietnameseName = Regex.Match(
             text ?? string.Empty,
             @"(?i)\bTên\s+môn\s*:\s*(?<name>.+?)(?=\s+(?:Tên\s+tiếng\s+Anh|Mã\s+môn|Số\s+tín\s+chỉ|Trình\s+độ)\s*:|\s*=+|$)",
-            RegexOptions.CultureInvariant);
+            RegexOptions.CultureInvariant,
+            RegexTimeout);
         if (vietnameseName.Success)
         {
             return vietnameseName.Groups["name"].Value.Trim();
@@ -2188,7 +2198,7 @@ public sealed class RagChatService : IRagChatService
 
         var asksForPersonName = normalized.Contains("ten", StringComparison.Ordinal)
                                 || normalized.Contains("who", StringComparison.Ordinal)
-                                || Regex.IsMatch(normalized, @"\bai\b", RegexOptions.CultureInvariant);
+                                || Regex.IsMatch(normalized, @"\bai\b", RegexOptions.CultureInvariant, RegexTimeout);
         var asksForLecturer = normalized.Contains("giang vien", StringComparison.Ordinal)
                              || normalized.Contains("lecturer", StringComparison.Ordinal)
                              || normalized.Contains("instructor", StringComparison.Ordinal)
@@ -2233,7 +2243,7 @@ public sealed class RagChatService : IRagChatService
 
         foreach (var pattern in patterns)
         {
-            var match = Regex.Match(text, pattern, RegexOptions.CultureInvariant);
+            var match = Regex.Match(text, pattern, RegexOptions.CultureInvariant, RegexTimeout);
             if (!match.Success)
             {
                 continue;
@@ -2256,7 +2266,7 @@ public sealed class RagChatService : IRagChatService
 
     private static IReadOnlyList<string> ExtractCourseCodesInOrder(string text)
     {
-        return Regex.Matches(text ?? string.Empty, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant)
+        return Regex.Matches(text ?? string.Empty, @"\b[A-Za-z]{2,}\d{2,}\b", RegexOptions.CultureInvariant, RegexTimeout)
             .Select(match => match.Value.ToUpperInvariant())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -2630,7 +2640,7 @@ public sealed class RagChatService : IRagChatService
             return lines;
         }
 
-        var inlineQuestions = Regex.Matches(input, @"[^?？！]+[?？！]")
+        var inlineQuestions = Regex.Matches(input, @"[^?？！]+[?？！]", RegexOptions.None, RegexTimeout)
             .Select(match => CleanQuestionLine(match.Value))
             .Where(IsLikelyQuestion)
             .ToList();
@@ -2640,7 +2650,7 @@ public sealed class RagChatService : IRagChatService
 
     private static string CleanQuestionLine(string line)
     {
-        var cleaned = Regex.Replace(line.Trim(), @"^\s*(?:[-*•]|\d+[\).\:-])\s*", string.Empty);
+        var cleaned = Regex.Replace(line.Trim(), @"^\s*(?:[-*•]|\d+[\).\:-])\s*", string.Empty, RegexOptions.None, RegexTimeout);
         var pipeIndex = cleaned.IndexOf('|', StringComparison.Ordinal);
         if (pipeIndex > 0)
         {
@@ -2938,11 +2948,19 @@ public sealed class RagChatService : IRagChatService
             return Array.Empty<string>();
         }
 
-        var dimension = IsDifficultyQuestion(normalized)
-            ? "khối lượng học điều kiện tiên quyết bài tập thực hành hình thức đánh giá"
-            : IsAssessmentQuestion(normalized)
-                ? "cơ cấu điểm thành phần đánh giá tỷ trọng bài tập thi cuối kỳ"
-                : "mục tiêu nội dung kỹ năng đánh giá khối lượng học";
+        string dimension;
+        if (IsDifficultyQuestion(normalized))
+        {
+            dimension = "khối lượng học điều kiện tiên quyết bài tập thực hành hình thức đánh giá";
+        }
+        else if (IsAssessmentQuestion(normalized))
+        {
+            dimension = "cơ cấu điểm thành phần đánh giá tỷ trọng bài tập thi cuối kỳ";
+        }
+        else
+        {
+            dimension = "mục tiêu nội dung kỹ năng đánh giá khối lượng học";
+        }
         return courseCodes.Select(code => $"{code} {dimension}").ToList();
     }
 
@@ -3012,7 +3030,7 @@ public sealed class RagChatService : IRagChatService
     private static bool IsCasualChat(string question)
     {
         var normalized = RemoveDiacritics(question).ToLowerInvariant();
-        var compact = Regex.Replace(normalized, @"[^\p{L}\p{N}\s]+", " ").Trim();
+        var compact = Regex.Replace(normalized, @"[^\p{L}\p{N}\s]+", " ", RegexOptions.None, RegexTimeout).Trim();
         var compactTokens = compact.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var terms = ExtractTerms(question);
 
@@ -3078,7 +3096,11 @@ public sealed class RagChatService : IRagChatService
 
     private static string BuildUserIdentityAnswer(string? userDisplayName, string language)
     {
-        var name = string.IsNullOrWhiteSpace(userDisplayName) ? (language == "vi" ? "bạn" : "you") : userDisplayName.Trim();
+        var name = userDisplayName?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = language == "vi" ? "bạn" : "you";
+        }
         if (language == "en")
         {
             return $"You are {name}. In this app, you are the owner of this document workspace and the person I am helping.";
@@ -3143,64 +3165,10 @@ public sealed class RagChatService : IRagChatService
         return "Hi, I am here. Ask about a course, CLO, assessment, or document section and I will look it up.";
     }
 
-    private static string BuildBotIdentityAnswer()
-    {
-        return "Mình là AI chuyên hỗ trợ tra cứu và giải thích nội dung trong kho tài liệu học tập. Nói đơn giản: bạn hỏi, mình tìm trong tài liệu, tóm gọn lại cho dễ hiểu, rồi kèm nguồn khi có dữ liệu.";
-    }
-
-    private static string BuildUserIdentityAnswer(string? userDisplayName)
-    {
-        var name = string.IsNullOrWhiteSpace(userDisplayName) ? "bạn" : userDisplayName.Trim();
-        return $"Bạn là {name}. Trong ứng dụng này, bạn là chủ kho tài liệu và là người mình đang hỗ trợ.";
-    }
-
-    private static string BuildCasualChatAnswer(string question)
-    {
-        var normalized = RemoveDiacritics(question).ToLowerInvariant();
-        if (normalized.Contains("cam on", StringComparison.Ordinal)
-            || normalized.Contains("thanks", StringComparison.Ordinal)
-            || normalized.Contains("thank you", StringComparison.Ordinal))
-        {
-            return "Không có gì. Cần tra phần nào trong tài liệu thì ném câu hỏi qua, mình xem tiếp.";
-        }
-
-        if (normalized.Contains("tam biet", StringComparison.Ordinal)
-            || normalized.Contains("bye", StringComparison.Ordinal))
-        {
-            return "Tạm biệt nhé. Khi cần tra tài liệu thì quay lại, mình vẫn ở đây.";
-        }
-
-        if (normalized.Contains("an com", StringComparison.Ordinal)
-            || normalized.Contains("com chua", StringComparison.Ordinal))
-        {
-            return "Mình không ăn cơm được, nhưng đang trực kho tài liệu đây. Bạn muốn mình xem môn hay phần nào?";
-        }
-
-        if (normalized.Contains("khoe khong", StringComparison.Ordinal)
-            || normalized.Contains("on khong", StringComparison.Ordinal))
-        {
-            return "Mình ổn, đang sẵn sàng tra tài liệu. Bạn đang cần xem câu nào?";
-        }
-
-        return "Chào bạn, mình đây. Hỏi thẳng môn, CLO, đánh giá hoặc phần nào trong tài liệu, mình tra cho.";
-    }
-
-    private static string BuildRetrievalQuestion(string originalQuestion, string rewrittenQuestion)
-    {
-        var original = originalQuestion.Trim();
-        var rewritten = string.IsNullOrWhiteSpace(rewrittenQuestion) ? original : rewrittenQuestion.Trim();
-        if (original.Equals(rewritten, StringComparison.OrdinalIgnoreCase))
-        {
-            return original;
-        }
-
-        return $"{rewritten}\n{original}";
-    }
-
     private static string NormalizeQuestion(string question)
     {
         var normalized = RemoveDiacritics(question).ToLowerInvariant();
-        return Regex.Replace(normalized, @"[^\p{L}\p{N}\s]+", " ").Trim();
+        return Regex.Replace(normalized, @"[^\p{L}\p{N}\s]+", " ", RegexOptions.None, RegexTimeout).Trim();
     }
 
     private static bool IsInsufficientDataAnswer(string answer)
@@ -3257,7 +3225,7 @@ public sealed class RagChatService : IRagChatService
 
     private static HashSet<string> ExtractGroundingFacts(string text)
     {
-        return Regex.Matches(NormalizeQuestion(text), @"\b(?:[a-z]{2,}\d{2,}|\d+(?:[.,]\d+)?%?)\b")
+        return Regex.Matches(NormalizeQuestion(text), @"\b(?:[a-z]{2,}\d{2,}|\d+(?:[.,]\d+)?%?)\b", RegexOptions.None, RegexTimeout)
             .Select(match => match.Value.Replace(',', '.'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
@@ -3348,32 +3316,6 @@ public sealed class RagChatService : IRagChatService
                || normalized.Contains("http ", StringComparison.Ordinal)
                || normalized.Contains("https ", StringComparison.Ordinal)
                || normalized.Contains("url ", StringComparison.Ordinal);
-    }
-
-    private static string BuildGroundedAnswer(IReadOnlySet<string> queryTerms, IReadOnlyList<DocumentChunk> chunks)
-    {
-        var selectedSentences = chunks
-            .SelectMany(chunk => SplitSentences(chunk.Text))
-            .Select(sentence => new
-            {
-                Text = sentence,
-                SharedTerms = CountSharedTerms(queryTerms, sentence)
-            })
-            .Where(item => item.Text.Length > 8 && item.SharedTerms > 0)
-            .OrderByDescending(item => item.SharedTerms)
-            .Select(item => item.Text)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(6)
-            .ToList();
-
-        if (selectedSentences.Count == 0)
-        {
-            return OutOfScopeAnswer;
-        }
-
-        return "Mình có thấy vài ý liên quan trong tài liệu. Tóm gọn lại nhé:\n\n" +
-               string.Join("\n", selectedSentences.Select(sentence => $"- {sentence}")) +
-               "\n\nNguồn mình để ngay bên dưới để bạn kiểm tra lại.";
     }
 
     private static string ResolveSubject(IReadOnlyList<DocumentChunk> chunks)
@@ -3569,8 +3511,8 @@ public sealed class RagChatService : IRagChatService
         var scopedTerms = new HashSet<string>(terms, StringComparer.OrdinalIgnoreCase);
         scopedTerms.RemoveWhere(term =>
         {
-            var normalized = Regex.Replace(term ?? string.Empty, @"[^a-z0-9]", string.Empty, RegexOptions.IgnoreCase);
-            return Regex.IsMatch(normalized, @"^[a-z]{2,}\d{2,}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+            var normalized = Regex.Replace(term ?? string.Empty, @"[^a-z0-9]", string.Empty, RegexOptions.IgnoreCase, RegexTimeout);
+            return Regex.IsMatch(normalized, @"^[a-z]{2,}\d{2,}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, RegexTimeout)
                    || normalized.Equals("syllabus", StringComparison.OrdinalIgnoreCase)
                    || normalized.Equals("subject", StringComparison.OrdinalIgnoreCase)
                    || normalized.Equals("course", StringComparison.OrdinalIgnoreCase)

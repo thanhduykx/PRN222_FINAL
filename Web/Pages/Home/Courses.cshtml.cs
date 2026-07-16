@@ -14,7 +14,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class CoursesModel : HomePageModelBase
 {
     public CoursesModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<CoursesModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

@@ -32,13 +32,21 @@
     <div class="package-membership__grid">
         @foreach (var package in Model.Packages)
         {
-            var tone = package.IsLifetime || package.Code.Contains("ANNUAL", StringComparison.OrdinalIgnoreCase)
-                ? "is-violet"
-                : package.IsFree
-                    ? "is-blue"
-                    : package.Code.Contains("PRO", StringComparison.OrdinalIgnoreCase)
-                        ? "is-violet"
-                        : "is-teal";
+            var isPremiumPackage = package.IsLifetime
+                || package.Code.Contains("ANNUAL", StringComparison.OrdinalIgnoreCase)
+                || package.Code.Contains("PRO", StringComparison.OrdinalIgnoreCase);
+            var tone = (isPremiumPackage, package.IsFree) switch
+            {
+                (true, _) => "is-violet",
+                (_, true) => "is-blue",
+                _ => "is-teal"
+            };
+            var packageIcon = (isPremiumPackage, package.IsFree) switch
+            {
+                (true, _) => "diamond",
+                (_, true) => "school",
+                _ => "workspace_premium"
+            };
             var packageI18nSuffix = package.Code.ToUpperInvariant() switch
             {
                 "FREE" => "free",
@@ -66,7 +74,7 @@
                 </div>
 
                 <div class="package-membership__icon" aria-hidden="true">
-                    <span class="material-symbols-outlined">@(package.IsLifetime || package.Code.Contains("ANNUAL", StringComparison.OrdinalIgnoreCase) ? "diamond" : package.IsFree ? "school" : "workspace_premium")</span>
+                    <span class="material-symbols-outlined">@packageIcon</span>
                 </div>
                 <span class="package-membership__code">@package.Code</span>
                 <h2 data-i18n="@packageNameI18n">@package.Name</h2>
@@ -125,34 +133,15 @@
                     }
                     else
                     {
-                        var paymentPanelId = $"payment-options-{package.Id:N}";
-                        <button type="button" class="package-membership__button" data-payment-toggle="@paymentPanelId" aria-controls="@paymentPanelId" aria-expanded="false">
-                            <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                            <span data-i18n="packages.selectPackage">Chọn gói này</span>
-                        </button>
-                        <div id="@paymentPanelId" class="package-membership__payment-options" hidden>
-                            <p data-i18n="packages.choosePayment">Chọn phương thức thanh toán</p>
-                            <form method="post" asp-page-handler="Checkout" data-checkout-form>
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="packageId" value="@package.Id" />
-                                <input type="hidden" name="provider" value="@PaymentProvider.MoMo" />
-                                <button type="submit" class="package-membership__payment-option is-momo">
-                                    <img src="~/img/payments/momo.svg" alt="" />
-                                    <span><strong>Ví MoMo</strong><small data-i18n="packages.payWithMomo">Thanh toán qua ứng dụng MoMo</small></span>
-                                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-                                </button>
-                            </form>
-                            <form method="post" asp-page-handler="Checkout" data-checkout-form>
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="packageId" value="@package.Id" />
-                                <input type="hidden" name="provider" value="@PaymentProvider.PayOS" />
-                                <button type="submit" class="package-membership__payment-option is-payos">
-                                    <img src="~/img/payments/payos.svg" alt="" />
-                                    <span><strong>PayOS</strong><small data-i18n="packages.payWithBanking">Quét mã QR bằng ứng dụng ngân hàng</small></span>
-                                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-                                </button>
-                            </form>
-                        </div>
+                        <form method="post" asp-page-handler="Checkout" data-checkout-form>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="packageId" value="@package.Id" />
+                            <input type="hidden" name="provider" value="@PaymentProvider.PayOS" />
+                            <button type="submit" class="package-membership__button">
+                                <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                                <span data-i18n="packages.selectPackage">Chọn gói này</span>
+                            </button>
+                        </form>
                     }
                 </div>
             </article>

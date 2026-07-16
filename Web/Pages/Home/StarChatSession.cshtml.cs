@@ -10,12 +10,11 @@ using PRN222_FINAL.BLL;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
-[IgnoreAntiforgeryToken]
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class StarChatSessionModel : HomePageModelBase
 {
     public StarChatSessionModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<StarChatSessionModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

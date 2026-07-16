@@ -1,0 +1,590 @@
+/* Admin reports reference layout */
+body.rbl-body:has(.ops-statistics-page) {
+  --rbl-primary: #0967dc;
+  --rbl-primary-soft: #edf5ff;
+  --rbl-bg: #f7faff;
+  --rbl-border: #e1e8f2;
+  --rbl-muted: #65758c;
+  --rbl-text: #071a3a;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-app-frame {
+  grid-template-columns: 225px minmax(0, 1fr);
+  background: #f7faff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar {
+  padding: 16px 10px;
+  border-right-color: #e1e8f2;
+  background: #ffffff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-brand {
+  grid-template-columns: 40px minmax(0, 1fr);
+  padding: 6px 8px 20px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #082f63;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-brand strong {
+  color: #071a3a;
+  font-size: .9rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-brand span:not(.material-symbols-outlined) {
+  color: #607086;
+  font-size: .78rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav {
+  gap: 9px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary {
+  min-height: 39px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #233653;
+  font-size: .83rem;
+  font-weight: 850;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link .material-symbols-outlined,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary .material-symbols-outlined {
+  color: #233653;
+  font-size: 19px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link:hover,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link:focus-visible,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary:hover,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary:focus-visible {
+  border-color: #d6e5f7;
+  background: #f5f9ff;
+  color: #0967dc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link.is-active,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary.is-active,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-dropdown[open] > summary {
+  border-color: #bfd8fb;
+  background: #eef6ff;
+  color: #0967dc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link.is-active .material-symbols-outlined,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-link-summary.is-active .material-symbols-outlined,
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-dropdown[open] > summary .material-symbols-outlined {
+  color: #0967dc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-dropdown[open] {
+  padding: 0 0 8px;
+  border: 1px solid #d7e7fb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-dropdown[open] > summary {
+  border-width: 0 0 1px;
+  border-color: #e5eef8;
+  border-radius: 7px 7px 0 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-sublist {
+  gap: 3px;
+  margin: 4px 6px 0 38px;
+  padding: 0;
+  border-left: 1px solid #d8e5f5;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-sublink {
+  min-height: 31px;
+  padding: 6px 9px;
+  border-radius: 5px;
+  color: #5f6f86;
+  font-size: .78rem;
+  font-weight: 760;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-sublink .material-symbols-outlined {
+  color: currentColor;
+  font-size: 16px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-nav-sublink.is-active {
+  background: #edf5ff;
+  color: #0967dc;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users {
+  margin-top: 18px;
+  border-color: #dfe8f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users .online-users-widget__header {
+  padding: 11px 12px 7px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users .online-users-widget__header h2 {
+  color: #071a3a;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users .online-users-widget__header p {
+  color: #31425a;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users .online-users-widget__body {
+  padding: 7px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-online-users .online-users-widget__item.is-current-user {
+  border-radius: 8px;
+  background: #fff4ee;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-sidebar-footer {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-user-card {
+  margin: 12px 0 0;
+  border: 0;
+  border-radius: 6px;
+  background: #f8fbff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-topbar {
+  min-height: 70px;
+  padding: 14px 28px;
+  border-bottom-color: #e1e8f2;
+  background: #ffffff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-topbar-title > span {
+  color: #071a3a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .rbl-main {
+  padding: 20px 34px;
+  background: #f7faff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-statistics-page {
+  gap: 14px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-header h1 {
+  margin: 0 0 5px;
+  color: #071a3a;
+  font-size: 1.55rem;
+  font-weight: 950;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-header p {
+  color: #5f6f86;
+  font-size: .82rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #071a3a;
+  font-size: .76rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-inline-field select {
+  min-width: 150px;
+  min-height: 38px;
+  border-color: #d8e2ef;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #17213a;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-button {
+  min-height: 38px;
+  border-radius: 7px;
+  font-size: .82rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-button--primary {
+  border-color: #0967dc;
+  background: linear-gradient(135deg, #0b7af2, #0967dc);
+  box-shadow: 0 10px 22px rgba(9, 103, 220, .18);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 26px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #dce7f3;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  min-width: auto;
+  padding: 9px 0 12px;
+  border-radius: 0;
+  background: transparent;
+  color: #506178;
+  font-size: .82rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-tab.is-active,
+body.rbl-body:has(.ops-statistics-page) .ops-tab:hover,
+body.rbl-body:has(.ops-statistics-page) .ops-tab:focus-visible {
+  background: transparent;
+  color: #0967dc;
+  box-shadow: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-tab.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: #0967dc;
+  content: "";
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis,
+body.rbl-body:has(.ops-statistics-page) .ops-subscription-kpis {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpi {
+  display: flex;
+  min-height: 104px;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(26, 53, 91, .045);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-kpi-content {
+  display: grid;
+  gap: 3px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpi .ops-kpi-icon,
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card .ops-kpi-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 12px;
+  font-size: 27px !important;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpi .ops-kpi-content > span,
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card .ops-kpi-content > span {
+  color: #65758c;
+  font-size: .76rem;
+  font-weight: 760;
+  text-transform: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpi .ops-kpi-content > strong,
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card .ops-kpi-content > strong {
+  color: #071a3a;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-kpi .ops-kpi-content > small,
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card .ops-kpi-content > small {
+  color: #6d7c91;
+  font-size: .7rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-strip,
+body.rbl-body:has(.ops-statistics-page) .ops-panel {
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(26, 53, 91, .045);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  min-height: 70px;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 10px 18px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-alert-card + .ops-stat-alert-card {
+  border-left: 1px solid #e7edf5;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr);
+  gap: 14px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -16px -16px 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #dfe8f3;
+  background: #ffffff;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-panel-head h2 {
+  color: #071a3a;
+  font-size: .94rem;
+  font-weight: 950;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-panel-head p {
+  color: #68778d;
+  font-size: .76rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-table-wrap {
+  border-color: #dfe8f3;
+  border-radius: 7px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-table thead {
+  background: #f1f6fc;
+  color: #1f2f48;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart {
+  position: relative;
+  display: block;
+  min-height: 300px;
+  padding: 18px 16px 34px;
+  overflow: hidden;
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  background:
+    linear-gradient(#e9eef6 1px, transparent 1px) 0 20px / 100% 54px,
+    linear-gradient(180deg, rgba(10, 124, 245, .05), rgba(10, 124, 245, 0));
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__svg {
+  position: absolute;
+  inset: 18px 16px 42px;
+  width: calc(100% - 32px);
+  height: calc(100% - 60px);
+  overflow: visible;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__area {
+  fill: url(#chatUsageFill);
+  stroke: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__line {
+  fill: none;
+  stroke: #0967dc;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__markers {
+  position: absolute;
+  inset: 18px 16px 42px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__marker {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #0967dc;
+  box-shadow: 0 3px 8px rgba(9, 103, 220, .24);
+  transform: translate(-50%, -50%);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__labels {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  left: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-line-chart__labels small {
+  color: #6d7a90;
+  font-size: .68rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-list {
+  display: grid;
+  gap: 14px;
+  padding: 2px 0 18px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #24344d;
+  font-size: .82rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-item .material-symbols-outlined {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  background: transparent !important;
+  font-size: 18px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-item.is-orange .material-symbols-outlined {
+  color: #f28b14;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-item.is-red .material-symbols-outlined {
+  color: #ef4444;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-action-item.is-blue .material-symbols-outlined {
+  color: #0967dc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-stat-empty {
+  display: grid;
+  min-height: 176px;
+  place-items: center;
+  place-content: center;
+  gap: 6px;
+  border: 1px solid #dfe8f3;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subscription-chart__plot {
+  min-height: 230px;
+  background:
+    linear-gradient(#e9eef6 1px, transparent 1px) 0 0 / 100% 42px,
+    linear-gradient(180deg, rgba(10, 124, 245, .035), rgba(10, 124, 245, 0));
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subscription-donut {
+  width: 174px;
+  height: 174px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subscription-insights {
+  padding: 16px !important;
+}
+
+body.rbl-body:has(.ops-statistics-page) .finance-summary,
+body.rbl-body:has(.ops-statistics-page) .package-economics {
+  display: none;
+}
+
+@media (max-width: 1500px) {
+  body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis,
+  body.rbl-body:has(.ops-statistics-page) .ops-subscription-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  body.rbl-body:has(.ops-statistics-page) .rbl-app-frame {
+    grid-template-columns: 1fr;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .rbl-sidebar {
+    position: relative;
+    height: auto;
+    min-height: auto;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-stat-kpis,
+  body.rbl-body:has(.ops-statistics-page) .ops-subscription-kpis,
+  body.rbl-body:has(.ops-statistics-page) .ops-subscription-grid,
+  body.rbl-body:has(.ops-statistics-page) .ops-subscription-insights {
+    grid-template-columns: 1fr;
+  }
+}

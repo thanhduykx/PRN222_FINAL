@@ -7,26 +7,26 @@
     ViewData["ActiveNav"] = "billing";
     ViewData["ShellTitle"] = "Kết quả thanh toán";
 
-    var status = Model.Status?.Status == PaymentStatus.Paid
-        ? PaymentStatus.Paid
-        : Model.ReturnStatusHint is PaymentStatus.Failed or PaymentStatus.Canceled
-            ? Model.ReturnStatusHint
-            : Model.Status?.Status;
+    var status = (Model.Status?.Status, Model.ReturnStatusHint) switch
+    {
+        (PaymentStatus.Paid, _) => PaymentStatus.Paid,
+        (_, PaymentStatus.Failed) => PaymentStatus.Failed,
+        (_, PaymentStatus.Canceled) => PaymentStatus.Canceled,
+        _ => Model.Status?.Status
+    };
     var isSuccess = status == PaymentStatus.Paid;
     var isFailure = status is PaymentStatus.Failed or PaymentStatus.Canceled;
-    var stateClass = isSuccess ? "is-success" : isFailure ? "is-error" : "is-pending";
-    var stateIcon = isSuccess ? "check_circle" : isFailure ? "cancel" : "hourglass_top";
-    var stateTitle = isSuccess
-        ? "Thanh toán thành công"
-        : isFailure
-            ? "Thanh toán chưa thành công"
-            : "Đang xác nhận thanh toán";
-    var stateMessage = isSuccess
-        ? "Gói trợ lý học tập đã được kích hoạt và sẵn sàng sử dụng."
-        : isFailure
-            ? "Giao dịch chưa hoàn tất nên gói hiện tại của bạn không thay đổi."
-            : "Hệ thống đang chờ xác nhận từ cổng thanh toán. Bạn có thể kiểm tra lại sau ít phút.";
-    var statusLabel = isSuccess ? "Đã thanh toán" : isFailure ? "Chưa hoàn tất" : "Đang xử lý";
+    var state = (isSuccess, isFailure) switch
+    {
+        (true, _) => (Css: "is-success", Icon: "check_circle", Title: "Thanh toán thành công", Message: "Gói trợ lý học tập đã được kích hoạt và sẵn sàng sử dụng.", Label: "Đã thanh toán"),
+        (_, true) => (Css: "is-error", Icon: "cancel", Title: "Thanh toán chưa thành công", Message: "Giao dịch chưa hoàn tất nên gói hiện tại của bạn không thay đổi.", Label: "Chưa hoàn tất"),
+        _ => (Css: "is-pending", Icon: "hourglass_top", Title: "Đang xác nhận thanh toán", Message: "Hệ thống đang chờ xác nhận từ cổng thanh toán. Bạn có thể kiểm tra lại sau ít phút.", Label: "Đang xử lý")
+    };
+    var stateClass = state.Css;
+    var stateIcon = state.Icon;
+    var stateTitle = state.Title;
+    var stateMessage = state.Message;
+    var statusLabel = state.Label;
     var providerName = Model.Status?.Provider.ToString() ?? string.Empty;
     var providerLogo = providerName.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
         ? "/img/payments/momo.svg"

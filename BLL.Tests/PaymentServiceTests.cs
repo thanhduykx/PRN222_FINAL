@@ -51,8 +51,11 @@ public sealed class PaymentServiceTests
         var pending = new KnowledgeSqlPayment
         {
             Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id, Package = package,
+            UserName = "Nguyen Van A", UserEmail = "student@example.edu",
             Provider = PaymentProvider.PayOS, Status = PaymentStatus.Pending,
             AmountVnd = package.PriceVnd, OrderCode = "123456789", CheckoutUrl = "https://pay.example/123",
+            QrCode = "00020101021238570010A000000727",
+            RawResponse = """{"code":"00","data":{"accountName":"COURSE ASSISTANT","accountNumber":"1234567890","bin":"970422","description":"PAY 123456789"}}""",
             CreatedAt = now.AddMinutes(-4)
         };
         var payments = Substitute.For<IPaymentRepository>();
@@ -67,6 +70,12 @@ public sealed class PaymentServiceTests
         var item = Assert.Single(result);
         Assert.Equal(pending.Id, item.PaymentId);
         Assert.Equal(now.AddMinutes(6), item.ExpiresAt);
+        Assert.Equal(pending.UserName, item.RecipientName);
+        Assert.Equal(pending.UserEmail, item.RecipientEmail);
+        Assert.Equal("COURSE ASSISTANT", item.PayeeAccountName);
+        Assert.Equal("1234567890", item.PayeeAccountNumber);
+        Assert.Equal("970422", item.PayeeBankBin);
+        Assert.Equal("PAY 123456789", item.TransferDescription);
     }
 
     [Fact]

@@ -71,11 +71,18 @@
         <section class="course-card-grid">
             @foreach (var course in Model.Courses)
             {
+                var isReady = course.DocumentCount > 0 && course.IndexedDocumentCount == course.DocumentCount;
+                var status = (course.DocumentCount == 0, isReady) switch
+                {
+                    (true, _) => (Css: "needs-attention", I18n: "courses.statusMissing", Label: "Thiếu tài liệu"),
+                    (_, true) => (Css: "is-ready", I18n: "courses.statusReady", Label: "Sẵn sàng"),
+                    _ => (Css: "needs-attention", I18n: "courses.statusAttention", Label: "Cần kiểm tra")
+                };
                 <a class="course-workspace-card" asp-page="/Home/CourseWorkspace" asp-route-id="@course.Id">
                     <div class="course-workspace-card__head">
                         <span class="material-symbols-outlined" aria-hidden="true">school</span>
-                        <span class="course-readiness-badge @(course.DocumentCount > 0 && course.IndexedDocumentCount == course.DocumentCount ? "is-ready" : "needs-attention")" data-i18n="@(course.DocumentCount == 0 ? "courses.statusMissing" : course.IndexedDocumentCount == course.DocumentCount ? "courses.statusReady" : "courses.statusAttention")">
-                            @(course.DocumentCount == 0 ? "Thiếu tài liệu" : course.IndexedDocumentCount == course.DocumentCount ? "Sẵn sàng" : "Cần kiểm tra")
+                        <span class="course-readiness-badge @status.Css" data-i18n="@status.I18n">
+                            @status.Label
                         </span>
                     </div>
                     <div class="course-workspace-card__body">

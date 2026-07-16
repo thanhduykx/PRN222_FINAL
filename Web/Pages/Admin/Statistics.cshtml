@@ -47,7 +47,7 @@
             return new { Day = day, X = x, Y = y };
         })
         .ToList();
-    var dailyChartPath = string.Join(" ", dailyChartPoints.Select(point => FormattableString.Invariant($"{point.X:0.##},{point.Y:0.##}")));
+    var dailyChartPath = string.Join(" ", dailyChartPoints.Select(point => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{point.X:0.##},{point.Y:0.##}")));
     var maxSubscriptionTrend = Math.Max(1, Model.Dashboard.DailySubscriptionUsage
         .Select(day => Math.Max(day.NewSubscriptionCount, day.SuccessfulPaymentCount))
         .DefaultIfEmpty(0)
@@ -74,7 +74,7 @@
         }
 
         var nextCursor = donutCursor + packageVolume * 100d / totalPackageVolume;
-        donutStops.Add(FormattableString.Invariant($"{packageColors[packageIndex % packageColors.Length]} {donutCursor:0.##}% {nextCursor:0.##}%"));
+        donutStops.Add(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{packageColors[packageIndex % packageColors.Length]} {donutCursor:0.##}% {nextCursor:0.##}%"));
         donutCursor = nextCursor;
     }
 
@@ -320,7 +320,7 @@
                             <div class="ops-line-chart__markers">
                                 @foreach (var point in dailyChartPoints)
                                 {
-                                    <span class="ops-line-chart__marker" style="left:@FormattableString.Invariant($"{point.X:0.##}")%; top:@FormattableString.Invariant($"{point.Y:0.##}")%;" title="@point.Day.QuestionCount.ToString("N0") câu hỏi"></span>
+                                    <span class="ops-line-chart__marker" style="left:@string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{point.X:0.##}")%; top:@string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{point.Y:0.##}")%;" title="@point.Day.QuestionCount.ToString("N0") câu hỏi"></span>
                                 }
                             </div>
                             <div class="ops-line-chart__labels">
@@ -512,7 +512,7 @@
                                 var slotWidth = slot.QuestionCount * 100d / maxSemesterTimeSlotQuestions;
                                 <div class="ops-time-bar">
                                     <div class="ops-time-bar__label"><strong>@slot.Label</strong><span>@slotPercent% · @slot.ActiveUserCount người</span></div>
-                                    <div class="ops-time-bar__track"><span style="width: @FormattableString.Invariant($"{slotWidth:0.##}%")"></span></div>
+                                    <div class="ops-time-bar__track"><span style="width: @string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{slotWidth:0.##}%")"></span></div>
                                     <b>@slot.QuestionCount.ToString("N0")</b>
                                 </div>
                             }

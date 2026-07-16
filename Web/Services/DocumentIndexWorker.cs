@@ -93,21 +93,19 @@ public sealed class DocumentIndexWorker : BackgroundService
             }
         }
 
+        var failure = lastError!;
         using (var scope = _scopeFactory.CreateScope())
         {
             var knowledge = scope.ServiceProvider.GetRequiredService<IKnowledgeService>();
             await knowledge.MarkDocumentIndexFailedAsync(
                 documentId,
-                lastError?.Message ?? "Document indexing failed.",
+                failure.Message,
                 cancellationToken);
         }
 
         await _documentStatusNotifier.NotifyDocumentStatusChangedAsync(documentId, CancellationToken.None);
 
-        if (lastError is not null)
-        {
-            _logger.LogError(lastError, "Document indexing failed permanently for {DocumentId}", documentId);
-        }
+        _logger.LogError(failure, "Document indexing failed permanently for {DocumentId}", documentId);
     }
 }
 

@@ -32,6 +32,8 @@ public sealed class AiSettingsService : IAiSettingsService
         "gemini-embedding-001",
         "text-embedding-004"
     ];
+    private static readonly IReadOnlyList<string> AllChatModels = Array.AsReadOnly(
+        ChatModelsByProvider.Values.SelectMany(models => models).ToArray());
 
     private readonly string _settingsPath;
     private readonly GeminiOptions _gemini;
@@ -63,7 +65,7 @@ public sealed class AiSettingsService : IAiSettingsService
         }
     }
     public IReadOnlyList<string> SupportedChatProviders => [ChatProviders.Gemini, ChatProviders.Groq];
-    public IReadOnlyList<string> SupportedChatModels => ChatModelsByProvider.Values.SelectMany(models => models).ToArray();
+    public IReadOnlyList<string> SupportedChatModels => AllChatModels;
     public IReadOnlyDictionary<string, IReadOnlyList<string>> SupportedChatModelsByProvider => ChatModelsByProvider;
     public IReadOnlyList<string> SupportedEmbeddingModels => EmbeddingModels;
 
@@ -129,11 +131,11 @@ public sealed class AiSettingsService : IAiSettingsService
         if (!EmbeddingModels.Contains(embeddingModel, StringComparer.OrdinalIgnoreCase))
             throw new ArgumentException("Model đọc tài liệu không nằm trong danh sách được hỗ trợ.");
         if (settings.EmbeddingDimensions is < 128 or > 4096)
-            throw new ArgumentOutOfRangeException(nameof(settings.EmbeddingDimensions), "Độ chi tiết dữ liệu phải từ 128 đến 4.096.");
+            throw new ArgumentOutOfRangeException(nameof(settings), "Độ chi tiết dữ liệu phải từ 128 đến 4.096.");
         if (settings.ChunkSize is < 300 or > 4000)
-            throw new ArgumentOutOfRangeException(nameof(settings.ChunkSize), "Độ dài mỗi đoạn phải từ 300 đến 4.000 ký tự.");
+            throw new ArgumentOutOfRangeException(nameof(settings), "Độ dài mỗi đoạn phải từ 300 đến 4.000 ký tự.");
         if (settings.ChunkOverlap < 0 || settings.ChunkOverlap > Math.Min(500, settings.ChunkSize / 3))
-            throw new ArgumentOutOfRangeException(nameof(settings.ChunkOverlap), "Phần nối không hợp lệ.");
+            throw new ArgumentOutOfRangeException(nameof(settings), "Phần nối không hợp lệ.");
         return settings with { ChatProvider = chatProvider, ChatModel = chatModel, EmbeddingModel = embeddingModel };
     }
 }
