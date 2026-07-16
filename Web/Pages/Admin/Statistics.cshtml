@@ -14,8 +14,8 @@
         : Math.Min(100, (int)Math.Round(Model.Dashboard.TotalAssistantAnswers * 100d / Model.Dashboard.TotalChatQuestions));
     var documentIssueCount = Model.Dashboard.FailedDocuments;
     var subjectsWithoutDocuments = Model.Dashboard.SubjectUsage.Count(subject => subject.DocumentCount == 0);
-    var subjectsWithoutOwner = Model.Dashboard.SubjectUsage.Count(subject => string.IsNullOrWhiteSpace(subject.OwnerName) && string.IsNullOrWhiteSpace(subject.OwnerEmail));
-    var uploadPermissionCount = Model.Dashboard.SubjectUsage.Sum(subject => subject.LecturerCount);
+    var subjectsWithoutOwner = Model.Dashboard.SubjectUsage.Count(subject => !subject.OwnerUserId.HasValue);
+    var uploadPermissionCount = Model.Dashboard.SubjectUsage.Count(subject => subject.OwnerUserId.HasValue);
     var topSubjects = Model.Dashboard.SubjectUsage
         .OrderByDescending(subject => subject.ChatCitationCount)
         .ThenByDescending(subject => subject.CourseAccessCount)
@@ -95,6 +95,7 @@
     string TabClass(string tab) => $"ops-tab{(Model.Tab == tab ? " is-active" : "")}";
     string ReportDate(DateTimeOffset value) => value.ToLocalTime().ToString("dd/MM/yyyy");
     string ReportTimestamp(DateTimeOffset value) => value.ToLocalTime().ToString("HH:mm, dd/MM/yyyy");
+    string ProviderLabel(string provider) => provider.Equals("PayOS", StringComparison.OrdinalIgnoreCase) ? "VietQR" : provider;
     string PercentLabel(int numerator, int denominator) => denominator <= 0 ? "0%" : $"{Math.Min(100, (int)Math.Round(numerator * 100d / denominator))}%";
     string MoneyVnd(decimal value) => value >= 1_000_000 ? $"{value / 1_000_000m:N1}M" : $"{value:N0}đ";
     string UserInitial(string value) => string.IsNullOrWhiteSpace(value) ? "U" : value.Trim()[..1].ToUpperInvariant();
@@ -354,19 +355,23 @@
             </div>
 
             <div class="ops-stat-two-column">
-                <section class="ops-panel">
-                    <div class="ops-panel-head">
-                        <div>
-                            <h2 data-i18n="stat.topSubjects">Top môn học được hỏi nhiều</h2>
-                            <p class="ops-muted mb-0" data-i18n="stat.topSubjectsDesc">Ưu tiên môn cần bổ sung học liệu hoặc người phụ trách.</p>
+                <section class="ops-panel ops-overview-ranking-card">
+                    <div class="ops-panel-head ops-overview-ranking-head">
+                        <div class="ops-overview-heading">
+                            <span class="material-symbols-outlined is-indigo" aria-hidden="true">leaderboard</span>
+                            <div>
+                                <h2 data-i18n="stat.topSubjects">Môn học được hỏi nhiều</h2>
+                                <p class="ops-muted mb-0" data-i18n="stat.topSubjectsDesc">Danh sách các môn học được trợ lý trích dẫn nhiều nhất để trả lời câu hỏi.</p>
+                            </div>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("documents")" data-i18n="admin.viewAll">Xem tất cả</a>
                     </div>
-                    <div class="ops-table-wrap">
+                    <div class="ops-table-wrap ops-overview-subject-table">
                         <table class="ops-table ops-compact-table">
                             <caption class="visually-hidden" data-i18n="admin.topSubjectsCaption">Các môn học có nhiều lượt trích dẫn trong chatbot</caption>
                             <thead>
                                 <tr>
+                                    <th aria-label="Xếp hạng">#</th>
                                     <th data-i18n="stat.thSubject">Môn học</th>
                                     <th data-i18n="stat.thQuestions">Câu hỏi</th>
                                     <th data-i18n="stat.thDocs">Tài liệu</th>
@@ -377,7 +382,7 @@
                                 @if (topSubjects.Count == 0)
                                 {
                                     <tr>
-                                        <td colspan="4">
+                                        <td colspan="5">
                                             <div class="ops-empty ops-stat-empty ops-stat-empty--compact">
                                                 <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
                                                 <strong data-i18n="admin.noData">Chưa có dữ liệu</strong>
@@ -386,18 +391,22 @@
                                         </td>
                                     </tr>
                                 }
-                                @foreach (var subject in topSubjects)
+                                @foreach (var rankedSubject in topSubjects.Select((subject, index) => new { subject, index }))
                                 {
+                                    var subject = rankedSubject.subject;
                                     var readiness = subject.DocumentCount == 0 ? 0 : Math.Min(100, (int)Math.Round(subject.IndexedDocumentCount * 100d / subject.DocumentCount));
                                     <tr>
+                                        <td data-label="#"><span class="ops-overview-rank is-rank-@(rankedSubject.index + 1)">@(rankedSubject.index + 1)</span></td>
                                         <td data-label="Môn học" data-i18n-data-label="stat.thSubject"><div class="ops-stack"><strong>@subject.SubjectCode</strong><small>@subject.SubjectName</small></div></td>
                                         <td data-label="Câu hỏi" data-i18n-data-label="stat.thQuestions">@subject.ChatCitationCount.ToString("N0")</td>
                                         <td data-label="Tài liệu" data-i18n-data-label="stat.thDocs">@subject.DocumentCount.ToString("N0")</td>
                                         <td data-label="Tỷ lệ sẵn sàng" data-i18n-data-label="stat.thReadiness">
-                                            <div class="ops-progress">
-                                                <span style="width:@readiness%"></span>
+                                            <div class="ops-overview-readiness">
+                                                <small>@readiness%</small>
+                                                <div class="ops-progress" aria-label="Mức sẵn sàng @readiness%">
+                                                    <span style="width:@readiness%"></span>
+                                                </div>
                                             </div>
-                                            <small>@readiness%</small>
                                         </td>
                                     </tr>
                                 }
@@ -406,25 +415,28 @@
                     </div>
                 </section>
 
-                <section class="ops-panel">
-                    <div class="ops-panel-head">
-                        <div>
-                            <h2 data-i18n="stat.topChatUsers">Người dùng chat nhiều nhất</h2>
-                            <p class="ops-muted mb-0" data-i18n="stat.topChatUsersDesc">Theo số câu hỏi trong khoảng lọc.</p>
+                <section class="ops-panel ops-overview-ranking-card">
+                    <div class="ops-panel-head ops-overview-ranking-head">
+                        <div class="ops-overview-heading">
+                            <span class="material-symbols-outlined is-indigo" aria-hidden="true">group</span>
+                            <div>
+                                <h2 data-i18n="stat.topChatUsers">Người dùng hỏi nhiều nhất</h2>
+                                <p class="ops-muted mb-0" data-i18n="stat.topChatUsersDesc">Biết được những sinh viên đang tận dụng trợ lý học tập nhiều nhất.</p>
+                            </div>
                         </div>
                         <a class="ops-panel-note" href="@TabUrl("users")" data-i18n="admin.viewAll">Xem tất cả</a>
                     </div>
-                    <div class="ops-ranked-list">
+                    <div class="ops-ranked-list ops-overview-user-list">
                         @foreach (var user in Model.Dashboard.TopChatUsers.Take(5).Select((item, index) => new { item, index }))
                         {
-                            <div class="ops-ranked-item">
-                                <span class="ops-rank">@(user.index + 1)</span>
-                                <span class="ops-avatar">@UserInitial(user.item.UserName)</span>
+                            <div class="ops-ranked-item ops-overview-user-row">
+                                <span class="ops-overview-user-rank">@(user.index + 1)</span>
+                                <span class="ops-avatar @(user.index % 2 == 0 ? "is-blue" : "is-violet")">@UserInitial(user.item.UserName)</span>
                                 <div class="ops-user-identity">
                                     <strong>@user.item.UserName</strong>
                                     <small>@ShortEmail(user.item.UserEmail)</small>
                                 </div>
-                                <strong>@user.item.QuestionCount.ToString("N0") <span data-i18n="admin.questionsUnit">câu hỏi</span></strong>
+                                <strong class="ops-overview-question-count">@user.item.QuestionCount.ToString("N0") <span data-i18n="admin.questionsUnit">câu hỏi</span></strong>
                             </div>
                         }
                         @if (Model.Dashboard.TopChatUsers.Count == 0)
@@ -438,21 +450,33 @@
                 </section>
             </div>
 
-            <section class="ops-panel ops-insight-strip">
-                <div class="ops-insight-label">
+            <section class="ops-panel ops-overview-insights">
+                <header class="ops-overview-insights__head">
+                    <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
                     <strong data-i18n="stat.quickInsight">Insight nhanh</strong>
-                </div>
-                <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-blue" aria-hidden="true">trending_up</span>
-                    <span><strong>@(topSubjects.FirstOrDefault()?.SubjectCode ?? "Môn học")</strong> <span data-i18n="stat.mostCitedSubject">đang có nhiều citation chat nhất trong khoảng lọc.</span></span>
-                </div>
-                <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-orange" aria-hidden="true">priority_high</span>
-                    <span><span data-i18n="stat.thereAre">Có</span> <strong>@unansweredQuestions.ToString("N0")</strong> <span data-i18n="stat.questionsNeedChecking">câu hỏi cần kiểm tra nguồn trả lời.</span></span>
-                </div>
-                <div class="ops-insight-item">
-                    <span class="material-symbols-outlined is-green" aria-hidden="true">article</span>
-                    <span><strong>@Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0")</strong> <span data-i18n="stat.docsReadyForChatbot">tài liệu đã sẵn sàng cho chatbot.</span></span>
+                </header>
+                <div class="ops-overview-insights__grid">
+                    <article class="ops-overview-insight is-blue">
+                        <span class="material-symbols-outlined" aria-hidden="true">trending_up</span>
+                        <div>
+                            <strong>@(topSubjects.FirstOrDefault()?.SubjectCode ?? "Môn học")</strong>
+                            <small data-i18n="stat.mostCitedSubjectShort">là môn được trích dẫn nhiều nhất</small>
+                        </div>
+                    </article>
+                    <article class="ops-overview-insight is-orange">
+                        <span class="material-symbols-outlined" aria-hidden="true">priority_high</span>
+                        <div>
+                            <strong>@unansweredQuestions.ToString("N0") câu hỏi</strong>
+                            <small data-i18n="stat.needsReviewShort">cần xem lại</small>
+                        </div>
+                    </article>
+                    <article class="ops-overview-insight is-green">
+                        <span class="material-symbols-outlined" aria-hidden="true">task</span>
+                        <div>
+                            <strong>@Model.Dashboard.IndexedDocuments.ToString("N0")/@Model.Dashboard.TotalDocuments.ToString("N0") tài liệu</strong>
+                            <small data-i18n="stat.readyForChatbotShort">sẵn sàng cho chatbot</small>
+                        </div>
+                    </article>
                 </div>
             </section>
         }
@@ -666,7 +690,19 @@
                             @foreach (var subject in Model.Dashboard.SubjectUsage)
                             {
                                 var owner = string.IsNullOrWhiteSpace(subject.OwnerName) ? subject.OwnerEmail : subject.OwnerName;
-                                <tr><td data-label="Người dùng" data-i18n-data-label="admin.thUser"><strong>@(string.IsNullOrWhiteSpace(owner) ? Html.Raw("<span data-i18n=\"admin.unassigned\">Chưa phân công</span>") : Html.Raw(owner))</strong><small>@ShortEmail(subject.OwnerEmail)</small></td><td data-label="Vai trò" data-i18n-data-label="admin.thRole" data-i18n="admin.leaderLecturer">Giảng viên phụ trách</td><td data-label="Môn phụ trách" data-i18n-data-label="admin.thLeaderSubject">@subject.SubjectCode</td><td data-label="Quyền upload" data-i18n-data-label="admin.thUploadPerms">@(subject.LecturerCount > 0 ? Html.Raw("<span data-i18n=\"admin.yes\">Có</span>") : Html.Raw("<span data-i18n=\"admin.notYet\">Chưa có</span>"))</td><td data-label="Trạng thái" data-i18n-data-label="admin.thStatus"><span class="rbl-status @(string.IsNullOrWhiteSpace(owner) ? "is-running" : "is-success")" data-i18n="admin.status.@(string.IsNullOrWhiteSpace(owner) ? "needsAssign" : "active")">@(string.IsNullOrWhiteSpace(owner) ? "Cần gán" : "Active")</span></td></tr>
+                                var hasUploadPermission = subject.OwnerUserId.HasValue;
+                                <tr>
+                                    <td data-label="Người dùng" data-i18n-data-label="admin.thUser">
+                                        <div class="ops-user-lines">
+                                            <strong>@(string.IsNullOrWhiteSpace(owner) ? Html.Raw("<span data-i18n=\"admin.unassigned\">Chưa phân công</span>") : Html.Raw(owner))</strong>
+                                            <small>@ShortEmail(subject.OwnerEmail)</small>
+                                        </div>
+                                    </td>
+                                    <td data-label="Vai trò" data-i18n-data-label="admin.thRole" data-i18n="admin.leaderLecturer">Giảng viên phụ trách</td>
+                                    <td data-label="Môn phụ trách" data-i18n-data-label="admin.thLeaderSubject">@subject.SubjectCode</td>
+                                    <td data-label="Quyền upload" data-i18n-data-label="admin.thUploadPerms">@(hasUploadPermission ? Html.Raw("<span data-i18n=\"admin.yes\">Có</span>") : Html.Raw("<span data-i18n=\"admin.notYet\">Chưa có</span>"))</td>
+                                    <td data-label="Trạng thái" data-i18n-data-label="admin.thStatus"><span class="rbl-status @(hasUploadPermission ? "is-success" : "is-running")" data-i18n="admin.status.@(hasUploadPermission ? "active" : "needsAssign")">@(hasUploadPermission ? "Active" : "Cần gán")</span></td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -767,8 +803,10 @@
                         </div>
                         <div class="ops-subscription-donut-layout">
                             <div class="ops-subscription-donut" style="--subscription-donut:@subscriptionDonut">
-                                <span>Tổng</span>
-                                <strong>@totalPackageVolume.ToString("N0")</strong>
+                                <div class="ops-subscription-donut__label">
+                                    <span>Tổng</span>
+                                    <strong>@totalPackageVolume.ToString("N0")</strong>
+                                </div>
                             </div>
                             <div class="ops-subscription-mix-table">
                                 <div class="ops-subscription-mix-row is-head"><span>Gói</span><span>Số lượng</span><span>Tỷ lệ</span></div>
@@ -849,9 +887,14 @@
                                     @foreach (var payment in Model.Dashboard.RecentPayments.Take(6))
                                     {
                                         <tr>
-                                            <td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td>
+                                            <td data-label="User">
+                                                <div class="ops-user-lines">
+                                                    <strong>@payment.UserName</strong>
+                                                    <small>@ShortEmail(payment.UserEmail)</small>
+                                                </div>
+                                            </td>
                                             <td data-label="Gói">@payment.PackageName</td>
-                                            <td data-label="Cổng">@payment.Provider</td>
+                                            <td data-label="Cổng">@ProviderLabel(payment.Provider)</td>
                                             <td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td>
                                             <td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</td>
                                         </tr>
@@ -889,7 +932,7 @@
             </section>
             <div class="ops-stat-two-column">
                 <section class="ops-panel"><div class="ops-panel-head"><div><h2>Thống kê mua gói</h2><p class="ops-muted mb-0">Doanh thu và trạng thái theo package.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><caption class="visually-hidden">Thống kê doanh thu và giao dịch theo gói</caption><thead><tr><th>Gói</th><th>Paid</th><th>Pending</th><th>Failed</th><th>Doanh thu</th></tr></thead><tbody>@foreach (var package in Model.Dashboard.PackagePurchases){<tr><td data-label="Gói"><strong>@package.PackageName</strong><small>@package.PackageCode</small></td><td data-label="Paid">@package.PaidCount</td><td data-label="Pending">@package.PendingCount</td><td data-label="Failed">@package.FailedCount</td><td data-label="Doanh thu">@package.RevenueVnd.ToString("N0") VND</td></tr>}</tbody></table></div></section>
-                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giao dịch gần nhất</h2><p class="ops-muted mb-0">Bảng rút gọn để tránh cuộn ngang.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><caption class="visually-hidden">Danh sách giao dịch thanh toán gần nhất</caption><thead><tr><th>User</th><th>Gói</th><th>Cổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody>@foreach (var payment in Model.Dashboard.RecentPayments){<tr><td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td><td data-label="Gói">@payment.PackageName</td><td data-label="Cổng">@payment.Provider</td><td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td><td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM")</td></tr>}</tbody></table></div></section>
+                <section class="ops-panel"><div class="ops-panel-head"><div><h2>Giao dịch gần nhất</h2><p class="ops-muted mb-0">Bảng rút gọn để tránh cuộn ngang.</p></div></div><div class="ops-table-wrap"><table class="ops-table ops-compact-table"><caption class="visually-hidden">Danh sách giao dịch thanh toán gần nhất</caption><thead><tr><th>User</th><th>Gói</th><th>Cổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody>@foreach (var payment in Model.Dashboard.RecentPayments){<tr><td data-label="User"><strong>@payment.UserName</strong><small>@ShortEmail(payment.UserEmail)</small></td><td data-label="Gói">@payment.PackageName</td><td data-label="Cổng">@ProviderLabel(payment.Provider)</td><td data-label="Trạng thái"><span class="rbl-status @StatusClass(payment.Status)">@StatusLabel(payment.Status)</span></td><td data-label="Ngày">@payment.CreatedAt.LocalDateTime.ToString("dd/MM")</td></tr>}</tbody></table></div></section>
             </div>
         }
 

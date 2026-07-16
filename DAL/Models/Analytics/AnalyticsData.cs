@@ -51,6 +51,7 @@ public sealed class SubjectUsageData
     public Guid SubjectId { get; set; }
     public string SubjectCode { get; set; } = string.Empty;
     public string SubjectName { get; set; } = string.Empty;
+    public Guid? OwnerUserId { get; set; }
     public string OwnerName { get; set; } = string.Empty;
     public string OwnerEmail { get; set; } = string.Empty;
     public int LecturerCount { get; set; }
