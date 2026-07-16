@@ -40,16 +40,44 @@ public sealed class AccountEmailWorker : BackgroundService
             catch (Exception exception)
             {
                 _logger.LogError(exception, "Could not claim the next account email job.");
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                if (!await DelayUntilNextAttemptAsync(TimeSpan.FromSeconds(10), stoppingToken))
+                {
+                    break;
+                }
+
                 continue;
             }
             if (job is null)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                if (!await DelayUntilNextAttemptAsync(TimeSpan.FromSeconds(2), stoppingToken))
+                {
+                    break;
+                }
+
                 continue;
             }
 
-            await ProcessAsync(job, stoppingToken);
+            try
+            {
+                await ProcessAsync(job, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+    }
+
+    private static async Task<bool> DelayUntilNextAttemptAsync(TimeSpan delay, CancellationToken stoppingToken)
+    {
+        try
+        {
+            await Task.Delay(delay, stoppingToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            return false;
         }
     }
 
