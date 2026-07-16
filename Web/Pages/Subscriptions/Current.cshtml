@@ -27,8 +27,11 @@
         "Pending" => "schedule",
         _ => "cancel"
     };
-    string ProviderLogo(string provider) => provider.Equals("MoMo", StringComparison.OrdinalIgnoreCase)
-        ? "/img/payments/momo.svg" : "/img/payments/payos.svg";
+    bool IsMomo(string provider) => provider.Equals("MoMo", StringComparison.OrdinalIgnoreCase);
+    string ProviderName(string provider) => IsMomo(provider) ? "MoMo" : "VietQR";
+    string ProviderLogo(string provider) => IsMomo(provider)
+        ? "/img/payments/momo.png" : "/img/payments/vietqr.png";
+    string ProviderClass(string provider) => IsMomo(provider) ? "is-momo" : "is-vietqr";
     var premiumCode = Model.Subscription?.PackageCode?.ToUpperInvariant() ?? string.Empty;
     var hasPremiumEffects = premiumCode is "PRO" or "ANNUAL";
     var profileInitial = string.IsNullOrWhiteSpace(Model.Profile.FullName) ? "U" : Model.Profile.FullName.Trim()[..1].ToUpperInvariant();
@@ -101,7 +104,12 @@
                     var receiptId = $"receipt-{payment.PaymentId:N}";
                     <details class="transaction-item @StatusClass(payment.Status)">
                         <summary>
-                            <img src="@ProviderLogo(payment.Provider)" alt="" />
+                            <span class="transaction-provider-logo @ProviderClass(payment.Provider)">
+                                <img src="@ProviderLogo(payment.Provider)"
+                                     alt="Logo @ProviderName(payment.Provider)"
+                                     width="@(IsMomo(payment.Provider) ? 32 : 46)"
+                                     height="@(IsMomo(payment.Provider) ? 32 : 24)" />
+                            </span>
                             <span class="transaction-item__identity"><strong>@payment.PackageName</strong><small>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy · HH:mm")</small></span>
                             <strong class="transaction-item__amount">@payment.AmountVnd.ToString("N0") VND</strong>
                             <span class="transaction-item__status">@StatusLabel(payment.Status)</span>
@@ -113,7 +121,18 @@
                             <div class="payment-receipt__customer"><span data-i18n="subscriptions.buyer">Người mua</span><strong>@Model.Profile.FullName</strong><small>@Model.AccountEmail</small></div>
                             <dl>
                                 <div><dt data-i18n="subscriptions.packageLabel">Gói dịch vụ</dt><dd>@payment.PackageName</dd></div>
-                                <div><dt data-i18n="subscriptions.gatewayLabel">Cổng thanh toán</dt><dd><img src="@ProviderLogo(payment.Provider)" alt="" /> @payment.Provider</dd></div>
+                                <div>
+                                    <dt data-i18n="subscriptions.gatewayLabel">Cổng thanh toán</dt>
+                                    <dd>
+                                        <span class="payment-provider-inline @ProviderClass(payment.Provider)">
+                                            <img src="@ProviderLogo(payment.Provider)"
+                                                 alt=""
+                                                 width="@(IsMomo(payment.Provider) ? 22 : 42)"
+                                                 height="@(IsMomo(payment.Provider) ? 22 : 20)" />
+                                            <span>@ProviderName(payment.Provider)</span>
+                                        </span>
+                                    </dd>
+                                </div>
                                 <div><dt data-i18n="subscriptions.orderCodeLabel">Mã đơn hàng</dt><dd>@payment.OrderCode</dd></div>
                                 <div><dt data-i18n="subscriptions.createdAtLabel">Ngày tạo</dt><dd>@payment.CreatedAt.LocalDateTime.ToString("dd/MM/yyyy HH:mm")</dd></div>
                                 <div><dt data-i18n="subscriptions.paidAtLabel">Ngày thanh toán</dt><dd>@(payment.PaidAt.HasValue ? payment.PaidAt.Value.LocalDateTime.ToString("dd/MM/yyyy HH:mm") : "")@if(!payment.PaidAt.HasValue){<span data-i18n="subscriptions.unconfirmed">Chưa xác nhận</span>}</dd></div>
