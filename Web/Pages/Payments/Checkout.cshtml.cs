@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -128,6 +129,36 @@ public sealed class CheckoutModel : PageModel
         {
             return string.Empty;
         }
+    }
+
+    public static string BuildVietQrImageSource(
+        string bankBin,
+        string accountNumber,
+        decimal amountVnd,
+        string description,
+        string accountName)
+    {
+        if (string.IsNullOrWhiteSpace(bankBin) || string.IsNullOrWhiteSpace(accountNumber) || amountVnd <= 0)
+        {
+            return string.Empty;
+        }
+
+        var bank = Uri.EscapeDataString(bankBin.Trim());
+        var account = Uri.EscapeDataString(accountNumber.Trim());
+        var amount = amountVnd.ToString("0", CultureInfo.InvariantCulture);
+        var query = $"amount={amount}";
+
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            query += $"&addInfo={Uri.EscapeDataString(description.Trim())}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(accountName))
+        {
+            query += $"&accountName={Uri.EscapeDataString(accountName.Trim())}";
+        }
+
+        return $"https://img.vietqr.io/image/{bank}-{account}-compact2.png?{query}";
     }
 
     private Guid GetUserId()
