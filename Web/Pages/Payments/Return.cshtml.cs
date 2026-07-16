@@ -24,7 +24,11 @@ public sealed class ReturnModel : PageModel
     public async Task OnGetAsync(string? provider, string? orderCode, string? orderId, CancellationToken cancellationToken)
     {
         var rawProvider = string.IsNullOrWhiteSpace(provider) ? QueryValue("provider") : provider;
-        var rawOrderCode = !string.IsNullOrWhiteSpace(orderCode) ? orderCode : (!string.IsNullOrWhiteSpace(orderId) ? orderId : QueryValue("orderId"));
+        var rawOrderCode = orderCode;
+        if (string.IsNullOrWhiteSpace(rawOrderCode))
+        {
+            rawOrderCode = string.IsNullOrWhiteSpace(orderId) ? QueryValue("orderId") : orderId;
+        }
 
         if (!Enum.TryParse<PaymentProvider>(rawProvider, true, out var parsedProvider) || string.IsNullOrWhiteSpace(rawOrderCode))
         {

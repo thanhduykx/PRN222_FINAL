@@ -15,12 +15,15 @@ namespace PRN222_FINAL.Web.Pages.Home;
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class CourseWorkspaceModel : HomePageModelBase
 {
-    private static readonly Regex SentenceRegex = new(@"(?<=[.!?。])\s+|\r?\n+", RegexOptions.Compiled);
+    private static readonly Regex SentenceRegex = new(
+        @"(?<=[.!?。])\s+|\r?\n+",
+        RegexOptions.Compiled,
+        TimeSpan.FromSeconds(1));
     private readonly IAnalyticsService _analytics;
     private readonly IDocumentStatusNotifier _documentStatusNotifier;
 
     public CourseWorkspaceModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<CourseWorkspaceModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

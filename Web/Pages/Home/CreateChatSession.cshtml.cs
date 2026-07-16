@@ -9,12 +9,11 @@ using PRN222_FINAL.BLL;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
-[IgnoreAntiforgeryToken]
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class CreateChatSessionModel : HomePageModelBase
 {
     public CreateChatSessionModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<CreateChatSessionModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

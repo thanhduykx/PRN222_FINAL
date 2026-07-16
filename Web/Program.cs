@@ -15,6 +15,20 @@ namespace PRN222_FINAL.Web
 {
     public class Program
     {
+        private static readonly string DefaultGeminiChatUrl = BuildHttpsUrl(
+            "generativelanguage.googleapis.com",
+            "v1beta/openai/chat/completions");
+        private static readonly string DefaultGeminiEmbeddingUrl = BuildHttpsUrl(
+            "generativelanguage.googleapis.com",
+            "v1beta");
+        private static readonly string DefaultGroqChatUrl = BuildHttpsUrl(
+            "api.groq.com",
+            "openai/v1/chat/completions");
+
+        protected Program()
+        {
+        }
+
         public static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -203,11 +217,15 @@ namespace PRN222_FINAL.Web
             var geminiTimeoutSeconds = int.TryParse(geminiSection["TimeoutSeconds"], out var parsedGeminiTimeout)
                 ? parsedGeminiTimeout
                 : 60;
-            var geminiEmbeddingDimensions = int.TryParse(geminiSection["EmbeddingDimensions"], out var parsedGeminiEmbeddingDimensions)
-                ? parsedGeminiEmbeddingDimensions
-                : int.TryParse(builder.Configuration["Embedding:OutputDimensionality"], out var parsedEmbeddingDimensions)
-                    ? parsedEmbeddingDimensions
-                    : 768;
+            var geminiEmbeddingDimensions = 768;
+            if (int.TryParse(geminiSection["EmbeddingDimensions"], out var parsedGeminiEmbeddingDimensions))
+            {
+                geminiEmbeddingDimensions = parsedGeminiEmbeddingDimensions;
+            }
+            else if (int.TryParse(builder.Configuration["Embedding:OutputDimensionality"], out var parsedEmbeddingDimensions))
+            {
+                geminiEmbeddingDimensions = parsedEmbeddingDimensions;
+            }
             var geminiOptions = new PRN222_FINAL.BLL.GeminiOptions(
                 geminiEnabled,
                 geminiApiKey,
@@ -215,8 +233,8 @@ namespace PRN222_FINAL.Web
                 geminiSection["EmbeddingModel"] ?? "gemini-embedding-2",
                 geminiEmbeddingDimensions,
                 geminiTimeoutSeconds,
-                geminiSection["ChatBaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-                geminiSection["EmbeddingBaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta");
+                geminiSection["ChatBaseUrl"] ?? DefaultGeminiChatUrl,
+                geminiSection["EmbeddingBaseUrl"] ?? DefaultGeminiEmbeddingUrl);
 
             builder.Services.AddSingleton(geminiOptions);
 
@@ -233,7 +251,7 @@ namespace PRN222_FINAL.Web
                     ? !string.IsNullOrWhiteSpace(groqApiKey)
                     : parsedGroqEnabled,
                 GroqApiKey = groqApiKey,
-                GroqBaseUrl = groqSection["ChatBaseUrl"] ?? "https://api.groq.com/openai/v1/chat/completions",
+                GroqBaseUrl = groqSection["ChatBaseUrl"] ?? DefaultGroqChatUrl,
                 TimeoutSeconds = int.TryParse(groqSection["TimeoutSeconds"], out var parsedGroqTimeout)
                     ? Math.Clamp(parsedGroqTimeout, 5, 180)
                     : geminiOptions.TimeoutSeconds
@@ -283,6 +301,11 @@ namespace PRN222_FINAL.Web
                 .WithStaticAssets();
 
             app.Run();
+        }
+
+        private static string BuildHttpsUrl(string host, string path)
+        {
+            return new UriBuilder(Uri.UriSchemeHttps, host) { Path = path }.Uri.AbsoluteUri;
         }
     }
 }

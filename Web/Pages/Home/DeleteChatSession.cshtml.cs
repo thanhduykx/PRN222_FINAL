@@ -10,12 +10,11 @@ using PRN222_FINAL.BLL;
 
 namespace PRN222_FINAL.Web.Pages.Home;
 
-[IgnoreAntiforgeryToken]
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class DeleteChatSessionModel : HomePageModelBase
 {
     public DeleteChatSessionModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<DeleteChatSessionModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

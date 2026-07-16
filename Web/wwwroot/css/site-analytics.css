@@ -1,0 +1,492 @@
+/* Admin chatbot semester analytics */
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d9e4f1;
+  border-radius: 7px;
+  background: #f5f8fc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-section-eyebrow {
+  color: #0967dc;
+  font-size: .69rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head h2 {
+  margin: 4px 0 2px;
+  color: #071a3a;
+  font-size: 1.12rem;
+  font-weight: 950;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head p {
+  margin: 0;
+  color: #68778d;
+  font-size: .72rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-field {
+  display: grid;
+  grid-template-rows: auto 40px;
+  gap: 6px;
+  width: 132px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-field label {
+  display: block;
+  margin: 0;
+  color: #4f6078;
+  font-size: .68rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-field:last-child {
+  width: 118px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-controls select {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #d4e0ee;
+  border-radius: 7px;
+  background: #fff;
+  color: #142944;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-switch {
+  display: flex;
+  padding: 3px;
+  border: 1px solid #d8e3f0;
+  border-radius: 7px;
+  background: #f3f7fc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-switch a {
+  display: grid;
+  min-width: 86px;
+  gap: 0;
+  padding: 7px 12px;
+  border-radius: 5px;
+  color: #4c5d74;
+  font-size: .75rem;
+  font-weight: 850;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-switch a small {
+  margin-top: 3px;
+  color: #8a97aa;
+  font-size: .58rem;
+  font-weight: 700;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-switch a.is-active {
+  background: #ffffff;
+  color: #0967dc;
+  box-shadow: 0 2px 8px rgba(35, 70, 115, .12);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-switch a.is-active small {
+  color: #4b86d6;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-year label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-year select {
+  height: 38px;
+  min-width: 86px;
+  padding: 0 30px 0 10px;
+  border: 1px solid #d8e3f0;
+  border-radius: 7px;
+  background: #fff;
+  color: #1d304b;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article {
+  display: flex;
+  min-width: 0;
+  min-height: 82px;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid #d9e4f1;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(35, 64, 102, .055);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article + article {
+  border-left: 1px solid #dfe8f3;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article > .material-symbols-outlined {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 22px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-blue { background: #e8f2ff; color: #0875ee; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-green { background: #e3f7eb; color: #079447; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-purple { background: #f1e8ff; color: #7e22ce; }
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary .is-orange { background: #fff0e3; color: #e85b0b; }
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary small {
+  overflow: hidden;
+  color: #66758a;
+  font-size: .7rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary strong {
+  overflow: hidden;
+  color: #071a3a;
+  font-size: 1.08rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-summary p {
+  overflow: hidden;
+  margin: 0;
+  color: #748298;
+  font-size: .65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-grid {
+  display: grid;
+  grid-template-columns: minmax(330px, .82fr) minmax(470px, 1.18fr);
+  gap: 14px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d8e3ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(30, 58, 95, .075);
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-card__head h3 {
+  margin: 0 0 2px;
+  color: #142944;
+  font-size: .86rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-card__head p {
+  margin: 0;
+  color: #76849a;
+  font-size: .68rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-card__head > .material-symbols-outlined {
+  color: #7890ad;
+  font-size: 21px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bars {
+  display: grid;
+  gap: 14px;
+  padding: 2px 0 4px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar {
+  display: grid;
+  grid-template-columns: minmax(108px, .72fr) minmax(100px, 1fr) 38px;
+  align-items: center;
+  gap: 12px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label {
+  display: grid;
+  gap: 2px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label strong {
+  color: #1d304b;
+  font-size: .72rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__label span,
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar > b {
+  color: #728096;
+  font-size: .64rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar > b {
+  text-align: right;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eff8;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subject-ranking .ops-table-wrap {
+  border-radius: 6px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subject-ranking .ops-table th,
+body.rbl-body:has(.ops-statistics-page) .ops-subject-ranking .ops-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: .67rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-subject-ranking td small {
+  display: block;
+  margin-top: 2px;
+  color: #7b889b;
+  font-size: .6rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: #1677ed;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf1f6;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li:last-child {
+  border-bottom: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-rank {
+  display: inline-grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 6px;
+  background: #edf3fb;
+  color: #4d6582;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li:first-child .ops-rank,
+body.rbl-body:has(.ops-statistics-page) .ops-semester-users tbody tr:first-child .ops-rank {
+  background: #e7f1ff;
+  color: #0967dc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li > div,
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li > p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list strong {
+  color: #172b46;
+  font-size: .74rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list small {
+  overflow: hidden;
+  max-width: 190px;
+  color: #7a879a;
+  font-size: .62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li > p {
+  text-align: right;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-ranking-list li > p b {
+  color: #142944;
+  font-size: .76rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-leader-summary {
+  display: grid;
+  max-width: 220px;
+  gap: 2px;
+  text-align: right;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-leader-summary b {
+  overflow: hidden;
+  color: #0967dc;
+  font-size: .74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-leader-summary small {
+  color: #7b889a;
+  font-size: .61rem;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-users .ops-table-wrap {
+  border: 0;
+  border-radius: 0;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-users .ops-table thead {
+  background: #f5f8fc;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-users .ops-table th,
+body.rbl-body:has(.ops-statistics-page) .ops-semester-users .ops-table td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-empty {
+  display: grid;
+  min-height: 120px;
+  place-content: center;
+  gap: 4px;
+  color: #7a8799;
+  font-size: .7rem;
+  text-align: center;
+}
+
+body.rbl-body:has(.ops-statistics-page) .ops-semester-empty strong {
+  color: #40516a;
+  font-size: .78rem;
+}
+
+@media (max-width: 1180px) {
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-controls {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 760px) {
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-analysis__head,
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article {
+    padding: 13px 14px;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-summary article + article {
+    border-left: 1px solid #dfe8f3;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-field,
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-field:last-child,
+  body.rbl-body:has(.ops-statistics-page) .ops-semester-controls select {
+    width: 100%;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-time-bar {
+    grid-template-columns: 1fr 42px;
+  }
+
+  body.rbl-body:has(.ops-statistics-page) .ops-time-bar__track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

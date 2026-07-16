@@ -7,14 +7,17 @@ public sealed class ParagraphAwareTextChunker : ITextChunker
 {
     private const int TargetSize = 950;
     private const int MaxSize = 1200;
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
-    private static readonly Regex SpaceRegex = new(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex SpaceRegex = new(@"\s+", RegexOptions.Compiled, RegexTimeout);
     private static readonly Regex NumberedHeadingRegex = new(
         @"^\d+(\.\d+)*[\).:-]?\s+\S+",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled,
+        RegexTimeout);
     private static readonly Regex NamedHeadingRegex = new(
         @"^(chapter|section|unit|lesson|week|module|part)\b",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        RegexOptions.Compiled | RegexOptions.IgnoreCase,
+        RegexTimeout);
 
     public string StrategyName => $"paragraph-aware-{TargetSize}-0";
 
@@ -25,7 +28,7 @@ public sealed class ParagraphAwareTextChunker : ITextChunker
         return Task.FromResult(new TextChunkingResult(CreateChunks(text)));
     }
 
-    public IReadOnlyList<TextChunk> CreateChunks(string text)
+    private static IReadOnlyList<TextChunk> CreateChunks(string text)
     {
         var normalized = Normalize(text);
         if (string.IsNullOrWhiteSpace(normalized))

@@ -7,8 +7,5 @@ namespace PRN222_FINAL.Web.Pages.Home;
 [Authorize(Policy = AuthorizationPolicies.ChatAccess)]
 public sealed class OnlineUsersModel : PageModel
 {
-    public void OnGet()
-    {
-    }
 }
 

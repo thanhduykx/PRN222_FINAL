@@ -19,7 +19,7 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
     private readonly IAnalyticsService _analytics;
 
     public SubjectDocumentsModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<SubjectDocumentsModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

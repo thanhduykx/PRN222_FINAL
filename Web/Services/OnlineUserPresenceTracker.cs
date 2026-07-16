@@ -114,11 +114,19 @@ public sealed class InMemoryOnlineUserPresenceTracker : IOnlineUserPresenceTrack
             }
 
             var role = AppRoles.Normalize(user?.FindFirstValue(ClaimTypes.Role));
-            var userKey = !string.IsNullOrWhiteSpace(rawUserId)
-                ? rawUserId
-                : !string.IsNullOrWhiteSpace(email)
-                    ? email.ToUpperInvariant()
-                    : connectionId;
+            string userKey;
+            if (!string.IsNullOrWhiteSpace(rawUserId))
+            {
+                userKey = rawUserId;
+            }
+            else if (!string.IsNullOrWhiteSpace(email))
+            {
+                userKey = email.ToUpperInvariant();
+            }
+            else
+            {
+                userKey = connectionId;
+            }
 
             return new OnlineConnectionPresence(
                 connectionId,

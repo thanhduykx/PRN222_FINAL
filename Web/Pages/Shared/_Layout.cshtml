@@ -108,6 +108,19 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1&amp;display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-documents-legacy.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-chat-legacy.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-workspace.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-operations.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-navigation.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-lecturer-workspace.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-billing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-reports.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-documents.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-analytics.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-chat.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-a11y.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 </head>
@@ -263,18 +276,20 @@
                     </div>
                     @if (isAuthenticated && currentRole == AppRoles.Student)
                     {
-                        <a class="rbl-topbar-package" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
-                            <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">sell</span>
-                            <span class="rbl-topbar-package__text">
-                                <strong data-i18n="packages.learningPackage">Gói học tập</strong>
-                                <small data-i18n="packages.viewAvailable">Xem các gói đang bán</small>
-                            </span>
-                            <span class="rbl-topbar-package__status" data-i18n="packages.buyPackage">Mua gói</span>
-                        </a>
-                        <a class="rbl-cart-button" asp-page="/Payments/Checkout" aria-current="@(activeNav == "checkout" ? "page" : null)" title="Giỏ thanh toán">
-                            <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
-                            <span>Giỏ thanh toán</span>
-                        </a>
+                        <div class="rbl-topbar-commerce">
+                            <a class="rbl-topbar-package" asp-page="/Packages/Index" aria-current="@(activeNav == "billing" ? "page" : null)">
+                                <span class="rbl-topbar-package__icon material-symbols-outlined" aria-hidden="true">sell</span>
+                                <span class="rbl-topbar-package__text">
+                                    <strong data-i18n="packages.learningPackage">Gói học tập</strong>
+                                    <small data-i18n="packages.viewAvailable">Xem các gói đang bán</small>
+                                </span>
+                                <span class="rbl-topbar-package__status" data-i18n="packages.buyPackage">Mua gói</span>
+                            </a>
+                            <a class="rbl-cart-button" asp-page="/Payments/Checkout" aria-current="@(activeNav == "checkout" ? "page" : null)" title="Giỏ thanh toán">
+                                <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+                                <span>Giỏ thanh toán</span>
+                            </a>
+                        </div>
                     }
                     <div class="rbl-topbar-actions">
                         <div class="language-switch rbl-language-switch" role="group" aria-label="Language">
@@ -475,7 +490,9 @@
             var packagePriceMatch = isPackageNotification
                 ? System.Text.RegularExpressions.Regex.Match(
                     notification.Message,
-                    @"^Giá gói (?<package>.+?) đã thay đổi từ (?<old>[\d.,]+đ) thành (?<new>[\d.,]+đ)\. (?<rest>.+)$")
+                    @"^Giá gói (?<package>.+?) đã thay đổi từ (?<old>[\d.,]+đ) thành (?<new>[\d.,]+đ)\. (?<rest>.+)$",
+                    System.Text.RegularExpressions.RegexOptions.None,
+                    TimeSpan.FromSeconds(1))
                 : System.Text.RegularExpressions.Match.Empty;
             <div class="price-change-modal" data-system-notification data-notification-id="@notification.Id" data-viewer-id="@currentUserId" hidden>
                 <div class="price-change-modal__backdrop" data-system-notification-close></div>

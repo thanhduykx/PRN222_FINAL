@@ -17,7 +17,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class AskModel : HomePageModelBase
 {
     public AskModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<AskModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

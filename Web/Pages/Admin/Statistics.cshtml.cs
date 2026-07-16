@@ -261,9 +261,9 @@ public sealed class StatisticsModel : PageModel
             "summer" => (5, 8),
             _ => (9, 12)
         };
-        var offset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, startMonth, 1));
+        var offset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, startMonth, 1, 0, 0, 0, DateTimeKind.Unspecified));
         var fromLocal = new DateTimeOffset(year, startMonth, 1, 0, 0, 0, offset);
-        var endOffset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, endMonth, 1));
+        var endOffset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, endMonth, 1, 0, 0, 0, DateTimeKind.Unspecified));
         var toLocal = new DateTimeOffset(year, endMonth, 1, 0, 0, 0, endOffset).AddMonths(1).AddTicks(-1);
         return (fromLocal.ToUniversalTime(), toLocal.ToUniversalTime());
     }

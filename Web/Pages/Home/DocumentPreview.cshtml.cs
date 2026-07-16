@@ -13,7 +13,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class DocumentPreviewModel : HomePageModelBase
 {
     public DocumentPreviewModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<DocumentPreviewModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

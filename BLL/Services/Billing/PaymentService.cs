@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using PRN222_FINAL.BLL.Mapping;
+using System.Text.Json;
 using PRN222_FINAL.BLL.Options;
 using PRN222_FINAL.BLL.Services.Billing.Gateways;
 using PRN222_FINAL.DAL.Repositories.Billing;
@@ -388,23 +389,75 @@ public sealed class PaymentService : IPaymentService
         await CleanupExpiredPaymentsAsync(cancellationToken);
         var lifetime = GetPendingLifetime();
         return (await _payments.GetPendingByUserAsync(userId, cancellationToken))
-            .Select(payment => new PendingPaymentDto
+            .Select(payment =>
             {
-                PaymentId = payment.Id,
-                PackageId = payment.PackageId,
-                PackageName = payment.Package?.Name ?? string.Empty,
-                PackageCode = payment.Package?.Code ?? string.Empty,
-                Provider = (PaymentProvider)payment.Provider,
-                AmountVnd = payment.AmountVnd,
-                Currency = payment.Currency,
-                OrderCode = payment.OrderCode,
-                CheckoutUrl = payment.CheckoutUrl,
-                QrCode = payment.QrCode,
-                CreatedAt = payment.CreatedAt,
-                ExpiresAt = payment.CreatedAt.Add(lifetime)
+                var payee = payment.Provider == DalPaymentProvider.PayOS
+                    ? ParsePayOsPayee(payment.RawResponse)
+                    : EmptyPayee;
+
+                return new PendingPaymentDto
+                {
+                    PaymentId = payment.Id,
+                    PackageId = payment.PackageId,
+                    PackageName = payment.Package?.Name ?? string.Empty,
+                    PackageCode = payment.Package?.Code ?? string.Empty,
+                    RecipientName = payment.UserName,
+                    RecipientEmail = payment.UserEmail,
+                    Provider = (PaymentProvider)payment.Provider,
+                    AmountVnd = payment.AmountVnd,
+                    Currency = payment.Currency,
+                    OrderCode = payment.OrderCode,
+                    CheckoutUrl = payment.CheckoutUrl,
+                    QrCode = payment.QrCode,
+                    PayeeAccountName = payee.AccountName,
+                    PayeeAccountNumber = payee.AccountNumber,
+                    PayeeBankBin = payee.BankBin,
+                    TransferDescription = payee.Description,
+                    CreatedAt = payment.CreatedAt,
+                    ExpiresAt = payment.CreatedAt.Add(lifetime)
+                };
             })
             .ToList();
     }
+
+    private static PayOsPayeeDetails ParsePayOsPayee(string rawResponse)
+    {
+        if (string.IsNullOrWhiteSpace(rawResponse))
+        {
+            return EmptyPayee;
+        }
+
+        try
+        {
+            using var json = JsonDocument.Parse(rawResponse);
+            var root = json.RootElement;
+            var data = root.TryGetProperty("data", out var dataElement) ? dataElement : root;
+            return new PayOsPayeeDetails(
+                ReadJsonValue(data, "accountName"),
+                ReadJsonValue(data, "accountNumber"),
+                ReadJsonValue(data, "bin"),
+                ReadJsonValue(data, "description"));
+        }
+        catch (JsonException)
+        {
+            return EmptyPayee;
+        }
+    }
+
+    private static string ReadJsonValue(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var value) ? value.ToString() : string.Empty;
+
+    private static readonly PayOsPayeeDetails EmptyPayee = new(
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        string.Empty);
+
+    private readonly record struct PayOsPayeeDetails(
+        string AccountName,
+        string AccountNumber,
+        string BankBin,
+        string Description);
 
     public Task<bool> DeletePendingPaymentAsync(
         Guid paymentId,
@@ -447,11 +500,19 @@ public sealed class PaymentService : IPaymentService
             && existing.StartsAt <= now
             && existing.EndsAt > now;
         var startsAt = isAlreadyEffective ? existing!.StartsAt : now;
-        var endsAt = isAlreadyEffective
-            ? existing!.EndsAt
-            : package.IsLifetime
-            ? new DateTimeOffset(9999, 12, 31, 23, 59, 59, TimeSpan.Zero)
-            : startsAt.AddDays(Math.Max(1, package.DurationDays));
+        DateTimeOffset endsAt;
+        if (isAlreadyEffective)
+        {
+            endsAt = existing!.EndsAt;
+        }
+        else if (package.IsLifetime)
+        {
+            endsAt = new DateTimeOffset(9999, 12, 31, 23, 59, 59, TimeSpan.Zero);
+        }
+        else
+        {
+            endsAt = startsAt.AddDays(Math.Max(1, package.DurationDays));
+        }
         var subscription = new Subscription
         {
             Id = existing?.Id ?? Guid.NewGuid(),

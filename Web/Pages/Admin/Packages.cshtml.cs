@@ -62,11 +62,13 @@ public sealed class PackagesModel : PageModel
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
             _logger.LogWarning(exception, "Could not update package {PackageId} price.", input.PackageId);
-            TempData["Error"] = exception.Message == "Package not found."
-                ? "Không tìm thấy gói dịch vụ."
-                : exception.Message == "Package price changed since this page was loaded."
-                    ? "Giá gói đã được một quản trị viên khác thay đổi. Vui lòng kiểm tra lại giá mới nhất rồi thử lại."
-                : exception.Message;
+            TempData["Error"] = exception.Message switch
+            {
+                "Package not found." => "Không tìm thấy gói dịch vụ.",
+                "Package price changed since this page was loaded." =>
+                    "Giá gói đã được một quản trị viên khác thay đổi. Vui lòng kiểm tra lại giá mới nhất rồi thử lại.",
+                _ => exception.Message
+            };
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

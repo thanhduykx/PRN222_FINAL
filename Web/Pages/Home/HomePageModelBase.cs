@@ -14,7 +14,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 
 public abstract class HomePageModelBase : PageModel
 {
-    protected readonly ILogger<HomePageModelBase> _logger;
+    protected readonly ILogger _logger;
     protected readonly IKnowledgeService _knowledge;
     protected readonly IDocumentIndexingService _indexingService;
     protected readonly IWebPageTextExtractor _webPageTextExtractor;
@@ -24,7 +24,7 @@ public abstract class HomePageModelBase : PageModel
     protected readonly IDocumentIndexJobQueue _indexJobQueue;
 
     protected HomePageModelBase(
-        ILogger<HomePageModelBase> logger,
+        ILogger logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
@@ -254,17 +254,7 @@ public abstract class HomePageModelBase : PageModel
         
         protected async Task<bool> CanEditDocumentAsync(IndexedDocument document, CancellationToken cancellationToken)
         {
-            if (DocumentBelongsToCurrentUser(document))
-            {
-                return true;
-            }
-
-            if (await CanManageSubjectAsync(document.Subject, cancellationToken))
-            {
-                return true;
-            }
-
-            return false;
+            return await CanManageDocumentAsync(document, cancellationToken);
         }
 
         public bool CanEditDocumentMetadata(IndexedDocument document, IEnumerable<CourseSubject> catalog)

@@ -674,28 +674,25 @@ public sealed class UserAccountService : IUserAccountService
             : throw new InvalidOperationException("Full name must be 120 characters or fewer.");
     }
 
-    private bool EnsureSeedAdmin(List<UserAccount> users)
+    private void EnsureSeedAdmin(List<UserAccount> users)
     {
         if (!_seedAdmin.Enabled)
         {
-            return false;
+            return;
         }
 
         var seedEmail = _seedAdmin.Email;
         var existing = users.FirstOrDefault(user => string.Equals(user.Email, seedEmail, StringComparison.OrdinalIgnoreCase));
         if (existing is not null)
         {
-            var changed = false;
             if (string.IsNullOrWhiteSpace(existing.FullName))
             {
                 existing.FullName = _seedAdmin.FullName;
-                changed = true;
             }
 
             if (string.IsNullOrWhiteSpace(existing.Provider))
             {
                 existing.Provider = "Local";
-                changed = true;
             }
 
             if (!PasswordMatches(existing.PasswordHash, _seedAdmin.Password))
@@ -704,21 +701,19 @@ public sealed class UserAccountService : IUserAccountService
                 existing.PasswordResetTokenHash = null;
                 existing.PasswordResetTokenExpiresAt = null;
                 existing.PasswordChangedAt = DateTimeOffset.UtcNow;
-                changed = true;
             }
 
             if (existing.Role != AppRoles.Admin)
             {
                 existing.Role = AppRoles.Admin;
-                changed = true;
             }
 
-            return changed;
+            return;
         }
 
         if (users.Any(user => user.Role == AppRoles.Admin))
         {
-            return false;
+            return;
         }
 
         users.Add(new UserAccount
@@ -730,13 +725,10 @@ public sealed class UserAccountService : IUserAccountService
             Role = AppRoles.Admin
         });
 
-        return true;
     }
 
-    private static bool EnsureFixedAccounts(List<UserAccount> users)
+    private static void EnsureFixedAccounts(List<UserAccount> users)
     {
-        var changed = false;
-
         foreach (var fixedAccount in FixedAccounts)
         {
             var existing = users.FirstOrDefault(user =>
@@ -752,27 +744,23 @@ public sealed class UserAccountService : IUserAccountService
                     Provider = "Local",
                     Role = fixedAccount.Role
                 });
-                changed = true;
                 continue;
             }
 
             if (existing.Provider != "Local")
             {
                 existing.Provider = "Local";
-                changed = true;
             }
 
             if (existing.Role != fixedAccount.Role)
             {
                 existing.Role = fixedAccount.Role;
-                changed = true;
             }
 
             // Fixed accounts are bootstrap identities only. Never overwrite user-edited
             // names or passwords after the account has been created.
         }
 
-        return changed;
     }
 
     private bool IsSeedAdminEmail(string email)

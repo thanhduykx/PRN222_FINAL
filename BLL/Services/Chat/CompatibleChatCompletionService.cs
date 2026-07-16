@@ -169,7 +169,7 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
 
         return await CallChatAsync(
             BuildSystemPrompt(subject, language),
-            BuildAnswerPrompt(question, history, chunks, language),
+            BuildAnswerPrompt(question, history, chunks),
             0.2,
             1024,
             cancellationToken);
@@ -461,8 +461,7 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
     private static string BuildAnswerPrompt(
         string question,
         IReadOnlyList<ChatMessage> history,
-        IReadOnlyList<DocumentChunk> chunks,
-        string language)
+        IReadOnlyList<DocumentChunk> chunks)
     {
         var builder = new StringBuilder();
         builder.AppendLine("<document_chunks>");

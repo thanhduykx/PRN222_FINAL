@@ -14,9 +14,16 @@ public sealed class CourseSubject
     public List<CourseChapter> Chapters { get; set; } = new();
     public int StudentCount { get; set; }
 
-    public string DisplayName => string.IsNullOrWhiteSpace(Code)
-        ? Name
-        : Code.Equals(Name, StringComparison.OrdinalIgnoreCase)
-            ? Code
-            : $"{Code} - {Name}";
+    public string DisplayName
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Code))
+            {
+                return Name;
+            }
+
+            return Code.Equals(Name, StringComparison.OrdinalIgnoreCase) ? Code : $"{Code} - {Name}";
+        }
+    }
 }

@@ -12,7 +12,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class ChatSessionsModel : HomePageModelBase
 {
     public ChatSessionsModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<ChatSessionsModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,

@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PRN222_FINAL.BLL.Contracts.Billing;
+using PRN222_FINAL.BLL.Models;
 using PRN222_FINAL.BLL.Security;
 using PRN222_FINAL.BLL.Services.Billing;
+using QRCoder;
+using QRCoder.Exceptions;
 
 namespace PRN222_FINAL.Web.Pages.Payments;
 
@@ -21,6 +24,9 @@ public sealed class CheckoutModel : PageModel
     public IReadOnlyList<PendingPaymentDto> PendingPayments { get; private set; } = Array.Empty<PendingPaymentDto>();
     public Guid? SelectedPaymentId { get; private set; }
 
+    [TempData]
+    public string ErrorMessage { get; set; } = string.Empty;
+
     public async Task<IActionResult> OnGetAsync(Guid? paymentId, CancellationToken cancellationToken)
     {
         if (!User.IsInRole(AppRoles.Student))
@@ -36,6 +42,65 @@ public sealed class CheckoutModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnPostSwitchProviderAsync(
+        Guid paymentId,
+        string provider,
+        CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole(AppRoles.Student))
+        {
+            return RedirectToPage("/Home/Index");
+        }
+
+        if (!Enum.TryParse<PaymentProvider>(provider, true, out var targetProvider)
+            || targetProvider is not (PaymentProvider.MoMo or PaymentProvider.PayOS))
+        {
+            ErrorMessage = "Phương thức thanh toán không hợp lệ.";
+            return RedirectToPage(new { paymentId });
+        }
+
+        var userId = GetUserId();
+        var currentPayment = (await _payments.GetPendingPaymentsAsync(userId, cancellationToken))
+            .SingleOrDefault(item => item.PaymentId == paymentId);
+        if (currentPayment is null)
+        {
+            ErrorMessage = "Đơn thanh toán không còn tồn tại hoặc đã hết hạn.";
+            return RedirectToPage();
+        }
+
+        if (currentPayment.Provider == targetProvider)
+        {
+            return RedirectToPage(new { paymentId });
+        }
+
+        try
+        {
+            var result = await _payments.CreateCheckoutAsync(new CreatePaymentRequestDto
+            {
+                UserId = userId,
+                UserName = User.FindFirstValue(ClaimTypes.Name) ?? currentPayment.RecipientName,
+                UserEmail = User.FindFirstValue(ClaimTypes.Email) ?? currentPayment.RecipientEmail,
+                PackageId = currentPayment.PackageId,
+                Provider = targetProvider,
+                ReturnUrl = Url.PageLink("/Payments/Return") ?? string.Empty,
+                CancelUrl = Url.PageLink("/Payments/Checkout") ?? string.Empty,
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty
+            }, cancellationToken);
+
+            await _payments.DeletePendingPaymentAsync(paymentId, userId, cancellationToken);
+            return RedirectToPage(new { paymentId = result.PaymentId });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            return RedirectToPage(new { paymentId });
+        }
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(Guid paymentId, CancellationToken cancellationToken)
     {
         await _payments.DeletePendingPaymentAsync(paymentId, GetUserId(), cancellationToken);
@@ -49,6 +114,30 @@ public sealed class CheckoutModel : PageModel
     public static bool IsSafeQrImageUrl(string value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && uri.Scheme == Uri.UriSchemeHttps;
+
+    public static string BuildQrImageSource(string value)
+    {
+        if (IsSafeQrImageUrl(value))
+        {
+            return value;
+        }
+
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 4000)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var qrData = QRCodeGenerator.GenerateQrCode(value, QRCodeGenerator.ECCLevel.M);
+            using var qrCode = new PngByteQRCode(qrData);
+            return $"data:image/png;base64,{Convert.ToBase64String(qrCode.GetGraphic(8))}";
+        }
+        catch (DataTooLongException)
+        {
+            return string.Empty;
+        }
+    }
 
     private Guid GetUserId()
     {

@@ -36,31 +36,6 @@ public static class KnowledgeSqlMapper
         };
     }
 
-    public static KnowledgeSqlDocument ToEntity(IndexedDocument model)
-    {
-        return new KnowledgeSqlDocument
-        {
-            Id = model.Id,
-            FileName = model.FileName,
-            StoredPath = model.StoredPath,
-            Subject = model.Subject,
-            Chapter = model.Chapter,
-            ContentType = model.ContentType,
-            UploadedAt = model.UploadedAt,
-            ChunkCount = model.ChunkCount,
-            FileSizeBytes = model.FileSizeBytes,
-            UploadedByUserId = model.UploadedByUserId,
-            UploadedByName = string.IsNullOrEmpty(model.UploadedByName) ? null : model.UploadedByName,
-            UploadedByEmail = string.IsNullOrEmpty(model.UploadedByEmail) ? null : model.UploadedByEmail,
-            Status = model.Status,
-            IndexedAt = model.IndexedAt,
-            IndexError = string.IsNullOrEmpty(model.IndexError) ? null : model.IndexError,
-            EmbeddingModel = model.EmbeddingModel,
-            EmbeddingDimensions = model.EmbeddingDimensions,
-            ChunkingStrategy = model.ChunkingStrategy
-        };
-    }
-
     public static DocumentChunk ToModel(KnowledgeSqlChunk entity)
     {
         var chunk = new DocumentChunk
@@ -83,24 +58,6 @@ public static class KnowledgeSqlMapper
         }
 
         return chunk;
-    }
-
-    public static KnowledgeSqlChunk ToEntity(DocumentChunk model)
-    {
-        return new KnowledgeSqlChunk
-        {
-            Id = model.Id,
-            DocumentId = model.DocumentId,
-            FileName = model.FileName,
-            Subject = model.Subject,
-            Chapter = model.Chapter,
-            ChunkIndex = model.ChunkIndex,
-            Text = model.Text,
-            SectionTitle = model.SectionTitle,
-            CharStart = model.CharStart,
-            CharEnd = model.CharEnd,
-            EmbeddingJson = model.Embedding != null ? System.Text.Json.JsonSerializer.Serialize(model.Embedding) : "{}"
-        };
     }
 
     public static CourseSubject ToModel(KnowledgeSqlCourseSubject entity)
@@ -182,6 +139,49 @@ public static class KnowledgeSqlMapper
             ChunkIndex = entity.ChunkIndex,
             Score = entity.Score,
             Excerpt = entity.Excerpt
+        };
+    }
+
+    public static KnowledgeSqlDocument ToEntity(IndexedDocument model)
+    {
+        return new KnowledgeSqlDocument
+        {
+            Id = model.Id,
+            FileName = model.FileName,
+            StoredPath = model.StoredPath,
+            Subject = model.Subject,
+            Chapter = model.Chapter,
+            ContentType = model.ContentType,
+            UploadedAt = model.UploadedAt,
+            ChunkCount = model.ChunkCount,
+            FileSizeBytes = model.FileSizeBytes,
+            UploadedByUserId = model.UploadedByUserId,
+            UploadedByName = string.IsNullOrEmpty(model.UploadedByName) ? null : model.UploadedByName,
+            UploadedByEmail = string.IsNullOrEmpty(model.UploadedByEmail) ? null : model.UploadedByEmail,
+            Status = model.Status,
+            IndexedAt = model.IndexedAt,
+            IndexError = string.IsNullOrEmpty(model.IndexError) ? null : model.IndexError,
+            EmbeddingModel = model.EmbeddingModel,
+            EmbeddingDimensions = model.EmbeddingDimensions,
+            ChunkingStrategy = model.ChunkingStrategy
+        };
+    }
+
+    public static KnowledgeSqlChunk ToEntity(DocumentChunk model)
+    {
+        return new KnowledgeSqlChunk
+        {
+            Id = model.Id,
+            DocumentId = model.DocumentId,
+            FileName = model.FileName,
+            Subject = model.Subject,
+            Chapter = model.Chapter,
+            ChunkIndex = model.ChunkIndex,
+            Text = model.Text,
+            SectionTitle = model.SectionTitle,
+            CharStart = model.CharStart,
+            CharEnd = model.CharEnd,
+            EmbeddingJson = model.Embedding != null ? System.Text.Json.JsonSerializer.Serialize(model.Embedding) : "{}"
         };
     }
 

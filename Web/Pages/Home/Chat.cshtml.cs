@@ -14,7 +14,7 @@ namespace PRN222_FINAL.Web.Pages.Home;
 public sealed class ChatModel : HomePageModelBase
 {
     public ChatModel(
-        ILogger<HomePageModelBase> logger,
+        ILogger<ChatModel> logger,
         IKnowledgeService knowledge,
         IDocumentIndexingService indexingService,
         IWebPageTextExtractor webPageTextExtractor,
