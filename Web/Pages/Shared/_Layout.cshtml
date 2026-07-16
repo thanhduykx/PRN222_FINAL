@@ -121,11 +121,35 @@
     <link rel="stylesheet" href="~/css/site-analytics.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site-chat.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site-a11y.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-loading.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 </head>
 <body class="@bodyClass">
     <a class="ds-skip-link" href="#mainContent" data-i18n="shell.skipLink">Bỏ qua tới nội dung chính</a>
+    <div class="app-page-skeleton" data-page-skeleton hidden aria-hidden="true">
+        <div class="app-page-skeleton__content">
+            <span class="app-skeleton-block app-skeleton-block--eyebrow"></span>
+            <span class="app-skeleton-block app-skeleton-block--title"></span>
+            <span class="app-skeleton-block app-skeleton-block--subtitle"></span>
+            <div class="app-page-skeleton__grid">
+                <section class="app-skeleton-card">
+                    <span class="app-skeleton-block app-skeleton-block--heading"></span>
+                    <span class="app-skeleton-block"></span>
+                    <span class="app-skeleton-block"></span>
+                    <span class="app-skeleton-block app-skeleton-block--short"></span>
+                </section>
+                <section class="app-skeleton-card">
+                    <span class="app-skeleton-block app-skeleton-block--heading"></span>
+                    <div class="app-skeleton-card__split">
+                        <span class="app-skeleton-block app-skeleton-block--square"></span>
+                        <span class="app-skeleton-block app-skeleton-block--details"></span>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <span class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-page-loading-status></span>
     @if (useRblShell)
     {
         <div class="rbl-app-frame">

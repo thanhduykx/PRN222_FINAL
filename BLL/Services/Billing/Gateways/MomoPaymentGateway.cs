@@ -66,11 +66,17 @@ public sealed class MomoPaymentGateway : IMomoPaymentGateway
             throw new InvalidOperationException(ReadString(root, "message", "MoMo refused checkout request."));
         }
 
+        var checkoutUrl = ReadString(root, "payUrl");
+        var qrPayload = ReadString(root, "qrCodeUrl");
+
         return new PaymentGatewayCreateResult
         {
             ProviderTransactionId = ReadString(root, "requestId"),
-            CheckoutUrl = ReadString(root, "payUrl"),
-            QrCode = ReadString(root, "qrCodeUrl"),
+            CheckoutUrl = checkoutUrl,
+            // MoMo documents qrCodeUrl as QR payload data, not as an image URL.
+            // Production accounts may not receive that optional field, so payUrl
+            // remains a scannable fallback for the same signed checkout.
+            QrCode = string.IsNullOrWhiteSpace(qrPayload) ? checkoutUrl : qrPayload,
             RawRequest = JsonSerializer.Serialize(payload, JsonOptions),
             RawResponse = rawResponse
         };
