@@ -37,8 +37,24 @@ public sealed class PaymentExpirationWorker : BackgroundService
             catch (Exception exception)
             {
                 _logger.LogError(exception, "Could not clean up expired payment orders.");
-                await Task.Delay(CleanupInterval, stoppingToken);
+                if (!await DelayUntilNextAttemptAsync(stoppingToken))
+                {
+                    break;
+                }
             }
+        }
+    }
+
+    private static async Task<bool> DelayUntilNextAttemptAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            await Task.Delay(CleanupInterval, stoppingToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            return false;
         }
     }
 }
