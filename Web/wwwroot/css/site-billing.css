@@ -475,24 +475,40 @@
   content: "";
 }
 
-.ops-subscription-donut span,
-.ops-subscription-donut strong {
-  position: relative;
-  z-index: 1;
-  display: block;
+.ops-subscription-donut__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  width: 90px;
+  height: 70px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  pointer-events: none;
   text-align: center;
+  transform: translate(-50%, -50%);
 }
 
-.ops-subscription-donut span {
+.ops-subscription-donut__label span {
+  display: block;
   color: #66758b;
   font-size: .8rem;
   font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.ops-subscription-donut strong {
+.ops-subscription-donut__label strong {
+  display: block;
   color: #0f1e3a;
   font-size: 1.4rem;
   font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .ops-subscription-mix-table {
