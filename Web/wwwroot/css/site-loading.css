@@ -1,0 +1,141 @@
+.app-page-skeleton {
+  position: fixed;
+  z-index: 9000;
+  inset: 72px 0 0;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 56px);
+  background: #f4f7fb;
+  cursor: progress;
+}
+
+.app-page-skeleton[hidden] {
+  display: none !important;
+}
+
+body.rbl-body .app-page-skeleton {
+  inset: 88px 0 0 296px;
+}
+
+.app-page-skeleton__content {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+}
+
+.app-page-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.app-skeleton-card {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 340px;
+  padding: 28px;
+  border: 1px solid #dfe7f1;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, .06);
+}
+
+.app-skeleton-block {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 18px;
+  border-radius: 8px;
+  background: #e2e8f0;
+}
+
+.app-skeleton-block::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .82), transparent);
+  animation: appSkeletonShimmer 1.35s ease-in-out infinite;
+  content: "";
+}
+
+.app-skeleton-block--eyebrow {
+  width: 180px;
+  height: 12px;
+}
+
+.app-skeleton-block--title {
+  width: min(420px, 72%);
+  height: 42px;
+  margin-top: 16px;
+  border-radius: 12px;
+}
+
+.app-skeleton-block--subtitle {
+  width: min(310px, 62%);
+  margin-top: 12px;
+}
+
+.app-skeleton-block--heading {
+  width: 54%;
+  height: 26px;
+  margin-bottom: 10px;
+}
+
+.app-skeleton-block--short {
+  width: 66%;
+}
+
+.app-skeleton-card__split {
+  display: grid;
+  grid-template-columns: minmax(150px, 42%) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.app-skeleton-block--square {
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 14px;
+}
+
+.app-skeleton-block--details {
+  height: 190px;
+  border-radius: 14px;
+}
+
+body.is-page-loading {
+  cursor: progress;
+}
+
+@keyframes appSkeletonShimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 900px) {
+  body.rbl-body .app-page-skeleton {
+    inset: 112px 0 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-page-skeleton {
+    inset-block-start: 64px;
+    padding: 20px;
+  }
+
+  .app-page-skeleton__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-skeleton-card:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-skeleton-block::after {
+    animation: none;
+  }
+}

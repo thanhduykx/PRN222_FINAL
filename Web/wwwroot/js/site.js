@@ -33,6 +33,7 @@ const translations = {
         "packages.lifetimeNoDowngrade": "A lifetime package cannot be downgraded.",
         "packages.downgradeAfter": "You can choose a lower package after",
         "packages.processing": "Processing...",
+        "loading.page": "Loading content...",
         "packages.chooseSuitable": "Choose a suitable package",
         "packages.lifetimeActive": "Active forever",
         "packages.remaining": "Remaining",
@@ -899,6 +900,7 @@ const translations = {
         "packages.lifetimeNoDowngrade": "Gói trọn đời không hỗ trợ hạ gói.",
         "packages.downgradeAfter": "Bạn có thể chọn gói thấp hơn sau",
         "packages.processing": "Đang xử lý...",
+        "loading.page": "Đang tải nội dung...",
         "packages.chooseSuitable": "Chọn gói phù hợp",
         "packages.lifetimeActive": "Hiệu lực vĩnh viễn",
         "packages.remaining": "Còn",
@@ -4068,6 +4070,60 @@ function initCheckoutLoadingStates() {
   });
 }
 
+function initPageSkeleton() {
+  const skeleton = document.querySelector("[data-page-skeleton]");
+  const status = document.querySelector("[data-page-loading-status]");
+  const main = document.getElementById("mainContent");
+  if (!skeleton) return;
+
+  let visible = false;
+  const show = () => {
+    if (visible) return;
+    visible = true;
+    skeleton.hidden = false;
+    document.body.classList.add("is-page-loading");
+    main?.setAttribute("aria-busy", "true");
+    if (status) status.textContent = t("loading.page");
+  };
+
+  const hide = () => {
+    visible = false;
+    skeleton.hidden = true;
+    document.body.classList.remove("is-page-loading");
+    main?.removeAttribute("aria-busy");
+    if (status) status.textContent = "";
+  };
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const clickedElement = event.target instanceof Element ? event.target : null;
+    const link = clickedElement?.closest("a[href]");
+    if (!link || link.hasAttribute("download") || link.dataset.noPageSkeleton !== undefined) return;
+    if (link.target && link.target.toLowerCase() !== "_self") return;
+
+    const rawHref = link.getAttribute("href") || "";
+    if (!rawHref || rawHref.startsWith("#") || /^(mailto:|tel:|javascript:)/i.test(rawHref)) return;
+
+    const targetUrl = new URL(link.href, window.location.href);
+    if (targetUrl.origin !== window.location.origin) return;
+    const currentUrl = new URL(window.location.href);
+    const changesOnlyHash = targetUrl.pathname === currentUrl.pathname
+      && targetUrl.search === currentUrl.search
+      && targetUrl.hash !== currentUrl.hash;
+    if (!changesOnlyHash) show();
+  });
+
+  document.addEventListener("submit", (event) => {
+    if (event.defaultPrevented || !(event.target instanceof HTMLFormElement)) return;
+    const form = event.target;
+    if (form.dataset.noPageSkeleton !== undefined || form.target || form.method.toLowerCase() === "dialog") return;
+    show();
+  });
+
+  window.addEventListener("beforeunload", show);
+  window.addEventListener("pageshow", hide);
+}
+
 function initAdminCreateUserForm() {
   document.querySelectorAll("[data-admin-user-role-subject-form]").forEach((form) => {
     if (form.dataset.roleSubjectBound === "true") {
@@ -4458,6 +4514,7 @@ initSubjectCards();
 initUploadSourceSwitchers();
 initPasswordVisibilityToggles();
 initCheckoutLoadingStates();
+initPageSkeleton();
 initAdminCreateUserForm();
 initConfirmForms();
 initAdminRoleUpdateForms();

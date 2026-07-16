@@ -84,7 +84,13 @@
             var recipientName = string.IsNullOrWhiteSpace(activePayment.RecipientName)
                 ? activePayment.RecipientEmail.Split('@')[0]
                 : activePayment.RecipientName;
-            var qrImageSource = CheckoutModel.BuildQrImageSource(activePayment.QrCode);
+            var qrPayload = activePayment.QrCode;
+            if (string.IsNullOrWhiteSpace(qrPayload) && activePayment.Provider == PaymentProvider.MoMo)
+            {
+                // Keep pending orders created before qrCodeUrl support scannable.
+                qrPayload = activePayment.CheckoutUrl;
+            }
+            var qrImageSource = CheckoutModel.BuildQrImageSource(qrPayload);
             var hasPayeeDetails = !string.IsNullOrWhiteSpace(activePayment.PayeeAccountName)
                 || !string.IsNullOrWhiteSpace(activePayment.PayeeAccountNumber);
             <section class="checkout-payment-grid">

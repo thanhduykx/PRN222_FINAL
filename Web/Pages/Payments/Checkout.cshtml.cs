@@ -111,17 +111,8 @@ public sealed class CheckoutModel : PageModel
         Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
 
-    public static bool IsSafeQrImageUrl(string value) =>
-        Uri.TryCreate(value, UriKind.Absolute, out var uri)
-        && uri.Scheme == Uri.UriSchemeHttps;
-
     public static string BuildQrImageSource(string value)
     {
-        if (IsSafeQrImageUrl(value))
-        {
-            return value;
-        }
-
         if (string.IsNullOrWhiteSpace(value) || value.Length > 4000)
         {
             return string.Empty;
