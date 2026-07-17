@@ -883,6 +883,19 @@ body.price-change-modal-open {
   font-weight: 750;
 }
 
+.price-change-modal__reason {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #0967dc;
+  border-radius: 0 8px 8px 0;
+  background: #eef6ff;
+  line-height: 1.55;
+}
+
+.price-change-modal__reason strong {
+  color: #0757b7;
+}
+
 .price-change-modal__effective-date {
   display: block;
   margin-top: 16px;
