@@ -1803,14 +1803,11 @@ function getChatSuggestions(language = getLanguage()) {
 }
 
 function readSubjectQuestionSubjects() {
-  const fromPayload = readJsonDataAttribute(chatPage, "chatSubjectSuggestions", [])
+  const subjects = readJsonDataAttribute(chatPage, "chatSubjectSuggestions", [])
     .map((item) => item?.subject || item?.vi || item?.en || "")
     .filter(Boolean);
-  const fromChips = [...document.querySelectorAll(".chat-subject-chip")]
-    .map((button) => button.dataset.subjectFilter || "")
-    .filter(Boolean);
 
-  return [...new Set([...fromPayload, ...fromChips].map((subject) => subject.trim()).filter(Boolean))];
+  return [...new Set(subjects.map((subject) => subject.trim()).filter(Boolean))];
 }
 
 function dedupeQuestionItems(items) {
@@ -2004,59 +2001,9 @@ function updateRelatedQuestionButtons() {
 }
 
 function getSelectedSubjectFilter() {
-  return document.querySelector(".chat-subject-chip.is-active")?.dataset.subjectFilter || "";
-}
-
-function setSelectedSubjectFilter(subject) {
-  const normalizedSubject = subject || "";
-  document.querySelectorAll(".chat-subject-chip").forEach((button) => {
-    const isActive = (button.dataset.subjectFilter || "") === normalizedSubject;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-  updateSuggestionButtons();
-  renderRelatedQuestions();
-  refreshChatFollowUpSuggestions();
-}
-
-function bindSubjectFilterChips() {
-  document.querySelectorAll(".chat-subject-chip").forEach((button) => {
-    button.addEventListener("click", () => {
-      setSelectedSubjectFilter(button.dataset.subjectFilter || "");
-      questionInput?.focus();
-    });
-  });
-}
-
-function bindSubjectSuggestionButtons() {
-  document.querySelectorAll("[data-subject-suggestion]").forEach((button) => {
-    if (button.dataset.subjectSuggestionBound === "true") {
-      return;
-    }
-
-    button.dataset.subjectSuggestionBound = "true";
-    button.addEventListener("click", () => {
-      setSelectedSubjectFilter(button.dataset.subjectSuggestion || "");
-      questionInput?.focus();
-    });
-  });
-}
-
-function applyInitialSubjectFromUrl() {
-  if (!chatPage) {
-    return;
-  }
-
-  const subject = new URLSearchParams(window.location.search).get("subject") || "";
-  if (!subject.trim()) {
-    return;
-  }
-
-  const matchingChip = [...document.querySelectorAll(".chat-subject-chip")]
-    .find((button) => (button.dataset.subjectFilter || "").toLowerCase() === subject.trim().toLowerCase());
-  if (matchingChip) {
-    setSelectedSubjectFilter(matchingChip.dataset.subjectFilter || "");
-  }
+  // Chat always searches across the full document scope. Subject selection was
+  // intentionally removed so a question is answered in one pass.
+  return "";
 }
 
 function normalizeQuestionForMemory(question) {
@@ -3686,36 +3633,6 @@ function appendRetryAction(messageWrapper, question) {
   messageWrapper.appendChild(button);
 }
 
-function renderClarificationOptions(messageWrapper, options, originalQuestion) {
-  const subjects = Array.isArray(options)
-    ? options.filter((subject) => typeof subject === "string" && subject.trim().length > 0).slice(0, 6)
-    : [];
-
-  if (!messageWrapper || subjects.length === 0) {
-    return;
-  }
-
-  const actions = document.createElement("div");
-  actions.className = "chat-clarification-options";
-  subjects.forEach((subject) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "chat-clarification-chip";
-    button.textContent = subject;
-    button.addEventListener("click", () => {
-      setSelectedSubjectFilter(subject);
-      if (questionInput && chatForm) {
-        questionInput.value = originalQuestion;
-        chatForm.requestSubmit();
-      }
-    });
-    actions.appendChild(button);
-  });
-
-  messageWrapper.appendChild(actions);
-  messageWrapper.parentElement.scrollTop = messageWrapper.parentElement.scrollHeight;
-}
-
 async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
   const question = input?.value.trim();
   if (!question || !messagesTarget) {
@@ -3771,10 +3688,6 @@ async function submitChatQuestion(input, messagesTarget, focusAfter = true) {
     }
     const answerMessage = await appendAssistantAnswer(messagesTarget, payload.answer, payload.citations || []);
     appendAnswerFeedback(answerMessage);
-    if (payload.needsClarification && Array.isArray(payload.subjectOptions)) {
-      renderClarificationOptions(answerMessage, payload.subjectOptions, question);
-    }
-
     advanceRelatedRotation();
     renderRelatedQuestions();
     refreshSessionList();
@@ -4508,8 +4421,6 @@ function initSystemNotifications() {
 
 bindSuggestionButtons();
 bindSessionButtons();
-bindSubjectFilterChips();
-applyInitialSubjectFromUrl();
 bindDocumentPreviewButtons();
 initSubjectCards();
 initUploadSourceSwitchers();
