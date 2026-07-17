@@ -366,6 +366,17 @@ public sealed class RagChatService : IRagChatService
         }
 
         var route = ResolveSubjectRoute(retrievalQuestion, subjectFilter, scopedChunks);
+        if (route.NeedsClarification)
+        {
+            return new SingleQuestionAnswer(
+                question,
+                BuildSubjectClarificationAnswer(route.CandidateSubjects, responseLanguage),
+                Array.Empty<SourceCitation>(),
+                null,
+                true,
+                route.CandidateSubjects);
+        }
+
         if (!string.IsNullOrWhiteSpace(route.SelectedSubject))
         {
             scopedChunks = scopedChunks
@@ -439,6 +450,22 @@ public sealed class RagChatService : IRagChatService
                 scopedChunks,
                 responseLanguage,
                 cancellationToken);
+        }
+
+        if (string.IsNullOrWhiteSpace(route.SelectedSubject)
+            && !IsMultiSubjectQuestion(NormalizeQuestion(retrievalQuestion)))
+        {
+            var ambiguousSubjects = FindAmbiguousCandidateSubjects(candidateMatches);
+            if (ambiguousSubjects.Count > 1)
+            {
+                return new SingleQuestionAnswer(
+                    question,
+                    BuildSubjectClarificationAnswer(ambiguousSubjects, responseLanguage),
+                    Array.Empty<SourceCitation>(),
+                    null,
+                    true,
+                    ambiguousSubjects);
+            }
         }
 
         var matches = await RerankMatchesAsync(retrievalQuestion, candidateMatches, responseLanguage, cancellationToken);
@@ -956,8 +983,10 @@ public sealed class RagChatService : IRagChatService
             return new SubjectRouteResult(explicitMatches[0], false, Array.Empty<string>());
         }
 
-        // When a question mentions more than one subject, keep the full scope
-        // and answer in one pass instead of asking the user to choose a subject.
+        if (explicitMatches.Count > 1 && !IsMultiSubjectQuestion(normalizedQuestion))
+        {
+            return new SubjectRouteResult(null, true, explicitMatches.Take(5).ToList());
+        }
 
         if (!string.IsNullOrWhiteSpace(subjectFilter) && !IsAllSubjectsFilter(subjectFilter))
         {
@@ -967,6 +996,31 @@ public sealed class RagChatService : IRagChatService
         }
 
         return new SubjectRouteResult(null, false, Array.Empty<string>());
+    }
+
+    private static IReadOnlyList<string> FindAmbiguousCandidateSubjects(IReadOnlyList<ScoredChunk> candidates)
+    {
+        var ranked = candidates
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.Chunk.Subject) ? "Không rõ môn" : item.Chunk.Subject.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new
+            {
+                Subject = group.Key,
+                Score = group.Max(item => item.Score) + Math.Min(0.03, group.Count() * 0.005)
+            })
+            .OrderByDescending(item => item.Score)
+            .Take(5)
+            .ToList();
+
+        if (ranked.Count < 2)
+        {
+            return Array.Empty<string>();
+        }
+
+        var top = ranked[0];
+        var second = ranked[1];
+        return top.Score - second.Score <= 0.08
+            ? ranked.Select(item => item.Subject).ToList()
+            : Array.Empty<string>();
     }
 
     private static bool SubjectMatches(string subject, string filter)
@@ -1067,6 +1121,25 @@ public sealed class RagChatService : IRagChatService
                || normalizedQuestion.Contains("tat ca mon", StringComparison.Ordinal)
                || normalizedQuestion.Contains("cac mon", StringComparison.Ordinal)
                || normalizedQuestion.Contains("all subjects", StringComparison.Ordinal);
+    }
+
+    private static string BuildSubjectClarificationAnswer(IReadOnlyList<string> subjects, string language)
+    {
+        var options = subjects
+            .Where(subject => !string.IsNullOrWhiteSpace(subject))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(5)
+            .ToList();
+
+        if (options.Count == 0)
+        {
+            return BuildOutOfScopeAnswer(language);
+        }
+
+        var optionText = string.Join("\n", options.Select(subject => $"- {subject}"));
+        return language == "vi"
+            ? $"Mình thấy câu này chạm tới vài môn. Bạn chọn đúng môn giúp mình nhé:\n\n{optionText}"
+            : $"I found relevant data in a few subjects. Which one should I use?\n\n{optionText}";
     }
 
     private static SingleQuestionAnswer? TryBuildExactFactAnswer(
