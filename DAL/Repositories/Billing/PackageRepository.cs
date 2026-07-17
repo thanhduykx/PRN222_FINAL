@@ -132,14 +132,13 @@ public sealed class PackageRepository : SqlBillingRepositoryBase, IPackageReposi
         };
         package.PriceVnd = newPriceVnd;
         context.PackagePriceChanges.Add(change);
-        var priceCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
         context.SystemNotifications.Add(new PRN222_FINAL.DAL.Entities.KnowledgeSqlSystemNotification
         {
             Id = Guid.NewGuid(),
             Type = PRN222_FINAL.DAL.Entities.SystemNotificationTypes.PackagePriceChanged,
             EntityId = package.Id,
             Title = $"Cập nhật giá gói {package.Name}",
-            Message = $"Giá gói {package.Name} đã thay đổi từ {change.OldPriceVnd.ToString("N0", priceCulture)}đ thành {change.NewPriceVnd.ToString("N0", priceCulture)}đ. Giá mới áp dụng cho các giao dịch tiếp theo.",
+            Message = PackagePriceChangeNotificationFormatter.Create(change),
             OccurredAt = changedAt
         });
         await context.SaveChangesAsync(cancellationToken);

@@ -4450,9 +4450,10 @@ function initSystemNotifications() {
   const pendingModals = modals.filter((modal) => {
     const notificationId = modal.dataset.notificationId;
     const viewerId = modal.dataset.viewerId || "anonymous";
+    const revision = modal.dataset.notificationRevision;
     if (!notificationId) return false;
 
-    const storageKey = `courseAssistant.systemNotification.${viewerId}.${notificationId}`;
+    const storageKey = `courseAssistant.systemNotification.${viewerId}.${notificationId}${revision ? `.${revision}` : ""}`;
     modal.dataset.storageKey = storageKey;
     try {
       return localStorage.getItem(storageKey) !== "acknowledged";
