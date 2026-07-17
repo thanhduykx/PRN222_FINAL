@@ -514,11 +514,16 @@
             var packagePriceMatch = isPackageNotification
                 ? System.Text.RegularExpressions.Regex.Match(
                     notification.Message,
-                    @"^Giá gói (?<package>.+?) đã thay đổi từ (?<old>[\d.,]+đ) thành (?<new>[\d.,]+đ)\. (?<rest>.+)$",
+                    @"^Giá gói (?<package>.+?) đã thay đổi từ (?<old>[\d.,]+đ) thành (?<new>[\d.,]+đ)\. (?<effective>.+?) Lý do thay đổi: (?<reason>.+)$",
                     System.Text.RegularExpressions.RegexOptions.None,
                     TimeSpan.FromSeconds(1))
                 : System.Text.RegularExpressions.Match.Empty;
-            <div class="price-change-modal" data-system-notification data-notification-id="@notification.Id" data-viewer-id="@currentUserId" hidden>
+            <div class="price-change-modal"
+                 data-system-notification
+                 data-notification-id="@notification.Id"
+                 data-viewer-id="@currentUserId"
+                 data-notification-revision="@(isPackageNotification ? "reason-v1" : null)"
+                 hidden>
                 <div class="price-change-modal__backdrop" data-system-notification-close></div>
                 <section class="price-change-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="@notificationTitleId" aria-describedby="@notificationDescriptionId">
                     <span class="material-symbols-outlined price-change-modal__icon" aria-hidden="true">@(isPackageNotification ? "sell" : "school")</span>
@@ -527,12 +532,18 @@
                         @if (packagePriceMatch.Success)
                         {
                             <h2 id="@notificationTitleId">Cập nhật giá gói <span class="price-change-modal__package-name">@packagePriceMatch.Groups["package"].Value</span></h2>
-                            <p id="@notificationDescriptionId" class="price-change-modal__message">
-                                Giá gói <strong class="price-change-modal__package-name">@packagePriceMatch.Groups["package"].Value</strong>
-                                đã thay đổi từ <strong class="price-change-modal__old-price">@packagePriceMatch.Groups["old"].Value</strong>
-                                thành <strong class="price-change-modal__new-price">@packagePriceMatch.Groups["new"].Value</strong>.
-                                <span class="price-change-modal__effective-copy">@packagePriceMatch.Groups["rest"].Value</span>
-                            </p>
+                            <div id="@notificationDescriptionId">
+                                <p class="price-change-modal__message">
+                                    Giá gói <strong class="price-change-modal__package-name">@packagePriceMatch.Groups["package"].Value</strong>
+                                    đã thay đổi từ <strong class="price-change-modal__old-price">@packagePriceMatch.Groups["old"].Value</strong>
+                                    thành <strong class="price-change-modal__new-price">@packagePriceMatch.Groups["new"].Value</strong>.
+                                    <span class="price-change-modal__effective-copy">@packagePriceMatch.Groups["effective"].Value</span>
+                                </p>
+                                <p class="price-change-modal__reason">
+                                    <strong>Lý do thay đổi:</strong>
+                                    <span>@packagePriceMatch.Groups["reason"].Value</span>
+                                </p>
+                            </div>
                         }
                         else
                         {

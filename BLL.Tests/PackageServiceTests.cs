@@ -9,6 +9,36 @@ namespace PRN222_FINAL.BLL.Tests;
 public sealed class PackageServiceTests
 {
     [Fact]
+    public void PriceChangeNotification_IncludesReasonShownToUsers()
+    {
+        var change = new KnowledgeSqlPackagePriceChange
+        {
+            PackageName = "Student",
+            OldPriceVnd = 49_000m,
+            NewPriceVnd = 79_000m,
+            Reason = "Điều chỉnh học kỳ mới"
+        };
+
+        var message = PackagePriceChangeNotificationFormatter.Create(change);
+
+        Assert.Contains("Lý do thay đổi: Điều chỉnh học kỳ mới", message);
+    }
+
+    [Fact]
+    public void ExistingPriceChangeNotification_CanBeEnrichedWithPersistedReason()
+    {
+        const string existingMessage = "Giá gói Student đã thay đổi từ 49.000đ thành 79.000đ. Giá mới áp dụng cho các giao dịch tiếp theo.";
+
+        var enrichedMessage = PackagePriceChangeNotificationFormatter.AppendReason(
+            existingMessage,
+            "Điều chỉnh học kỳ mới");
+
+        Assert.Equal(
+            $"{existingMessage} Lý do thay đổi: Điều chỉnh học kỳ mới",
+            enrichedMessage);
+    }
+
+    [Fact]
     public async Task UpdatePriceAsync_PersistsChangeAndMapsNotification()
     {
         var repository = Substitute.For<IPackageRepository>();
