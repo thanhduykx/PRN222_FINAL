@@ -79,16 +79,6 @@
 
         <form id="chatForm" class="chat-form codex-chat-form rbl-chat-form">
             @Html.AntiForgeryToken()
-            @if (subjectOptions.Count > 0)
-            {
-                <div class="chat-subject-filter" aria-label="Subject filter">
-                    <button type="button" class="chat-subject-chip is-active" data-subject-filter="" data-i18n="chat.allSubjects">All subjects</button>
-                    @foreach (var subject in subjectOptions)
-                    {
-                        <button type="button" class="chat-subject-chip" data-subject-filter="@subject">@subject</button>
-                    }
-                </div>
-            }
             @if (relatedQuestions.Length > 0)
             {
                 <div class="chat-related-strip rbl-related-strip" aria-label="Related questions" data-i18n-aria-label="chat.relatedAria">
