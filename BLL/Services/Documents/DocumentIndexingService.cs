@@ -190,10 +190,8 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
         ReportProgress("Embedding", 55, $"Generating embeddings for {chunkTexts.Count} chunks.");
         var chunks = new List<DocumentChunk>(chunkTexts.Count);
         var progressStep = Math.Max(1, chunkTexts.Count / 8);
-        var startChunkIndex = await _repository.GetMaxChunkIndexAsync(cancellationToken) + 1;
         foreach (var chunk in chunkTexts)
         {
-            var absoluteChunkIndex = startChunkIndex + chunk.ChunkIndex;
             var embeddingInput = await _chunkEnrichment.BuildEmbeddingTextAsync(
                 chunk,
                 new ChunkRetrievalEnrichmentContext(
@@ -209,7 +207,10 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
                 FileName = document.FileName,
                 Subject = document.Subject,
                 Chapter = document.Chapter,
-                ChunkIndex = absoluteChunkIndex,
+                // Chunk indexes are ordered within a document. They must not
+                // use the database-wide maximum, otherwise every newly
+                // indexed file starts after the previous file's last chunk.
+                ChunkIndex = chunk.ChunkIndex,
                 Text = chunk.Text,
                 SectionTitle = chunk.SectionTitle,
                 CharStart = chunk.CharStart,
@@ -223,7 +224,7 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
             if (chunk.ChunkIndex == chunkTexts.Count || chunk.ChunkIndex % progressStep == 0)
             {
                 var chunkProgress = 55 + (int)Math.Round((double)chunk.ChunkIndex / chunkTexts.Count * 30);
-                ReportProgress("Embedding", chunkProgress, $"Embedding chunk {chunk.ChunkIndex + 1}/{chunkTexts.Count} (Global ID: {absoluteChunkIndex}).");
+                ReportProgress("Embedding", chunkProgress, $"Embedding chunk {chunk.ChunkIndex + 1}/{chunkTexts.Count}.");
             }
         }
 
