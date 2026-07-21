@@ -510,8 +510,9 @@ public sealed class RagChatService : IRagChatService
             responseLanguage,
             cancellationToken);
         var answer = string.IsNullOrWhiteSpace(generatedAnswer)
+                     || IsQuestionEchoAnswer(resolvedQuestion, generatedAnswer)
                      || (!IsInsufficientDataAnswer(generatedAnswer) && !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, matchedChunks.Count))
-            ? BuildGroundedAnswer(contentTerms, matchedChunks, responseLanguage, ExtractCourseCodes(retrievalQuestion))
+            ? BuildGroundedAnswer(contentTerms, matchedChunks, responseLanguage, resolvedQuestion, ExtractCourseCodes(retrievalQuestion))
             : generatedAnswer.Trim();
 
         if (IsInsufficientDataAnswer(answer))
@@ -735,8 +736,9 @@ public sealed class RagChatService : IRagChatService
 
         var answer = string.IsNullOrWhiteSpace(generatedAnswer)
                      || IsInsufficientDataAnswer(generatedAnswer)
+                     || IsQuestionEchoAnswer(question, generatedAnswer)
                      || !ChatGroundingPolicy.HasValidSourceMarkers(generatedAnswer, fallbackChunks.Count)
-            ? BuildGroundedAnswer(answerSelectionTerms, fallbackChunks, responseLanguage, ExtractCourseCodes(question))
+            ? BuildGroundedAnswer(answerSelectionTerms, fallbackChunks, responseLanguage, question, ExtractCourseCodes(question))
             : generatedAnswer.Trim();
         if (IsInsufficientDataAnswer(answer))
         {
@@ -2846,16 +2848,17 @@ public sealed class RagChatService : IRagChatService
         string? fallbackModel = null,
         string? answerStatus = null)
     {
+        var displayAnswer = PrepareAnswerForDisplay(answer, citations.Count > 0);
         await _repository.AddMessageAsync(sessionId, KnowledgeModelMapper.ToData(new ChatMessage
         {
             Role = "assistant",
-            Content = answer,
+            Content = displayAnswer,
             Citations = citations.ToList()
         }), cancellationToken, KnowledgeModelMapper.ToData(ownerInfo));
 
         var session = KnowledgeModelMapper.ToModel(await _repository.GetOrCreateSessionAsync(sessionId, cancellationToken, KnowledgeModelMapper.ToData(ownerInfo)));
         return new ChatAnswer(
-            answer,
+            displayAnswer,
             citations,
             session.Messages,
             resolvedSubject,
@@ -2865,6 +2868,20 @@ public sealed class RagChatService : IRagChatService
             hasDirectCitation,
             fallbackModel,
             answerStatus ?? ChatGroundingPolicy.ResolveAnswerStatus(answerSource, needsClarification, citations.Count));
+    }
+
+    private static string PrepareAnswerForDisplay(string answer, bool hasCitations)
+    {
+        if (!hasCitations || string.IsNullOrWhiteSpace(answer))
+        {
+            return answer.Trim();
+        }
+
+        var withoutMarkers = ChatGroundingPolicy.RemoveSourceMarkers(answer);
+        withoutMarkers = Regex.Replace(withoutMarkers, @"[ \t]+([.,!?;:])", "$1", RegexOptions.None, RegexTimeout);
+        withoutMarkers = Regex.Replace(withoutMarkers, @"[ \t]{2,}", " ", RegexOptions.None, RegexTimeout);
+        withoutMarkers = string.Join("\n", withoutMarkers.Split('\n').Select(line => line.TrimEnd()));
+        return withoutMarkers.Trim();
     }
 
     private async Task<QueryIntentDecision> ClassifyQuestionIntentAsync(
@@ -3286,6 +3303,7 @@ public sealed class RagChatService : IRagChatService
         IReadOnlySet<string> queryTerms,
         IReadOnlyList<DocumentChunk> chunks,
         string language,
+        string question,
         IReadOnlySet<string>? requiredCourseCodes = null)
     {
         var minimumSharedTerms = queryTerms.Count >= 4 ? 2 : 1;
@@ -3299,6 +3317,7 @@ public sealed class RagChatService : IRagChatService
             }))
             .Where(item => item.Text.Length is > 8 and <= 500
                            && item.SharedTerms >= minimumSharedTerms
+                           && !IsQuestionEchoAnswer(question, item.Text)
                            && !IsLowValueFallbackSentence(item.Text))
             .OrderByDescending(item => item.SharedTerms)
             .GroupBy(item => item.Text, StringComparer.OrdinalIgnoreCase)
@@ -3339,14 +3358,69 @@ public sealed class RagChatService : IRagChatService
             return BuildOutOfScopeAnswer(language);
         }
 
-        if (language == "vi")
+        if (selectedSentences.Count == 1)
         {
-            return "Tóm tắt từ tài liệu:\n\n" +
-                   string.Join("\n", selectedSentences.Select(item => $"- {AttachSourceMarker(item.Text, item.SourceNumber)}"));
+            var item = selectedSentences[0];
+            return AttachSourceMarkers(FormatFallbackAnswerText(item.Text), item.SourceNumber);
         }
 
-        return "Summary from the documents:\n\n" +
-               string.Join("\n", selectedSentences.Select(item => $"- {AttachSourceMarker(item.Text, item.SourceNumber)}"));
+        return string.Join("\n", selectedSentences.Select(item =>
+            $"- {AttachSourceMarkers(FormatFallbackAnswerText(item.Text), item.SourceNumber)}"));
+    }
+
+    private static string FormatFallbackAnswerText(string text)
+    {
+        var value = text.Trim();
+        var listStart = value.IndexOf(": - ", StringComparison.Ordinal);
+        if (listStart < 0)
+        {
+            return value;
+        }
+
+        var heading = value[..(listStart + 1)].Trim();
+        var items = value[(listStart + 3)..]
+            .Split(" - ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return items.Length == 0
+            ? value
+            : $"{heading}\n{string.Join("\n", items.Select(item => $"- {item}"))}";
+    }
+
+    private static string AttachSourceMarkers(string text, int sourceNumber)
+    {
+        return string.Join("\n", text.Split('\n').Select(line =>
+        {
+            var trimmed = line.TrimEnd();
+            return trimmed.EndsWith(':') ? trimmed : AttachSourceMarker(trimmed, sourceNumber);
+        }));
+    }
+
+    private static bool IsQuestionEchoAnswer(string question, string answer)
+    {
+        if (string.IsNullOrWhiteSpace(question) || string.IsNullOrWhiteSpace(answer))
+        {
+            return false;
+        }
+
+        var normalizedQuestion = NormalizeQuestion(question);
+        var normalizedAnswer = NormalizeQuestion(ChatGroundingPolicy.RemoveSourceMarkers(answer));
+        normalizedAnswer = Regex.Replace(
+            normalizedAnswer,
+            @"^(?:cau hoi|question)\s*[:\-]?\s*",
+            string.Empty,
+            RegexOptions.None,
+            RegexTimeout);
+        if (normalizedAnswer.Equals(normalizedQuestion, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var questionTerms = ExtractTerms(question);
+        var answerTerms = ExtractTerms(ChatGroundingPolicy.RemoveSourceMarkers(answer));
+        var questionFacts = ExtractGroundingFacts(question);
+        var answerFacts = ExtractGroundingFacts(answer);
+        return answerTerms.Count >= 2
+               && answerTerms.All(questionTerms.Contains)
+               && answerFacts.All(questionFacts.Contains);
     }
 
     private static string AttachSourceMarker(string text, int sourceNumber)

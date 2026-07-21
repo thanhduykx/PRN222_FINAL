@@ -10,6 +10,7 @@ using PRN222_FINAL.BLL.Contracts.Billing;
 using PRN222_FINAL.Web.Security;
 using PRN222_FINAL.Web.Services;
 using PRN222_FINAL.Web.ViewModels.Analytics;
+using System.Globalization;
 
 namespace PRN222_FINAL.Web.Pages.Admin;
 
@@ -46,9 +47,16 @@ public sealed class StatisticsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int AcademicYear { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string Month { get; set; } = string.Empty;
+
     public AdminStatisticsViewModel Dashboard { get; private set; } = new();
     public AdminStatisticsViewModel SemesterDashboard { get; private set; } = new();
     public string SemesterLabel { get; private set; } = string.Empty;
+    public bool IsMonthlyReport { get; private set; }
+    public string SelectedMonthLabel { get; private set; } = string.Empty;
+    public string MinimumReportMonth => DateTimeOffset.Now.AddYears(-5).ToString("yyyy-MM", CultureInfo.InvariantCulture);
+    public string MaximumReportMonth => DateTimeOffset.Now.ToString("yyyy-MM", CultureInfo.InvariantCulture);
     public IReadOnlyList<int> AcademicYears { get; private set; } = Array.Empty<int>();
     public int TotalUsers { get; private set; }
     public int StudentUsers { get; private set; }
@@ -96,7 +104,10 @@ public sealed class StatisticsModel : PageModel
 
         try
         {
-            _analyticsSnapshot = await _analytics.GetAdminDashboardAsync(Days, cancellationToken);
+            var monthRange = NormalizeMonthSelection();
+            _analyticsSnapshot = monthRange.HasValue
+                ? await _analytics.GetAdminDashboardAsync(monthRange.Value.FromUtc, monthRange.Value.ToUtc, cancellationToken)
+                : await _analytics.GetAdminDashboardAsync(Days, cancellationToken);
             Dashboard = Map(_analyticsSnapshot);
             if (Tab == "chatbot")
             {
@@ -116,7 +127,7 @@ public sealed class StatisticsModel : PageModel
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Admin analytics dashboard could not be loaded for {Days} days.", Days);
+            _logger.LogError(exception, "Admin analytics dashboard could not be loaded for days {Days} and month {Month}.", Days, Month);
             ErrorMessage = "Không thể tải báo cáo lúc này. Vui lòng thử lại sau.";
         }
     }
@@ -267,5 +278,36 @@ public sealed class StatisticsModel : PageModel
         var endOffset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(year, endMonth, 1, 0, 0, 0, DateTimeKind.Unspecified));
         var toLocal = new DateTimeOffset(year, endMonth, 1, 0, 0, 0, endOffset).AddMonths(1).AddTicks(-1);
         return (fromLocal.ToUniversalTime(), toLocal.ToUniversalTime());
+    }
+
+    private (DateTimeOffset FromUtc, DateTimeOffset ToUtc)? NormalizeMonthSelection()
+    {
+        var value = (Month ?? string.Empty).Trim();
+        if (!DateTime.TryParseExact(
+                value,
+                "yyyy-MM",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var selectedMonth))
+        {
+            Month = string.Empty;
+            return null;
+        }
+
+        var firstAllowedMonth = new DateTime(DateTimeOffset.Now.Year - 5, DateTimeOffset.Now.Month, 1);
+        var currentMonth = new DateTime(DateTimeOffset.Now.Year, DateTimeOffset.Now.Month, 1);
+        selectedMonth = new DateTime(selectedMonth.Year, selectedMonth.Month, 1);
+        if (selectedMonth < firstAllowedMonth || selectedMonth > currentMonth)
+        {
+            Month = string.Empty;
+            return null;
+        }
+
+        Month = selectedMonth.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+        SelectedMonthLabel = $"Tháng {selectedMonth:MM/yyyy}";
+        IsMonthlyReport = true;
+
+        var range = AnalyticsPeriod.ForCalendarMonth(selectedMonth.Year, selectedMonth.Month, TimeZoneInfo.Local);
+        return (range.FromUtc, range.ToUtc);
     }
 }

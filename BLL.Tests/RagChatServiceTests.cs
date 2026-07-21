@@ -101,7 +101,7 @@ public sealed class RagChatServiceTests
             $"Status={result.AnswerStatus}; Source={result.AnswerSource}; Answer={result.Answer}");
         Assert.DoesNotContain("JWT", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("cookie bảo mật", result.Answer, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("[1]", result.Answer);
+        Assert.DoesNotMatch(@"\[\d+\]", result.Answer);
         Assert.Single(result.Citations);
     }
 
@@ -262,7 +262,7 @@ public sealed class RagChatServiceTests
         Assert.True(
             result.AnswerStatus == ChatGroundingPolicy.GroundedAnswerStatus,
             $"Status={result.AnswerStatus}; Source={result.AnswerSource}; Answer={result.Answer}");
-        Assert.Equal("Authentication sử dụng cookie bảo mật [1].", result.Answer);
+        Assert.Equal("Authentication sử dụng cookie bảo mật.", result.Answer);
         Assert.Single(result.Citations);
         Assert.Equal("PRN222-syllabus.pdf", result.Citations[0].FileName);
     }
@@ -319,6 +319,116 @@ public sealed class RagChatServiceTests
             "Authentication in PRN222 uses a secure cookie",
             result.Citations[0].Excerpt,
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AskAsync_QuestionEchoIsReplacedByDirectAnswerWithSupportingCitation()
+    {
+        var fixture = CreateFixture();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(), FileName = "FLM-Syllabus-IOT102.txt", Subject = "IOT102",
+                Chapter = "Chuẩn đầu ra", ChunkIndex = 3,
+                Text = "Chuẩn đầu ra IOT102 gồm CLO1: Understand the concept of IoT and applications. CLO2: Build a basic IoT solution.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            },
+            new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(), FileName = "FLM-Syllabus-IOT102.txt", Subject = "IOT102",
+                Chapter = "Đánh giá", ChunkIndex = 7,
+                Text = "Câu hỏi: IOT102 có chuẩn đầu ra nào? Active learning 10%, Final Project Presentation 20%, Final exam 20%.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            }
+        ]);
+        fixture.Completion.IsEnabled.Returns(true);
+        fixture.Completion.RerankChunksAsync(
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns([
+                new ChatChunkRerankResult(1, 0.96, "learning outcomes"),
+                new ChatChunkRerankResult(2, 0.90, "question text")
+            ]);
+        fixture.Completion.GenerateAnswerAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<ChatMessage>>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns("IOT102 có chuẩn đầu ra nào [2].");
+        fixture.Completion.ValidateGroundingAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new GroundingDecision(true, 0.99, "question text exists in source"));
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "IOT102 có chuẩn đầu ra nào?",
+            allowedSubjects: ["IOT102"]);
+
+        Assert.Contains("CLO1", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Tóm tắt từ tài liệu", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("IOT102 có chuẩn đầu ra nào", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"\[\d+\]", result.Answer);
+        var citation = Assert.Single(result.Citations);
+        Assert.Equal("Chuẩn đầu ra", citation.Chapter);
+        Assert.Contains("CLO1", citation.Excerpt, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Final exam", citation.Excerpt, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AskAsync_FallbackFormatsInlineDocumentListAsClearAnswerWithoutMarkers()
+    {
+        var fixture = CreateFixture();
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(), FileName = "FLM-Syllabus-IOT102.txt", Subject = "IOT102",
+                Chapter = "Nội dung", ChunkIndex = 5,
+                Text = "Nội dung học IOT102 bao gồm: - Khái niệm cơ bản về IoT - Ứng dụng của IoT",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            }
+        ]);
+        fixture.Completion.IsEnabled.Returns(true);
+        fixture.Completion.RerankChunksAsync(
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns([new ChatChunkRerankResult(1, 0.96, "course content")]);
+        fixture.Completion.GenerateAnswerAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<ChatMessage>>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns((string?)null);
+        fixture.Completion.ValidateGroundingAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new GroundingDecision(true, 0.99, "direct extractive answer"));
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "IOT102 học những nội dung gì?",
+            allowedSubjects: ["IOT102"]);
+
+        Assert.Equal(
+            "Nội dung học IOT102 bao gồm:\n- Khái niệm cơ bản về IoT\n- Ứng dụng của IoT",
+            result.Answer);
+        Assert.Single(result.Citations);
     }
 
     [Theory]
@@ -443,8 +553,8 @@ public sealed class RagChatServiceTests
             allowedSubjects: ["DBA103", "IOT102"]);
 
         Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
-        Assert.Contains("DBA103: 3 tín chỉ [1].", result.Answer, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("IOT102: 4 tín chỉ [2].", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DBA103: 3 tín chỉ.", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IOT102: 4 tín chỉ.", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("IOT102 nhiều hơn DBA103 1 tín chỉ", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(2, result.Citations.Count);
         Assert.Equal("DBA103", result.Citations[0].Subject);
@@ -471,7 +581,7 @@ public sealed class RagChatServiceTests
 
         Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
         Assert.Contains("có số tín chỉ bằng nhau", result.Answer, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("[1][2]", result.Answer);
+        Assert.DoesNotMatch(@"\[\d+\]", result.Answer);
         Assert.Equal(2, result.Citations.Count);
     }
 
@@ -501,7 +611,7 @@ public sealed class RagChatServiceTests
             allowedSubjects: ["DBA103", "IOT102"]);
 
         Assert.Equal(ChatGroundingPolicy.PartialAnswerStatus, result.AnswerStatus);
-        Assert.Contains("DBA103: 3 tín chỉ [1].", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DBA103: 3 tín chỉ.", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("IOT102: Chưa tìm thấy số tín chỉ", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Single(result.Citations);
         Assert.Equal("DBA103", result.Citations[0].Subject);

@@ -821,6 +821,8 @@ const translations = {
     "admin.statTab.subscription": "Subscriptions",
     "admin.statTab.users": "Users",
     "admin.time": "Time period",
+    "admin.monthlyReport": "View report by month",
+    "admin.monthSelectAria": "Select report month",
     "admin.updatedAt": "Updated",
     "stat.activeUsersUnit": "active users",
     "stat.answerRate": "Answer rate",
@@ -1673,6 +1675,8 @@ const translations = {
     "admin.statTab.subscription": "Gói đăng ký",
     "admin.statTab.users": "Người dùng",
     "admin.time": "Thời gian",
+    "admin.monthlyReport": "Xem báo cáo theo tháng",
+    "admin.monthSelectAria": "Chọn tháng báo cáo",
     "admin.updatedAt": "Cập nhật",
     "stat.activeUsersUnit": "người dùng hoạt động",
     "stat.answerRate": "Tỷ lệ trả lời được",
@@ -3475,6 +3479,12 @@ function refreshChatFollowUpSuggestions() {
   });
 }
 
+function stripInlineCitationMarkers(content) {
+  return String(content || "")
+    .replace(/\s*\[(?:[1-9]|1\d|20)\]/g, "")
+    .replace(/[ \t]+([.,!?;:])/g, "$1");
+}
+
 function renderAssistantContent(bubble, content, options = {}) {
   if (!bubble) return;
   bubble.replaceChildren();
@@ -3485,7 +3495,8 @@ function renderAssistantContent(bubble, content, options = {}) {
     answerLabel.textContent = t("chat.answerLabel");
     bubble.appendChild(answerLabel);
   }
-  const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
+  const visibleContent = stripInlineCitationMarkers(content);
+  const lines = visibleContent.replace(/\r\n?/g, "\n").split("\n");
   let list = null;
   let codeBlock = null;
   const closeList = () => { list = null; };
@@ -3541,8 +3552,8 @@ function renderAssistantContent(bubble, content, options = {}) {
     bubble.appendChild(element);
   });
 
-  if (!bubble.childNodes.length) bubble.textContent = String(content || "");
-  if (options.includeFollowUps !== false && String(content || "").trim()) {
+  if (!bubble.childNodes.length) bubble.textContent = visibleContent;
+  if (options.includeFollowUps !== false && visibleContent.trim()) {
     appendFollowUpSuggestions(bubble);
   }
 }
@@ -3558,13 +3569,14 @@ async function appendAssistantAnswer(target, content, citations) {
   });
   const bubble = wrapper?.querySelector(".bubble");
   if (!wrapper || !bubble) return wrapper;
-  const step = content.length > 800 ? 8 : 4;
-  for (let index = 0; index < content.length; index += step) {
-    bubble.textContent = content.slice(0, index + step);
+  const visibleContent = stripInlineCitationMarkers(content);
+  const step = visibleContent.length > 800 ? 8 : 4;
+  for (let index = 0; index < visibleContent.length; index += step) {
+    bubble.textContent = visibleContent.slice(0, index + step);
     if (index % 32 === 0) target.scrollTop = target.scrollHeight;
     await new Promise((resolve) => window.setTimeout(resolve, 12));
   }
-  renderAssistantContent(bubble, content);
+  renderAssistantContent(bubble, visibleContent);
   appendCitationsToMessage(wrapper, citations);
   target.scrollTop = target.scrollHeight;
   return wrapper;
@@ -3630,11 +3642,14 @@ function appendCitationsToMessage(messageWrapper, citations) {
 
     const body = document.createElement("div");
     body.className = "citation-card__body";
+    const evidenceLabel = document.createElement("strong");
+    evidenceLabel.className = "citation-card__evidence-label";
+    evidenceLabel.textContent = getLanguage() === "vi" ? "Dẫn chứng từ tài liệu:" : "Evidence from the document:";
     const bodyText = document.createElement("p");
     bodyText.textContent = excerpt || (getLanguage() === "vi"
       ? "Nguồn này đã được dùng để đối chiếu câu trả lời. Nội dung chi tiết phụ thuộc quyền truy cập tài liệu của bạn."
       : "This source was used to verify the answer. Detailed content depends on your document access permissions.");
-    body.appendChild(bodyText);
+    body.append(evidenceLabel, bodyText);
     item.append(summary, body);
 
     sourceList.appendChild(item);

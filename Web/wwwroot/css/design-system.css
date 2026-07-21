@@ -261,7 +261,8 @@ body.rbl-body :where(.ops-table, .rbl-table) tbody tr:hover {
   font-weight: 750;
 }
 
-.ops-report-period-control select {
+.ops-report-period-control select,
+.ops-report-period-control input[type="month"] {
   min-height: 2.4rem;
   padding: .35rem 2rem .35rem .7rem;
   border: 1px solid var(--ds-border);

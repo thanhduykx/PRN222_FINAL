@@ -91,7 +91,7 @@
 
 
 
-    string TabUrl(string tab) => Url.Page("/Admin/Statistics", new { tab, days = Model.Days }) ?? "#";
+    string TabUrl(string tab) => Url.Page("/Admin/Statistics", new { tab, days = Model.Days, month = Model.Month }) ?? "#";
     string TabClass(string tab) => $"ops-tab{(Model.Tab == tab ? " is-active" : "")}";
     string ReportDate(DateTimeOffset value) => value.ToLocalTime().ToString("dd/MM/yyyy");
     string ReportTimestamp(DateTimeOffset value) => value.ToLocalTime().ToString("HH:mm, dd/MM/yyyy");
@@ -158,26 +158,46 @@
             <div class="ops-report-scope__main">
                 <span class="material-symbols-outlined" aria-hidden="true">date_range</span>
                 <div>
-                    <strong><span data-i18n="admin.scopeLabel">Phạm vi:</span> @ReportDate(Model.Dashboard.FromUtc) – @ReportDate(Model.Dashboard.ToUtc)</strong>
+                    <strong>
+                        <span data-i18n="admin.scopeLabel">Phạm vi:</span>
+                        @if (Model.IsMonthlyReport)
+                        {
+                            <span>@Model.SelectedMonthLabel · @ReportDate(Model.Dashboard.FromUtc) – @ReportDate(Model.Dashboard.ToUtc)</span>
+                        }
+                        else
+                        {
+                            <span>@ReportDate(Model.Dashboard.FromUtc) – @ReportDate(Model.Dashboard.ToUtc)</span>
+                        }
+                    </strong>
                     <span data-i18n="admin.scopeAll">Tất cả môn học · Tất cả người dùng · Múi giờ địa phương</span>
                 </div>
             </div>
             <label class="ops-report-period-control">
                 <span data-i18n="admin.time">Thời gian</span>
-                <select asp-for="Days" onchange="this.form.submit()" aria-label="Chọn khoảng thời gian báo cáo" data-i18n-aria-label="admin.timeSelectAria">
+                <select asp-for="Days" onchange="this.form.elements['Month'].value=''; this.form.submit()" aria-label="Chọn khoảng thời gian báo cáo" data-i18n-aria-label="admin.timeSelectAria">
                     <option value="7" data-i18n="admin.days7">7 ngày gần nhất</option>
                     <option value="30" data-i18n="admin.days30">30 ngày gần nhất</option>
                     <option value="90" data-i18n="admin.days90">90 ngày gần nhất</option>
                     <option value="180" data-i18n="admin.days180">180 ngày gần nhất</option>
                 </select>
             </label>
+            <label class="ops-report-period-control">
+                <span data-i18n="admin.monthlyReport">Xem báo cáo theo tháng</span>
+                <input asp-for="Month"
+                       type="month"
+                       min="@Model.MinimumReportMonth"
+                       max="@Model.MaximumReportMonth"
+                       onchange="this.form.submit()"
+                       aria-label="Chọn tháng báo cáo"
+                       data-i18n-aria-label="admin.monthSelectAria" />
+            </label>
             <div class="ops-report-scope__freshness" title="Thời điểm hệ thống tổng hợp dữ liệu báo cáo" data-i18n-title="admin.updatedAtTooltip">
                 <span class="ops-data-status" aria-hidden="true"></span>
                 <span data-i18n="admin.updatedAt">Cập nhật</span> @ReportTimestamp(Model.Dashboard.GeneratedAt)
             </div>
-            @if (Model.Days != 30)
+            @if (Model.Days != 30 || Model.IsMonthlyReport)
             {
-                <a class="ops-report-scope__reset" asp-page="/Admin/Statistics" asp-route-tab="@Model.Tab" asp-route-days="30" data-i18n="admin.reset30">Đặt lại 30 ngày</a>
+                <a class="ops-report-scope__reset" asp-page="/Admin/Statistics" asp-route-tab="@Model.Tab" asp-route-days="30" asp-route-month="" data-i18n="admin.reset30">Đặt lại 30 ngày</a>
             }
         </form>
 
@@ -195,6 +215,7 @@
                     <form method="post" asp-page-handler="GenerateRecommendations">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="Days" value="@Model.Days" />
+                        <input type="hidden" name="Month" value="@Model.Month" />
                         <input type="hidden" name="Tab" value="overview" />
                         <button type="submit" class="ops-button ops-button--primary">
                             <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
@@ -508,6 +529,7 @@
                     <form method="get" class="ops-semester-controls">
                         <input type="hidden" name="tab" value="chatbot" />
                         <input type="hidden" name="days" value="@Model.Days" />
+                        <input type="hidden" name="month" value="@Model.Month" />
                         <div class="ops-semester-field">
                             <label for="semesterSelect">Học kỳ</label>
                             <select id="semesterSelect" asp-for="Semester" onchange="this.form.submit()"><option value="spring">Spring</option><option value="summer">Summer</option><option value="fall">Fall</option></select>
