@@ -116,6 +116,13 @@ public static class KnowledgeSqlSchemaInitializer
 
             CREATE INDEX IF NOT EXISTS "IX_subscriptions_UserId_Status_EndsAt" ON subscriptions ("UserId", "Status", "EndsAt");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_subscriptions_PaymentId" ON subscriptions ("PaymentId") WHERE "PaymentId" IS NOT NULL;
+            UPDATE subscriptions AS subscription
+            SET "EndsAt" = subscription."StartsAt" + make_interval(days => GREATEST(1, package."DurationDays"))
+            FROM packages AS package
+            WHERE subscription."PackageId" = package."Id"
+                AND subscription."Status" = 'Active'
+                AND package."IsLifetime" = false
+                AND subscription."EndsAt" > subscription."StartsAt" + make_interval(days => GREATEST(1, package."DurationDays"));
             WITH ranked_active AS (
                 SELECT "Id", ROW_NUMBER() OVER (
                     PARTITION BY "UserId"

@@ -14,6 +14,7 @@ public sealed class MomoOptions
     public string AccessKey { get; set; } = string.Empty;
     public string SecretKey { get; set; } = string.Empty;
     public string Endpoint { get; set; } = "https://test-payment.momo.vn/v2/gateway/api/create";
+    public string QueryEndpoint { get; set; } = string.Empty;
     public string RequestType { get; set; } = "captureWallet";
 }
 

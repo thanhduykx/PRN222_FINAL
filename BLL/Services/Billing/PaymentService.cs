@@ -245,7 +245,11 @@ public sealed class PaymentService : IPaymentService
             return null;
         }
 
-        if (payment.Provider == PaymentProvider.PayOS && payment.Status == PaymentStatus.Pending)
+        if (payment.Provider == PaymentProvider.MoMo && payment.Status == PaymentStatus.Pending)
+        {
+            payment = await ReconcileMomoPaymentAsync(payment, cancellationToken);
+        }
+        else if (payment.Provider == PaymentProvider.PayOS && payment.Status == PaymentStatus.Pending)
         {
             payment = await ReconcilePayOsPaymentAsync(payment, cancellationToken);
         }
@@ -295,6 +299,50 @@ public sealed class PaymentService : IPaymentService
             };
     }
 
+    private async Task<Payment> ReconcileMomoPaymentAsync(Payment payment, CancellationToken cancellationToken)
+    {
+        PaymentGatewayStatusResult gatewayStatus;
+        try
+        {
+            gatewayStatus = await _momoGateway.GetStatusAsync(payment.OrderCode, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return payment;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return payment;
+        }
+        catch (InvalidOperationException)
+        {
+            return payment;
+        }
+
+        if (!string.Equals(gatewayStatus.OrderCode, payment.OrderCode, StringComparison.Ordinal)
+            || !gatewayStatus.AmountVnd.HasValue
+            || gatewayStatus.AmountVnd.Value != payment.AmountVnd
+            || gatewayStatus.Status != PaymentStatus.Paid)
+        {
+            return payment;
+        }
+
+        var packageEntity = await _packages.GetByIdAsync(payment.PackageId, cancellationToken);
+        if (packageEntity is null)
+        {
+            return payment;
+        }
+
+        payment.ProviderTransactionId = string.IsNullOrWhiteSpace(gatewayStatus.ProviderTransactionId)
+            ? payment.ProviderTransactionId
+            : gatewayStatus.ProviderTransactionId;
+        payment.Status = PaymentStatus.Paid;
+        payment.PaidAt = _timeProvider.GetUtcNow();
+        await _payments.UpdateAsync(BillingDtoMapper.ToEntity(payment), cancellationToken);
+        await ActivateSubscriptionAsync(payment, BillingDtoMapper.ToModel(packageEntity), cancellationToken);
+        return payment;
+    }
+
     private async Task<Payment> ReconcilePayOsPaymentAsync(Payment payment, CancellationToken cancellationToken)
     {
         PaymentGatewayStatusResult gatewayStatus;
@@ -317,7 +365,8 @@ public sealed class PaymentService : IPaymentService
 
         var expectedGatewayOrderCode = BuildPayOsOrderCode(payment.OrderCode).ToString();
         if (!string.Equals(gatewayStatus.OrderCode, expectedGatewayOrderCode, StringComparison.Ordinal)
-            || (gatewayStatus.AmountVnd.HasValue && gatewayStatus.AmountVnd.Value != payment.AmountVnd))
+            || !gatewayStatus.AmountVnd.HasValue
+            || gatewayStatus.AmountVnd.Value != payment.AmountVnd)
         {
             return payment;
         }

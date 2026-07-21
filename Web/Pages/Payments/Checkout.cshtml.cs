@@ -108,6 +108,43 @@ public sealed class CheckoutModel : PageModel
         return RedirectToPage();
     }
 
+    public async Task<IActionResult> OnGetStatusAsync(
+        string? provider,
+        string? orderCode,
+        CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole(AppRoles.Student))
+        {
+            return Forbid();
+        }
+
+        if (!Enum.TryParse<PaymentProvider>(provider, true, out var parsedProvider)
+            || parsedProvider is not (PaymentProvider.MoMo or PaymentProvider.PayOS)
+            || string.IsNullOrWhiteSpace(orderCode))
+        {
+            return BadRequest(new { message = "Thông tin giao dịch không hợp lệ." });
+        }
+
+        var status = await _payments.GetReturnStatusAsync(
+            parsedProvider,
+            orderCode.Trim(),
+            GetUserId(),
+            cancellationToken);
+        if (status is null)
+        {
+            return NotFound(new { message = "Không tìm thấy giao dịch hoặc đơn đã hết hạn." });
+        }
+
+        return new JsonResult(new
+        {
+            status = status.Status.ToString(),
+            redirectUrl = Url.Page(
+                "/Payments/Return",
+                pageHandler: null,
+                values: new { provider = parsedProvider.ToString(), orderCode = status.OrderCode })
+        });
+    }
+
     public static bool IsSafeCheckoutUrl(string value) =>
         Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
