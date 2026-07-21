@@ -28,7 +28,7 @@ public static class AnalyticsDtoMapper
         ActiveSubscriptionCount = data.ActiveSubscriptionCount,
         SubjectUsage = data.SubjectUsage.Select(x => new SubjectUsageDto
         {
-            SubjectId=x.SubjectId,SubjectCode=x.SubjectCode,SubjectName=x.SubjectName,
+            SubjectId=x.SubjectId,SubjectCode=x.SubjectCode,SubjectName=x.SubjectName,OwnerUserId=x.OwnerUserId,
             OwnerName=x.OwnerName,OwnerEmail=x.OwnerEmail,LecturerCount=x.LecturerCount,
             StudentCount=x.StudentCount,DocumentCount=x.DocumentCount,
             IndexedDocumentCount=x.IndexedDocumentCount,ChunkCount=x.ChunkCount,

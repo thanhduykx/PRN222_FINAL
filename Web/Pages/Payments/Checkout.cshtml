@@ -55,7 +55,7 @@
                     @foreach (var payment in Model.PendingPayments)
                     {
                         <tr class="@(payment.PaymentId == activePayment?.PaymentId ? "is-active" : null)">
-                            <td><strong>@payment.PackageName</strong><small>@(payment.Provider == PaymentProvider.MoMo ? "MOMO" : "PayOS")</small></td>
+                            <td><strong>@payment.PackageName</strong><small>@(payment.Provider == PaymentProvider.MoMo ? "MoMo" : "VietQR")</small></td>
                             <td><code>@payment.OrderCode</code></td>
                             <td><strong>@payment.AmountVnd.ToString("N0") @payment.Currency</strong></td>
                             <td>
@@ -80,7 +80,8 @@
 
         @if (activePayment is not null)
         {
-            var activeProviderName = activePayment.Provider == PaymentProvider.MoMo ? "MOMO" : "PayOS";
+            var isVietQr = activePayment.Provider == PaymentProvider.PayOS;
+            var activeProviderName = isVietQr ? "VietQR" : "MoMo";
             var recipientName = string.IsNullOrWhiteSpace(activePayment.RecipientName)
                 ? activePayment.RecipientEmail.Split('@')[0]
                 : activePayment.RecipientName;
@@ -90,9 +91,20 @@
                 // Keep pending orders created before qrCodeUrl support scannable.
                 qrPayload = activePayment.CheckoutUrl;
             }
-            var qrImageSource = CheckoutModel.BuildQrImageSource(qrPayload);
+            var fallbackQrImageSource = CheckoutModel.BuildQrImageSource(qrPayload);
             var hasPayeeDetails = !string.IsNullOrWhiteSpace(activePayment.PayeeAccountName)
                 || !string.IsNullOrWhiteSpace(activePayment.PayeeAccountNumber);
+            var vietQrImageSource = isVietQr
+                ? CheckoutModel.BuildVietQrImageSource(
+                    activePayment.PayeeBankBin,
+                    activePayment.PayeeAccountNumber,
+                    activePayment.AmountVnd,
+                    activePayment.TransferDescription,
+                    activePayment.PayeeAccountName)
+                : string.Empty;
+            var qrImageSource = string.IsNullOrWhiteSpace(vietQrImageSource)
+                ? fallbackQrImageSource
+                : vietQrImageSource;
             <section class="checkout-payment-grid">
                 <div class="checkout-method-card">
                     <span class="checkout-eyebrow">Phương thức thanh toán</span>
@@ -102,14 +114,19 @@
                         @foreach (var provider in paymentProviders)
                         {
                             var isCurrentProvider = provider == activePayment.Provider;
-                            var providerName = provider == PaymentProvider.MoMo ? "MOMO" : "PayOS";
+                            var providerName = provider == PaymentProvider.MoMo ? "MoMo" : "VietQR";
                             var providerDescription = provider == PaymentProvider.MoMo
-                                ? "Thanh toán qua ví điện tử MOMO"
-                                : "Quét QR bằng ứng dụng ngân hàng";
+                                ? "Thanh toán qua ví điện tử MoMo"
+                                : "Quét mã bằng mọi ứng dụng ngân hàng";
+                            var providerLogo = provider == PaymentProvider.MoMo ? "momo.png" : "vietqr.png";
                             @if (isCurrentProvider)
                             {
                                 <div class="checkout-payment-option is-selected" aria-current="true">
-                                    <img src="~/img/payments/@(provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="" />
+                                    <img class="checkout-method-logo @(provider == PaymentProvider.MoMo ? "is-momo" : "is-vietqr")"
+                                         src="~/img/payments/@providerLogo"
+                                         alt="Logo @providerName"
+                                         width="@(provider == PaymentProvider.MoMo ? 44 : 72)"
+                                         height="@(provider == PaymentProvider.MoMo ? 44 : 36)" />
                                     <span><strong>@providerName</strong><small>@providerDescription</small></span>
                                     <span class="checkout-method-status"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Đã chọn</span>
                                 </div>
@@ -120,7 +137,11 @@
                                     <input type="hidden" name="paymentId" value="@activePayment.PaymentId" />
                                     <input type="hidden" name="provider" value="@provider" />
                                     <button class="checkout-payment-option" type="submit" aria-label="Đổi sang @providerName">
-                                        <img src="~/img/payments/@(provider == PaymentProvider.MoMo ? "momo.svg" : "payos.svg")" alt="" />
+                                        <img class="checkout-method-logo @(provider == PaymentProvider.MoMo ? "is-momo" : "is-vietqr")"
+                                             src="~/img/payments/@providerLogo"
+                                             alt="Logo @providerName"
+                                             width="@(provider == PaymentProvider.MoMo ? 44 : 72)"
+                                             height="@(provider == PaymentProvider.MoMo ? 44 : 36)" />
                                         <span><strong>@providerName</strong><small>@providerDescription</small></span>
                                         <span class="checkout-method-status">Chọn</span>
                                     </button>
@@ -151,7 +172,10 @@
                         <div class="checkout-qr-frame">
                             @if (!string.IsNullOrWhiteSpace(qrImageSource))
                             {
-                                <img class="checkout-qr" src="@qrImageSource" alt="Mã QR thanh toán đơn @activePayment.OrderCode" />
+                                <img class="checkout-qr @(isVietQr ? "is-vietqr" : null)"
+                                     src="@qrImageSource"
+                                     data-qr-fallback="@fallbackQrImageSource"
+                                     alt="Mã @activeProviderName thanh toán đơn @activePayment.OrderCode" />
                             }
                             else
                             {
@@ -179,25 +203,36 @@
                         </div>
                     </section>
 
-                    @if (CheckoutModel.IsSafeCheckoutUrl(activePayment.CheckoutUrl))
+                    @if (!isVietQr && CheckoutModel.IsSafeCheckoutUrl(activePayment.CheckoutUrl))
                     {
                         <a class="checkout-primary-button checkout-pay-button" href="@activePayment.CheckoutUrl" rel="noopener noreferrer">
-                            Mở cổng thanh toán
+                            Mở ứng dụng MoMo
                             <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
                         </a>
                     }
-                    else
+                    else if (!isVietQr)
                     {
                         <p class="checkout-gateway-error">Không lấy được liên kết thanh toán an toàn. Vui lòng xóa đơn và tạo lại.</p>
                     }
                     <p class="checkout-expiry-note"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> Còn <strong data-active-countdown data-expires-at="@activePayment.ExpiresAt.ToString("O")">--:--</strong> để hoàn tất thanh toán.</p>
 
                     <h3 class="checkout-instructions__title">Hoàn tất trong vài bước</h3>
-                    <ol>
-                        <li><span>1</span><div><strong>Mở cổng thanh toán</strong><p>Nhấn “Thanh toán ngay” để sang trang bảo mật của @activeProviderName.</p></div></li>
-                        <li><span>2</span><div><strong>Quét QR hoặc xác nhận</strong><p>Kiểm tra đúng số tiền <b>@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</b> và mã đơn <b>@activePayment.OrderCode</b>.</p></div></li>
-                        <li><span>3</span><div><strong>Chờ hệ thống xác nhận</strong><p>Sau khi cổng thanh toán báo thành công, gói học tập sẽ được kích hoạt tự động.</p></div></li>
-                    </ol>
+                    @if (isVietQr)
+                    {
+                        <ol>
+                            <li><span>1</span><div><strong>Quét mã VietQR</strong><p>Mở ứng dụng ngân hàng và quét trực tiếp mã ở phía trên.</p></div></li>
+                            <li><span>2</span><div><strong>Kiểm tra và chuyển khoản</strong><p>Xác nhận đúng số tiền <b>@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</b> và nội dung chuyển khoản.</p></div></li>
+                            <li><span>3</span><div><strong>Chờ hệ thống xác nhận</strong><p>Gói học tập sẽ được kích hoạt tự động sau khi giao dịch thành công.</p></div></li>
+                        </ol>
+                    }
+                    else
+                    {
+                        <ol>
+                            <li><span>1</span><div><strong>Mở ứng dụng MoMo</strong><p>Nhấn nút phía trên để tiếp tục trên cổng thanh toán MoMo.</p></div></li>
+                            <li><span>2</span><div><strong>Xác nhận thanh toán</strong><p>Kiểm tra đúng số tiền <b>@activePayment.AmountVnd.ToString("N0") @activePayment.Currency</b> và mã đơn <b>@activePayment.OrderCode</b>.</p></div></li>
+                            <li><span>3</span><div><strong>Chờ hệ thống xác nhận</strong><p>Gói học tập sẽ được kích hoạt tự động sau khi giao dịch thành công.</p></div></li>
+                        </ol>
+                    }
                     <div class="checkout-warning"><span class="material-symbols-outlined" aria-hidden="true">warning</span><p>Nếu thanh toán sau thời hạn, đơn đã bị xóa và hệ thống sẽ không kích hoạt gói. Hãy tạo đơn mới.</p></div>
                 </div>
             </section>
@@ -208,6 +243,13 @@
 @section Scripts {
     <script>
         (() => {
+            document.querySelectorAll('[data-qr-fallback]').forEach(image => {
+                image.addEventListener('error', () => {
+                    const fallback = image.dataset.qrFallback;
+                    if (fallback && image.src !== fallback) image.src = fallback;
+                }, { once: true });
+            });
+
             const format = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
             let expired = false;
             const tick = () => {
