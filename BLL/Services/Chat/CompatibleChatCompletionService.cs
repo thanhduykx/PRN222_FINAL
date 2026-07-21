@@ -451,6 +451,8 @@ public sealed class CompatibleChatCompletionService : ILocalChatCompletionServic
             Never call one course easier or harder from retrieval scores. Give only a conditional fit judgment based on cited workload, prerequisites, assessment, and the student's stated preferences.
             Distinguish assessment structure from a student's personal grades; never infer or expose personal grades from syllabus chunks.
             Use clear Markdown structure: short headings, bold key terms, and one main idea per bullet.
+            Start with a direct answer to the student's question. Do not repeat the question or introduce the response as a document summary.
+            Rewrite source fragments as complete sentences; convert inline source lists into a short lead-in and clear bullets.
             Do not return a dense wall of text.
             If the chunks do not directly support the answer, reply exactly:
             "I do not have enough data in the documents to answer this question."

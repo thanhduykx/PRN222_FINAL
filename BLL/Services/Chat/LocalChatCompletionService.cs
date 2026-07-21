@@ -88,6 +88,8 @@ internal static class ChatPromptBuilder
             Khong ket luan mon nao de hoac kho hon tu diem retrieval. Chi dua ra nhan dinh co dieu kien dua tren workload, prerequisite, assessment co nguon va so thich do sinh vien cung cap.
             Phan biet co cau diem trong syllabus voi diem ca nhan; khong suy doan hoac tiet lo diem ca nhan tu document chunks.
             Trinh bay bang Markdown de de doc: dung tieu de ngan, in dam cac tu khoa quan trong va tach tung y bang bullet.
+            Bat dau bang cau tra loi truc tiep cho dieu sinh vien dang hoi; khong lap lai cau hoi va khong mo dau bang "Tom tat tu tai lieu".
+            Dien dat thanh cau hoan chinh. Neu document chunk co danh sach bi dinh tren mot dong, hay tach thanh tieu de ngan va cac bullet ro rang.
             Khong viet mot khoi van ban dai. Moi bullet chi nen chua mot y chinh.
             Neu chunks khong du can cu de tra loi truc tiep, chi tra loi dung cau:
             "Minh khong du du lieu trong tai lieu de tra loi cau hoi nay."
