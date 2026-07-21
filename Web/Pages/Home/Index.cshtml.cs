@@ -237,8 +237,8 @@ public sealed class IndexModel : HomePageModelBase
         if ((model.File is null || model.File.Length == 0) && string.IsNullOrWhiteSpace(model.SourceUrl))
         {
             TempData["Error"] = isVietnamese
-                ? "Hãy chọn file PDF, DOCX, PPTX, TXT hoặc nhập URL trang bài giảng trước khi index."
-                : "Choose a PDF, DOCX, PPTX, TXT file or enter a web page URL before indexing.";
+                ? "Hãy chọn file PDF, DOCX, PPTX, XLSX, TXT, MD, CSV hoặc nhập URL trang bài giảng trước khi index."
+                : "Choose a PDF, DOCX, PPTX, XLSX, TXT, MD, CSV file or enter a web page URL before indexing.";
             return RedirectToPage("/Home/Index");
         }
 

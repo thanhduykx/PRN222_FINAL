@@ -108,7 +108,7 @@ public sealed class SubjectDocumentsModel : HomePageModelBase
 
         if ((model.File is null || model.File.Length == 0) && string.IsNullOrWhiteSpace(model.SourceUrl))
         {
-            TempData["Error"] = "Hay chon file PDF, DOCX, PPTX, TXT hoac nhap URL bai giang truoc khi index.";
+            TempData["Error"] = "Hãy chọn file PDF, DOCX, PPTX, XLSX, TXT, MD, CSV hoặc nhập URL bài giảng trước khi index.";
             return RedirectToPage("/Home/SubjectDocuments", new { id });
         }
 

@@ -539,13 +539,65 @@ public sealed class RagChatService : IRagChatService
         var normalizedSources = ChatGroundingPolicy.NormalizeSourceMarkers(answer);
         var referencedCitations = normalizedSources.OriginalSourceNumbers
             .Where(sourceNumber => sourceNumber >= 1 && sourceNumber <= citations.Count)
-            .Select(sourceNumber => citations[sourceNumber - 1])
+            .Select(sourceNumber => CreateAnswerAlignedCitation(
+                citations[sourceNumber - 1],
+                matchedChunks[sourceNumber - 1].Text,
+                ChatGroundingPolicy.GetClaimsCitingSource(answer, sourceNumber)))
             .ToList();
         return new SingleQuestionAnswer(
             question,
             normalizedSources.Answer,
             referencedCitations,
             resolvedSubject);
+    }
+
+    private static SourceCitation CreateAnswerAlignedCitation(
+        SourceCitation citation,
+        string sourceText,
+        IReadOnlyList<string> citedClaims)
+    {
+        return new SourceCitation
+        {
+            DocumentId = citation.DocumentId,
+            FileName = citation.FileName,
+            Subject = citation.Subject,
+            Chapter = citation.Chapter,
+            ChunkIndex = citation.ChunkIndex,
+            Score = citation.Score,
+            Excerpt = CreateAnswerAlignedExcerpt(sourceText, citedClaims)
+        };
+    }
+
+    private static string CreateAnswerAlignedExcerpt(string sourceText, IReadOnlyList<string> citedClaims)
+    {
+        if (citedClaims.Count == 0)
+        {
+            return CreateExcerpt(sourceText);
+        }
+
+        var claimTerms = citedClaims
+            .SelectMany(ExtractTerms)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var claimFacts = ExtractGroundingFacts(string.Join(" ", citedClaims));
+        var rankedSentences = SplitSentences(sourceText)
+            .Select((sentence, sourceOrder) => new
+            {
+                Text = sentence,
+                SourceOrder = sourceOrder,
+                SharedTerms = CountSharedTerms(claimTerms, sentence),
+                SharedFacts = ExtractGroundingFacts(sentence).Count(claimFacts.Contains)
+            })
+            .Where(item => item.SharedTerms > 0 || item.SharedFacts > 0)
+            .OrderByDescending(item => item.SharedFacts)
+            .ThenByDescending(item => item.SharedTerms)
+            .Take(3)
+            .OrderBy(item => item.SourceOrder)
+            .Select(item => item.Text)
+            .ToList();
+
+        return rankedSentences.Count == 0
+            ? CreateExcerpt(sourceText)
+            : CreateExcerpt(string.Join(" ", rankedSentences));
     }
 
     private static string ApplyAnswerDepth(string question, string? answerDepth, string language)
