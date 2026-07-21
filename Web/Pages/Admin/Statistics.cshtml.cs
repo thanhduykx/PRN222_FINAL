@@ -147,6 +147,7 @@ public sealed class StatisticsModel : PageModel
         {
             SubjectCode = subject.SubjectCode,
             SubjectName = subject.SubjectName,
+            OwnerUserId = subject.OwnerUserId,
             OwnerName = subject.OwnerName,
             OwnerEmail = subject.OwnerEmail,
             LecturerCount = subject.LecturerCount,

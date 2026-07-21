@@ -76,6 +76,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                 subject.Id,
                 subject.Code,
                 subject.Name,
+                subject.OwnerUserId,
                 subject.OwnerName ?? string.Empty,
                 subject.OwnerEmail ?? string.Empty))
             .ToListAsync(cancellationToken);
@@ -251,6 +252,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
                     SubjectId = subject.Id,
                     SubjectCode = subject.Code,
                     SubjectName = subject.Name,
+                    OwnerUserId = subject.OwnerUserId,
                     OwnerName = subject.OwnerName,
                     OwnerEmail = subject.OwnerEmail,
                     LecturerCount = lecturerCounts.TryGetValue(subject.Id, out var lecturerCount) ? lecturerCount : 0,
@@ -314,6 +316,9 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
     private static IReadOnlyList<UserChatUsageData> BuildTopChatUsers(IReadOnlyList<ChatQuestionRow> questionRows)
     {
         return questionRows
+            .Where(row => row.OwnerUserId.HasValue
+                          && (!string.IsNullOrWhiteSpace(row.OwnerName)
+                              || !string.IsNullOrWhiteSpace(row.OwnerEmail)))
             .GroupBy(row => row.OwnerUserId)
             .Select(group =>
             {
@@ -433,7 +438,7 @@ public sealed class AnalyticsRepository : SqlBillingRepositoryBase, IAnalyticsRe
     }
 
     private sealed record ChatQuestionRow(Guid Id, Guid SessionId, DateTimeOffset CreatedAt, Guid? OwnerUserId, string OwnerName, string OwnerEmail);
-    private sealed record SubjectRow(Guid Id, string Code, string Name, string OwnerName, string OwnerEmail);
+    private sealed record SubjectRow(Guid Id, string Code, string Name, Guid? OwnerUserId, string OwnerName, string OwnerEmail);
     private sealed record DocumentRow(
         Guid Id,
         string FileName,
