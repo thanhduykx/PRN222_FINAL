@@ -267,6 +267,60 @@ public sealed class RagChatServiceTests
         Assert.Equal("PRN222-syllabus.pdf", result.Citations[0].FileName);
     }
 
+    [Fact]
+    public async Task AskAsync_CitationExcerptShowsTheEvidenceThatSupportsTheDisplayedAnswer()
+    {
+        var fixture = CreateFixture();
+        var unrelatedPrefix = string.Join(" ", Enumerable.Repeat(
+            "This section contains general administrative information for students.",
+            8));
+        fixture.Repository.GetChunksAsync(Arg.Any<CancellationToken>()).Returns(
+        [
+            new DataDocumentChunk
+            {
+                DocumentId = Guid.NewGuid(), FileName = "PRN222-syllabus.pdf", Subject = "PRN222",
+                Chapter = "Authentication", ChunkIndex = 4,
+                Text = $"{unrelatedPrefix} Authentication in PRN222 uses a secure cookie.",
+                Embedding = new Dictionary<int, double> { [1] = 1 }
+            }
+        ]);
+        fixture.Completion.IsEnabled.Returns(true);
+        fixture.Completion.RerankChunksAsync(
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns([new ChatChunkRerankResult(1, 0.95, "direct evidence")]);
+        fixture.Completion.GenerateAnswerAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<ChatMessage>>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns("Authentication in PRN222 uses a secure cookie [1].");
+        fixture.Completion.ValidateGroundingAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<DocumentChunk>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new GroundingDecision(true, 0.99, "fully supported"));
+
+        var result = await fixture.Service.AskAsync(
+            Guid.NewGuid(),
+            "How does authentication work in PRN222?",
+            language: "en",
+            allowedSubjects: ["PRN222"]);
+
+        Assert.Equal(ChatGroundingPolicy.GroundedAnswerStatus, result.AnswerStatus);
+        Assert.Single(result.Citations);
+        Assert.Contains(
+            "Authentication in PRN222 uses a secure cookie",
+            result.Citations[0].Excerpt,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("Xin chào", ChatGroundingPolicy.SmallTalkStatus, "SmallTalk")]
     [InlineData("Thời tiết hôm nay thế nào?", ChatGroundingPolicy.InsufficientEvidenceStatus, "OutOfScope")]

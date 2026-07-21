@@ -62,6 +62,24 @@ internal static partial class ChatGroundingPolicy
         });
     }
 
+    public static IReadOnlyList<string> GetClaimsCitingSource(string? answer, int sourceNumber)
+    {
+        if (string.IsNullOrWhiteSpace(answer) || sourceNumber < 1)
+        {
+            return Array.Empty<string>();
+        }
+
+        return ExtractClaimSegments(answer)
+            .Where(segment => SourceMarkerRegex().Matches(segment).Any(marker =>
+                int.TryParse(marker.Groups[1].Value, out var citedSourceNumber)
+                && citedSourceNumber == sourceNumber))
+            .Select(RemoveSourceMarkers)
+            .Select(claim => claim.Trim())
+            .Where(claim => !string.IsNullOrWhiteSpace(claim))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public static NormalizedSourceMarkers NormalizeSourceMarkers(string answer)
     {
         var sourceAnswer = answer ?? string.Empty;

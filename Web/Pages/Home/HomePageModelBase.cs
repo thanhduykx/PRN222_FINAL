@@ -475,9 +475,9 @@ public abstract class HomePageModelBase : PageModel
 
         protected static string ToVietnameseUploadError(string message)
         {
-            if (message.Contains("Only PDF, DOCX, PPTX, and TXT files", StringComparison.OrdinalIgnoreCase))
+            if (message.Contains("files are supported", StringComparison.OrdinalIgnoreCase))
             {
-                return "Chỉ hỗ trợ file PDF, DOCX, PPTX và TXT.";
+                return $"Chỉ hỗ trợ file {DocumentTextExtractor.SupportedFormatsLabel}.";
             }
 
             if (message.Contains("selected file is empty", StringComparison.OrdinalIgnoreCase))

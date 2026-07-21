@@ -71,6 +71,12 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
     {
         ArgumentNullException.ThrowIfNull(request);
         var uploadsRoot = NormalizeRequiredText(request.UploadsRoot, "Upload path is required.");
+        var safeFileName = NormalizeFileName(request.FileName);
+        if (!DocumentTextExtractor.IsSupportedFileName(safeFileName))
+        {
+            throw new InvalidOperationException($"Only {DocumentTextExtractor.SupportedFormatsLabel} files are supported.");
+        }
+
         await using var copy = new MemoryStream();
         await request.FileStream.CopyToAsync(copy, cancellationToken);
         if (copy.Length == 0)
@@ -78,7 +84,6 @@ public sealed class DocumentIndexingService : IDocumentIndexingService
             throw new InvalidOperationException("The selected file is empty and cannot be indexed.");
         }
 
-        var safeFileName = NormalizeFileName(request.FileName);
         var storedPath = Path.Combine(uploadsRoot, $"{Guid.NewGuid():N}{Path.GetExtension(safeFileName)}");
         copy.Position = 0;
         var savedLength = await _files.SaveAsync(storedPath, copy, cancellationToken);
