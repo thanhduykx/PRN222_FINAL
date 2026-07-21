@@ -1515,7 +1515,7 @@ public sealed class RagChatService : IRagChatService
                 .Take(8)
                 .ToList();
         }
-        if (!IsAssessmentWeightQuestion(normalizedQuestion)
+        if (!IsAssessmentQuestion(normalizedQuestion)
             || IsPersonalGradeQuestion(question)
             || courseCodes.Count == 0
             || (courseCodes.Count > 1 && IsMultiSubjectQuestion(normalizedQuestion) && !asksForAllCourses))

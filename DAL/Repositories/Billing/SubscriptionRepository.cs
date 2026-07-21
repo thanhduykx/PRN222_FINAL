@@ -155,8 +155,7 @@ public sealed class SubscriptionRepository : SqlBillingRepositoryBase, ISubscrip
         var calculatedEnd = SubscriptionActivationPolicy.CalculateEnd(
             activatedAt,
             subscription.StartsAt,
-            subscription.EndsAt,
-            superseded.Where(item => item.StartsAt <= activatedAt).Select(item => item.EndsAt));
+            subscription.EndsAt);
         subscription.StartsAt = activatedAt;
         subscription.EndsAt = calculatedEnd;
 

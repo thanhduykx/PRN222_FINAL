@@ -82,6 +82,52 @@ public sealed class MomoPaymentGateway : IMomoPaymentGateway
         };
     }
 
+    public async Task<PaymentGatewayStatusResult> GetStatusAsync(
+        string orderCode,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(orderCode))
+        {
+            throw new InvalidOperationException("MoMo order code is required.");
+        }
+
+        var momo = _options.MoMo;
+        var queryEndpoint = ResolveQueryEndpoint(momo);
+        EnsureConfigured(momo.PartnerCode, momo.AccessKey, momo.SecretKey, queryEndpoint, "MoMo");
+
+        var requestId = $"{orderCode}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        var rawSignature =
+            $"accessKey={momo.AccessKey}&orderId={orderCode}&partnerCode={momo.PartnerCode}&requestId={requestId}";
+        var payload = new Dictionary<string, object?>
+        {
+            ["partnerCode"] = momo.PartnerCode,
+            ["requestId"] = requestId,
+            ["orderId"] = orderCode,
+            ["lang"] = "vi",
+            ["signature"] = PaymentSignatureHelper.HmacSha256(rawSignature, momo.SecretKey)
+        };
+
+        var response = await _http.SendAsync(
+            new HttpRequestData("POST", queryEndpoint, JsonSerializer.Serialize(payload, JsonOptions)),
+            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"MoMo status lookup failed: {response.StatusCode} {response.ReasonPhrase}");
+        }
+
+        using var json = JsonDocument.Parse(response.Body);
+        var root = json.RootElement;
+        var resultCode = ReadInt(root, "resultCode");
+        return new PaymentGatewayStatusResult
+        {
+            OrderCode = ReadString(root, "orderId"),
+            ProviderTransactionId = ReadString(root, "transId"),
+            AmountVnd = decimal.TryParse(ReadString(root, "amount"), out var amount) ? amount : null,
+            Status = resultCode == 0 ? PaymentStatus.Paid : PaymentStatus.Pending,
+            Message = ReadString(root, "message")
+        };
+    }
+
     public PaymentGatewayWebhookResult VerifyWebhook(PaymentWebhookDto webhook)
     {
         var values = webhook.Values;
@@ -114,6 +160,19 @@ public sealed class MomoPaymentGateway : IMomoPaymentGateway
 
     private static int ReadInt(JsonElement element, string propertyName)
         => element.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value) ? value : -1;
+
+    private static string ResolveQueryEndpoint(MomoOptions options)
+    {
+        if (!string.IsNullOrWhiteSpace(options.QueryEndpoint))
+        {
+            return options.QueryEndpoint.Trim();
+        }
+
+        var endpoint = options.Endpoint?.Trim() ?? string.Empty;
+        return endpoint.EndsWith("/create", StringComparison.OrdinalIgnoreCase)
+            ? $"{endpoint[..^"/create".Length]}/query"
+            : endpoint.TrimEnd('/') + "/query";
+    }
 
     private static void EnsureConfigured(string partnerCode, string accessKey, string secretKey, string endpoint, string providerName)
     {

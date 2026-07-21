@@ -5,8 +5,7 @@ public static class SubscriptionActivationPolicy
     public static DateTimeOffset CalculateEnd(
         DateTimeOffset activatedAt,
         DateTimeOffset purchasedStartsAt,
-        DateTimeOffset purchasedEndsAt,
-        IEnumerable<DateTimeOffset> activeSubscriptionEnds)
+        DateTimeOffset purchasedEndsAt)
     {
         if (purchasedEndsAt.Year >= 9999)
         {
@@ -19,11 +18,6 @@ public static class SubscriptionActivationPolicy
             throw new InvalidOperationException("Purchased subscription duration must be positive.");
         }
 
-        var remainingDuration = activeSubscriptionEnds
-            .Where(end => end > activatedAt)
-            .Select(end => end - activatedAt)
-            .DefaultIfEmpty(TimeSpan.Zero)
-            .Max();
-        return activatedAt.Add(purchasedDuration).Add(remainingDuration);
+        return activatedAt.Add(purchasedDuration);
     }
 }

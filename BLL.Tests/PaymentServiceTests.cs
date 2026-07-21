@@ -294,6 +294,181 @@ public sealed class PaymentServiceTests
     }
 
     [Fact]
+    public async Task GetReturnStatusAsync_PendingMomoPayment_ReconcilesAndActivatesSubscription()
+    {
+        var now = new DateTimeOffset(2026, 7, 21, 8, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id,
+            UserName = "Nguyen Van A", UserEmail = "student@example.edu",
+            Provider = PaymentProvider.MoMo, Status = PaymentStatus.Pending,
+            AmountVnd = package.PriceVnd, Currency = "VND", OrderCode = "8123456789",
+            CreatedAt = now.AddMinutes(-1)
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var momo = Substitute.For<IMomoPaymentGateway>();
+        payments.GetByOrderCodeAsync(PaymentProvider.MoMo, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        momo.GetStatusAsync(payment.OrderCode, Arg.Any<CancellationToken>()).Returns(new PaymentGatewayStatusResult
+        {
+            OrderCode = payment.OrderCode,
+            ProviderTransactionId = "MOMO-PAID-123",
+            AmountVnd = payment.AmountVnd,
+            Status = PRN222_FINAL.BLL.Models.PaymentStatus.Paid,
+            Message = "Successful."
+        });
+        var service = new PaymentService(
+            packages, payments, subscriptions, momo, Substitute.For<IPayOsPaymentGateway>(),
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()), new FixedTimeProvider(now));
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.MoMo,
+            payment.OrderCode,
+            userId);
+
+        Assert.NotNull(result);
+        Assert.Equal(PRN222_FINAL.BLL.Models.PaymentStatus.Paid, result!.Status);
+        Assert.Equal("MOMO-PAID-123", result.ProviderTransactionId);
+        await payments.Received().UpdateAsync(
+            Arg.Is<KnowledgeSqlPayment>(item => item.Id == payment.Id && item.Status == PaymentStatus.Paid),
+            Arg.Any<CancellationToken>());
+        await subscriptions.Received().ActivateExclusiveAsync(
+            Arg.Is<KnowledgeSqlSubscription>(item => item.PaymentId == payment.Id && item.Status == SubscriptionStatus.Active),
+            now,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetReturnStatusAsync_MomoQueryAmountMismatch_DoesNotActivateSubscription()
+    {
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id,
+            Provider = PaymentProvider.MoMo, Status = PaymentStatus.Pending,
+            AmountVnd = package.PriceVnd, Currency = "VND", OrderCode = "8123456790",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var momo = Substitute.For<IMomoPaymentGateway>();
+        payments.GetByOrderCodeAsync(PaymentProvider.MoMo, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        momo.GetStatusAsync(payment.OrderCode, Arg.Any<CancellationToken>()).Returns(new PaymentGatewayStatusResult
+        {
+            OrderCode = payment.OrderCode,
+            AmountVnd = payment.AmountVnd + 1,
+            Status = PRN222_FINAL.BLL.Models.PaymentStatus.Paid
+        });
+        var service = new PaymentService(
+            packages, payments, subscriptions, momo, Substitute.For<IPayOsPaymentGateway>(),
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()));
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.MoMo,
+            payment.OrderCode,
+            userId);
+
+        Assert.NotNull(result);
+        Assert.Equal(PRN222_FINAL.BLL.Models.PaymentStatus.Pending, result!.Status);
+        await payments.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default);
+        await subscriptions.DidNotReceiveWithAnyArgs().ActivateExclusiveAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task GetReturnStatusAsync_PendingPayOsPayment_ReconcilesAndActivatesSubscription()
+    {
+        var now = new DateTimeOffset(2026, 7, 21, 8, 0, 0, TimeSpan.Zero);
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id,
+            UserName = "Nguyen Van A", UserEmail = "student@example.edu",
+            Provider = PaymentProvider.PayOS, Status = PaymentStatus.Pending,
+            AmountVnd = package.PriceVnd, Currency = "VND", OrderCode = "260721123456789",
+            CreatedAt = now.AddMinutes(-1)
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var payOs = Substitute.For<IPayOsPaymentGateway>();
+        payments.GetByOrderCodeAsync(PaymentProvider.PayOS, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        payOs.GetStatusAsync(260721123456789, Arg.Any<CancellationToken>()).Returns(new PaymentGatewayStatusResult
+        {
+            OrderCode = payment.OrderCode,
+            ProviderTransactionId = "PAYOS-LINK-123",
+            AmountVnd = payment.AmountVnd,
+            Status = PRN222_FINAL.BLL.Models.PaymentStatus.Paid,
+            Message = "PAID"
+        });
+        var service = new PaymentService(
+            packages, payments, subscriptions, Substitute.For<IMomoPaymentGateway>(), payOs,
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()), new FixedTimeProvider(now));
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.PayOS,
+            payment.OrderCode,
+            userId);
+
+        Assert.NotNull(result);
+        Assert.Equal(PRN222_FINAL.BLL.Models.PaymentStatus.Paid, result!.Status);
+        Assert.Equal("PAYOS-LINK-123", result.ProviderTransactionId);
+        await payments.Received().UpdateAsync(
+            Arg.Is<KnowledgeSqlPayment>(item => item.Id == payment.Id && item.Status == PaymentStatus.Paid),
+            Arg.Any<CancellationToken>());
+        await subscriptions.Received().ActivateExclusiveAsync(
+            Arg.Is<KnowledgeSqlSubscription>(item => item.PaymentId == payment.Id && item.Status == SubscriptionStatus.Active),
+            now,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetReturnStatusAsync_PayOsQueryWithoutAmount_DoesNotActivateSubscription()
+    {
+        var userId = Guid.NewGuid();
+        var package = CreatePackage("PRO", "Pro", 30);
+        var payment = new KnowledgeSqlPayment
+        {
+            Id = Guid.NewGuid(), UserId = userId, PackageId = package.Id,
+            Provider = PaymentProvider.PayOS, Status = PaymentStatus.Pending,
+            AmountVnd = package.PriceVnd, Currency = "VND", OrderCode = "260721123456790",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        var packages = Substitute.For<IPackageRepository>();
+        var payments = Substitute.For<IPaymentRepository>();
+        var subscriptions = Substitute.For<ISubscriptionRepository>();
+        var payOs = Substitute.For<IPayOsPaymentGateway>();
+        payments.GetByOrderCodeAsync(PaymentProvider.PayOS, payment.OrderCode, Arg.Any<CancellationToken>()).Returns(payment);
+        packages.GetByIdAsync(package.Id, Arg.Any<CancellationToken>()).Returns(package);
+        payOs.GetStatusAsync(260721123456790, Arg.Any<CancellationToken>()).Returns(new PaymentGatewayStatusResult
+        {
+            OrderCode = payment.OrderCode,
+            Status = PRN222_FINAL.BLL.Models.PaymentStatus.Paid
+        });
+        var service = new PaymentService(
+            packages, payments, subscriptions, Substitute.For<IMomoPaymentGateway>(), payOs,
+            Microsoft.Extensions.Options.Options.Create(new PaymentOptions()));
+
+        var result = await service.GetReturnStatusAsync(
+            PRN222_FINAL.BLL.Models.PaymentProvider.PayOS,
+            payment.OrderCode,
+            userId);
+
+        Assert.NotNull(result);
+        Assert.Equal(PRN222_FINAL.BLL.Models.PaymentStatus.Pending, result!.Status);
+        await payments.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default);
+        await subscriptions.DidNotReceiveWithAnyArgs().ActivateExclusiveAsync(default!, default, default);
+    }
+
+    [Fact]
     public async Task GetReturnStatusAsync_DoesNotExposeAnotherUsersPayment()
     {
         var ownerId = Guid.NewGuid();

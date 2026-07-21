@@ -716,7 +716,7 @@ public sealed class RagChatServiceTests
 
         var result = await fixture.Service.AskAsync(
             Guid.NewGuid(),
-            "Diem DBA103 nhu nao?",
+            "DBA103 được đánh giá như thế nào?",
             language: "vi",
             allowedSubjects: ["DBA103"]);
 
@@ -801,15 +801,16 @@ public sealed class RagChatServiceTests
 
         var result = await fixture.Service.AskAsync(
             Guid.NewGuid(),
-            "Diem DBA103 nhu nao?",
+            "DBA103 được đánh giá như thế nào?",
             language: "vi",
             allowedSubjects: ["DBA103"]);
 
         Assert.True(
             result.AnswerStatus == ChatGroundingPolicy.GroundedAnswerStatus,
             $"Status={result.AnswerStatus}; Answer={result.Answer}");
-        Assert.Contains("15%", result.Answer, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("70%", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Assignment: 15%", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Participation: 15%", result.Answer, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Final exam: 70%", result.Answer, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("100%", result.Answer, StringComparison.OrdinalIgnoreCase);
     }
 

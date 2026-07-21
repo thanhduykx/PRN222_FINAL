@@ -105,7 +105,11 @@
             var qrImageSource = string.IsNullOrWhiteSpace(vietQrImageSource)
                 ? fallbackQrImageSource
                 : vietQrImageSource;
-            <section class="checkout-payment-grid">
+            var paymentStatusUrl = Url.Page(
+                "/Payments/Checkout",
+                "Status",
+                new { provider = activePayment.Provider.ToString(), orderCode = activePayment.OrderCode });
+            <section class="checkout-payment-grid" data-payment-status-url="@paymentStatusUrl">
                 <div class="checkout-method-card">
                     <span class="checkout-eyebrow">Phương thức thanh toán</span>
                     <h2>Chọn cách thanh toán</h2>
@@ -215,6 +219,7 @@
                         <p class="checkout-gateway-error">Không lấy được liên kết thanh toán an toàn. Vui lòng xóa đơn và tạo lại.</p>
                     }
                     <p class="checkout-expiry-note"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> Còn <strong data-active-countdown data-expires-at="@activePayment.ExpiresAt.ToString("O")">--:--</strong> để hoàn tất thanh toán.</p>
+                    <p class="checkout-expiry-note" data-payment-live-status role="status" aria-live="polite">Hệ thống đang tự động kiểm tra trạng thái giao dịch.</p>
 
                     <h3 class="checkout-instructions__title">Hoàn tất trong vài bước</h3>
                     @if (isVietQr)
@@ -263,6 +268,46 @@
             };
             tick();
             window.setInterval(tick, 1000);
+
+            const paymentStatusRegion = document.querySelector('[data-payment-status-url]');
+            const paymentLiveStatus = document.querySelector('[data-payment-live-status]');
+            let paymentPollingStopped = false;
+            const pollPaymentStatus = async () => {
+                if (paymentPollingStopped || !paymentStatusRegion?.dataset.paymentStatusUrl) return;
+
+                try {
+                    const response = await fetch(paymentStatusRegion.dataset.paymentStatusUrl, {
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (response.status === 404) {
+                        paymentPollingStopped = true;
+                        window.location.reload();
+                        return;
+                    }
+                    if (!response.ok) return;
+
+                    const result = await response.json();
+                    const status = String(result.status || '').toLowerCase();
+                    if (status === 'paid') {
+                        paymentPollingStopped = true;
+                        if (paymentLiveStatus) paymentLiveStatus.textContent = 'Thanh toán thành công. Đang kích hoạt gói và chuyển trang...';
+                        window.location.assign(result.redirectUrl);
+                        return;
+                    }
+                    if (status === 'failed' || status === 'canceled') {
+                        paymentPollingStopped = true;
+                        window.location.assign(result.redirectUrl);
+                        return;
+                    }
+                } catch {
+                    // Lỗi mạng tạm thời không được làm gián đoạn quá trình quét QR.
+                } finally {
+                    if (!paymentPollingStopped) window.setTimeout(pollPaymentStatus, 3000);
+                }
+            };
+            window.setTimeout(pollPaymentStatus, 1500);
         })();
     </script>
 }
